@@ -74,20 +74,20 @@ typedef enum TokenType_t
     EQ_OP,          // '=='
     NE_OP,          // '!='
 
-    SEMICOLON,      // ';'
-    LEFT_BRACE,     // '{'
-    RIGHT_BRACE,    // '}'
-    COMMA,          // ','       
-    COLON,          // ':'
+    SEMICOLON,      // ';' x
+    LEFT_BRACE,     // '{' x
+    RIGHT_BRACE,    // '}' x
+    COMMA,          // ',' x     
+    COLON,          // ':' x
     EQUAL,          // '='
-    LEFT_PAREN,     // '('
-    RIGHT_PAREN,    // ')'
-    LEFT_SQUARE,    // '['
-    RIGHT_SQUARE,   // ']'
+    LEFT_PAREN,     // '(' x
+    RIGHT_PAREN,    // ')' x
+    LEFT_SQUARE,    // '[' x
+    RIGHT_SQUARE,   // ']' x
     DOT,            // '.'
-    AMPERSAND,      // '&'
+    AMPERSAND,      // '&' 
     BANG,           // '!'
-    TILDE,          // '~'
+    TILDE,          // '~' x
     MINUS,          // '-'
     PLUS,           // '+'
     STAR,           // '*'
