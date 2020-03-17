@@ -9,16 +9,16 @@ typedef struct Scanner_t Scanner;
 /*
  * Initialize Scanner
  *
- * This function initializes an instance of the Scanner for a given source 
- * file. When finished, call the destructor function (Scanner_destroy)
+ * This function initializes an instance of the Scanner.
+ * When finished, call the destructor function (Scanner_destroy)
  *
  * Parameters:
- *  source_file - path to source file
+ *  source - pointer to source code
  *
  * Returns:
  *  pointer to allocated Scanner instance, or NULL on error.
  */
-Scanner * Scanner_init(char const * source_file);
+Scanner * Scanner_init(char const * source);
 
 /*
  * Get the next token

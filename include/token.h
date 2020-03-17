@@ -100,11 +100,11 @@ typedef enum TokenType_t
     QUESTION,       // '?'
 
     IDENTIFIER,
-    
-    INTEGER_LITERAL,
-    FLOAT_LITERAL,
-    STRING_LITERAL
+   
+    CONSTANT,
+    STRING_LITERAL,
 
+    END_OF_FILE
 } TokenType;
 
 /* Token struct */
@@ -117,7 +117,7 @@ typedef struct Token_t
     int line_number;
 
     /* Token lexeme */
-    char * lexeme;
+    const char * lexeme;
     int lexeme_length;
 } Token;
 
