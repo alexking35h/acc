@@ -1,6 +1,8 @@
 #ifndef __TOKEN__
 #define __TOKEN__
 
+#define TOKEN_STORE_LEXEME(tok) (tok >= 100)
+
 // ALIGNAS
 // ALIGNOF
 // ATOMIC
@@ -16,7 +18,7 @@
 /* Token types Enum */
 typedef enum TokenType_t
 {
-    AUTO,
+    AUTO = 1,
     BREAK,
     CASE,
     CHAR,
@@ -99,12 +101,12 @@ typedef enum TokenType_t
     BAR,            // '|'
     QUESTION,       // '?'
 
-    IDENTIFIER,
+    END_OF_FILE,
+
+    IDENTIFIER = 100,
    
     CONSTANT,
-    STRING_LITERAL,
-
-    END_OF_FILE
+    STRING_LITERAL
 } TokenType;
 
 /* Token struct */
@@ -116,9 +118,8 @@ typedef struct Token_t
     /* Position of the Token in the input */
     int line_number;
 
-    /* Token lexeme */
-    const char * lexeme;
-    int lexeme_length;
+    /* Token lexeme. Null-terminated string */
+    char * lexeme;
 } Token;
 
 #endif

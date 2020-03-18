@@ -37,9 +37,6 @@ build/acc: $(ACC_OBJECTS)
 build/test_acc: $(ACC_OBJECTS) $(TEST_OBJECTS)
 	$(CC) $^ -o $@ $(CFLAGS) 
 
-debug:
-	echo $(OBJECTS)
-
 $(ACC_OBJECTS): build/%.o: source/%.c
 	$(CC) -c $< -o $@ $(CFLAGS)
 

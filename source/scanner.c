@@ -10,9 +10,11 @@
 
 #define count(n) sizeof(n)/sizeof(n[0])
 
-/* Tokens are allocated in blocks of TOKEN_BUFFER_SIZE,
-and stored in a linked list so that new tokens can be 
-created on-demand. */
+/*
+ * Tokens are allocated in blocks of TOKEN_BUFFER_SIZE,
+ * and stored in a linked list so that new tokens can be
+ * created on-demand.
+ */
 typedef struct TokenList_t
 {
     // Linked-list pointer
@@ -21,7 +23,10 @@ typedef struct TokenList_t
     Token tokens[TOKEN_BUFFER_SIZE];
 } TokenList;
 
-/* Scanner instance */
+/*
+ * Scanner class
+ * This struct encapsulates all state required by the scanner.
+ */
 typedef struct Scanner_t
 {
     // Source file
@@ -39,11 +44,18 @@ typedef struct Scanner_t
 
 static Token * get_token(Scanner *);
 
+/*
+ * Helper functions:
+ * match_*   - return true if the input matches, advance the scanner position
+ * consume_* - advance the scanner over the input, raise error if the input doesn't match
+ */
 static bool match_character(Scanner *, const char * expected);
 static bool match_whitespace(Scanner *);
-
 static void consume_number(Scanner *);
 static void consume_string(Scanner *);
+static void consume_comment(Scanner *);
+
+static char peek(Scanner *);
 
 static Token * get_token(Scanner * scanner)
 {
@@ -67,6 +79,14 @@ static Token * get_token(Scanner * scanner)
     }
 }
 
+static char peek(Scanner * scanner)
+{
+    if(scanner->current >= strlen(scanner->source))
+        return 0;
+
+    return scanner->source[scanner->current];
+}
+
 static bool match_character(Scanner * scanner, const char * expected)
 {
     for(;*expected;expected++)
@@ -80,7 +100,6 @@ static bool match_character(Scanner * scanner, const char * expected)
     return false;
 }
        
-/* Return true if the source character is whitespace */
 static bool match_whitespace(Scanner * scanner)
 {
     char whitespace[] = {'\t', '\v', '\f', ' '};
@@ -102,7 +121,6 @@ static bool match_whitespace(Scanner * scanner)
     return false;
 }
 
-/* Consume a string */
 static void consume_string(Scanner * scanner)
 {
     // Skip over the first double-quote
@@ -149,6 +167,33 @@ static void consume_number(Scanner * scanner)
             continue;
     }
     match_character(scanner, "ulUL");
+}
+
+/* Consume a comment */
+static void consume_comment(Scanner * scanner)
+{
+    scanner->current++;
+    if(match_character(scanner, "/"))
+    {
+        while(scanner->source[scanner->current] != '\n')
+            scanner->current++;
+    }
+    else if(match_character(scanner, "*"))
+    {
+        while(true)
+        {
+            if(match_character(scanner, "\n"))
+            {
+                scanner->line_number++;
+                continue;
+            }
+            if(scanner->source[scanner->current++] != '*')
+                continue;
+            if(scanner->source[scanner->current++] != '/')
+                continue;
+            break;
+        }
+    }
 }
 
 static TokenType get_next_token_type(Scanner * scanner)
@@ -203,9 +248,6 @@ static TokenType get_next_token_type(Scanner * scanner)
     if(focus == '*')
         return match_character(scanner, "=") ? MUL_ASSIGN : STAR;
 
-    if(focus == '/')
-        return match_character(scanner, "=") ? DIV_ASSIGN : SLASH;
-
     if(focus == '%')
         return match_character(scanner, "=") ? MOD_ASSIGN : PERCENT;
 
@@ -247,6 +289,25 @@ static TokenType get_next_token_type(Scanner * scanner)
             return GE_OP;
 
         return GREATER_THAN;
+    }
+
+    if(focus == '/')
+    {
+        // Comment.
+        if(peek(scanner) == '*')
+        {
+            scanner->current--;
+            consume_comment(scanner);
+            return 0;
+        }
+        else if(peek(scanner) == '/')
+        {
+            scanner->current--;
+            consume_comment(scanner);
+            return 0;
+        }
+
+        return match_character(scanner, "=") ? DIV_ASSIGN : SLASH;
     }
 
     // String literal.
@@ -305,31 +366,43 @@ Scanner * Scanner_init(char const * source)
  */
 Token * Scanner_get_next(Scanner * scanner)
 {
-    // Skip over whitespace.
+    TokenType token_type;
+    int token_position;
+
     while(true)
     {
-        if(!match_whitespace(scanner)) // && !comment(scanner))
+        if(scanner->current >= strlen(scanner->source))
+	    {
+            token_type = END_OF_FILE;
             break;
-    }
-
-    TokenType token_type;
-    int token_position = scanner->current;
-
-    if(scanner->current >= strlen(scanner->source))
-    {
-       token_type = END_OF_FILE;
-    }
-    else
-    {
-        token_type = get_next_token_type(scanner);
+        }
+        if(match_whitespace(scanner))
+        {
+            continue;
+        }
+	
+    	token_position = scanner->current;
+        if((token_type = get_next_token_type(scanner)))
+        {
+            break;
+        }
     }
 
     Token * token = get_token(scanner);
     token->type = token_type;
-    token->lexeme = &(scanner->source[token_position]);
-    token->lexeme_length = scanner->current - token_position;
     token->line_number = scanner->line_number;
-   
+
+    if(TOKEN_STORE_LEXEME(token->type))
+    {
+    	const char * src = &(scanner->source[token_position]);
+    	int len = scanner->current - token_position;
+    	token->lexeme = calloc(1, len+1);
+    	strncpy(token->lexeme, src, len);
+    }
+    else
+    {
+    	token->lexeme = NULL;
+    }
     return token; 
 }
 

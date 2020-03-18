@@ -5,13 +5,7 @@
 #include <stdio.h>
 
 #define TOKEN(type, line_number, ptr, len) \
-    {(type), (line_number), (ptr), (len)}
-
-#define TOKEN_COMPARE(tok_a, tok_b) \
-    (tok_a->type == tok_b->type \
-     && tok_a->line_number == tok_b->line_number \
-     && tok_a->lexeme == tok_b->lexeme \
-     && tok_a->lexeme_length == tok_b->lexeme_length)
+    {(type), (line_number), (ptr)}
 
 #define COUNT(s) (sizeof(s)/sizeof(s[0]))
 
@@ -39,40 +33,39 @@ START_TEST(single_character)
     char * source = ";{},:=()[].&!~-+*/%<>^|?";
     Scanner * scanner = Scanner_init(source);
 
-    Token expected_tokens[] = {
-        TOKEN(SEMICOLON, 1, source++, 1),
-        TOKEN(LEFT_BRACE, 1, source++, 1),
-        TOKEN(RIGHT_BRACE, 1, source++, 1),
-        TOKEN(COMMA, 1, source++, 1),
-        TOKEN(COLON, 1, source++, 1),
-        TOKEN(EQUAL, 1, source++, 1),
-        TOKEN(LEFT_PAREN, 1, source++, 1),
-        TOKEN(RIGHT_PAREN, 1, source++, 1),
-        TOKEN(LEFT_SQUARE, 1, source++, 1),
-        TOKEN(RIGHT_SQUARE, 1, source++, 1),
-        TOKEN(DOT, 1, source++, 1),
-        TOKEN(AMPERSAND, 1, source++, 1),
-        TOKEN(BANG, 1, source++, 1),
-        TOKEN(TILDE, 1, source++, 1),
-        TOKEN(MINUS, 1, source++, 1),
-        TOKEN(PLUS, 1, source++, 1),
-        TOKEN(STAR, 1, source++, 1),
-        TOKEN(SLASH, 1, source++, 1),
-        TOKEN(PERCENT, 1, source++, 1),
-        TOKEN(LESS_THAN, 1, source++, 1),
-        TOKEN(GREATER_THAN, 1, source++, 1),
-        TOKEN(CARET, 1, source++, 1),
-        TOKEN(BAR, 1, source++, 1),
-        TOKEN(QUESTION, 1, source++, 1),
-        TOKEN(END_OF_FILE, 1, source, 0)
+    TokenType expected_tokens[] = {
+        SEMICOLON,
+        LEFT_BRACE,
+        RIGHT_BRACE,
+        COMMA,
+        COLON,
+        EQUAL,
+        LEFT_PAREN,
+        RIGHT_PAREN,
+        LEFT_SQUARE,
+        RIGHT_SQUARE,
+        DOT,
+        AMPERSAND,
+        BANG,
+        TILDE,
+        MINUS,
+        PLUS,
+        STAR,
+        SLASH,
+        PERCENT,
+        LESS_THAN,
+        GREATER_THAN,
+        CARET,
+        BAR,
+        QUESTION,
+        END_OF_FILE,
     };
 
     for(int i = 0;i<COUNT(expected_tokens);i++)
     {
         Token * token = Scanner_get_next(scanner);
-        Token * ref = &expected_tokens[i];
-
-        ck_assert(TOKEN_COMPARE(token, ref));
+        ck_assert(token->type == expected_tokens[i]);
+        ck_assert(token->line_number == 1);
     }
 }
 END_TEST
@@ -82,27 +75,46 @@ START_TEST(assignments)
     char * source = "|= ^= &= %= /= *= -= += <<= >>= ";
     Scanner * scanner = Scanner_init(source);
 
-    Token expected_tokens[] = {
-        TOKEN(OR_ASSIGN, 1, source, 2),
-        TOKEN(XOR_ASSIGN, 1, source+=3, 2),
-        TOKEN(AND_ASSIGN, 1, source+=3, 2),
-        TOKEN(MOD_ASSIGN, 1, source+=3, 2),
-        TOKEN(DIV_ASSIGN, 1, source+=3, 2),
-        TOKEN(MUL_ASSIGN, 1, source+=3, 2),
-        TOKEN(SUB_ASSIGN, 1, source+=3, 2),
-        TOKEN(ADD_ASSIGN, 1, source+=3, 2),
-        TOKEN(LEFT_ASSIGN, 1, source+=3, 3),
-        TOKEN(RIGHT_ASSIGN, 1, source+=4, 3),
-        TOKEN(END_OF_FILE, 1, source+=4, 0)
+    TokenType expected_tokens[] = {
+        OR_ASSIGN,
+        XOR_ASSIGN,
+        AND_ASSIGN,
+        MOD_ASSIGN,
+        DIV_ASSIGN,
+        MUL_ASSIGN,
+        SUB_ASSIGN,
+        ADD_ASSIGN,
+        LEFT_ASSIGN,
+        RIGHT_ASSIGN,
+        END_OF_FILE,
     };
 
     for(int i = 0;i<COUNT(expected_tokens);i++)
     {
         Token * token = Scanner_get_next(scanner);
-        Token * ref = &expected_tokens[i];
-
-        ck_assert(TOKEN_COMPARE(token, ref));
+        ck_assert(token->type == expected_tokens[i]);
+        ck_assert(token->line_number == 1);
     }
+}
+END_TEST
+
+START_TEST(comment)
+{
+    char * source = ":   // jim\n;/* pam\n\n */\n!";
+    Scanner * scanner = Scanner_init(source);
+
+    Token * token = Scanner_get_next(scanner);
+    ck_assert(token->type = COLON);
+    ck_assert(token->line_number == 1);
+
+    token = Scanner_get_next(scanner);
+    ck_assert(token->type == SEMICOLON);
+    ck_assert(token->line_number == 2);
+
+
+    token = Scanner_get_next(scanner);
+    ck_assert(token->type == BANG);
+    ck_assert(token->line_number == 5);
 }
 END_TEST
 
@@ -114,14 +126,12 @@ START_TEST(string_literal)
     Token * string_token = Scanner_get_next(scanner);
     ck_assert(string_token->type == STRING_LITERAL);
     ck_assert(string_token->line_number == 1);
-    ck_assert(string_token->lexeme == &(source[1]));
-    ck_assert(string_token->lexeme_length == strlen("\"qwertyuiop\""));
+    ck_assert(strcmp(string_token->lexeme, "\"qwertyuiop\"") == 0);
 
     string_token = Scanner_get_next(scanner);
     ck_assert(string_token->type == STRING_LITERAL);
     ck_assert(string_token->line_number == 1);
-    ck_assert(string_token->lexeme == source+strlen(" \"qwertyuiop\" "));
-    ck_assert(string_token->lexeme_length == strlen("\"qwert\\\"yuiop\\\t\""));
+    ck_assert(strcmp(string_token->lexeme, "\"qwert\\\"yuiop\\\t\"") == 0);
 }
 END_TEST
 
@@ -134,11 +144,9 @@ START_TEST(hex_literal)
     for(int i = 0;i < COUNT(expected_lexeme_length);i++)
     {
         Token * number_token = Scanner_get_next(scanner);
-        printf("'%s'\n", number_token->lexeme);
         ck_assert(number_token->type == CONSTANT);
         ck_assert(number_token->line_number == 1);
-        ck_assert(number_token->lexeme == source + i * 10);
-        ck_assert(number_token->lexeme_length = expected_lexeme_length[i]);
+        ck_assert(strncmp(number_token->lexeme, source+(i*10), expected_lexeme_length[i]) == 0);
     }
 }
 END_TEST
@@ -151,6 +159,7 @@ TCase * scanner_testcase(void)
     tcase_add_test(testcase, whitespace);
     tcase_add_test(testcase, single_character);
     tcase_add_test(testcase, assignments);
+    tcase_add_test(testcase, comment);
     tcase_add_test(testcase, string_literal);
     tcase_add_test(testcase, hex_literal);
     return testcase;
