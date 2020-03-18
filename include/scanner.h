@@ -18,7 +18,7 @@ typedef struct Scanner_t Scanner;
  * Returns:
  *  pointer to allocated Scanner instance, or NULL on error.
  */
-Scanner * Scanner_init(char const * source);
+Scanner* Scanner_init(char const* source);
 
 /*
  * Get the next token
@@ -26,12 +26,11 @@ Scanner * Scanner_init(char const * source);
  * This function generates the next token from the source file, including the
  * final EOF token. When finished, the function returns NULL.
  */
-Token * Scanner_get_next(Scanner * scanner);
+Token* Scanner_get_next(Scanner* scanner);
 
 /*
  * Destroy instance of ACC's Scanner.
  */
-void Scanner_destroy(Scanner * scanner);
+void Scanner_destroy(Scanner* scanner);
 
 #endif
-

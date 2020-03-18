@@ -3,16 +3,9 @@
 
 #include <stdbool.h>
 
-typedef enum ErrorType_t
-{
-    SCANNER,
-    PARSER
-} ErrorType;
+typedef enum ErrorType_t { SCANNER, PARSER } ErrorType;
 
-typedef enum WarningType
-{
-    INVALID_INITIALIZER
-} WarningType;
+typedef enum WarningType { INVALID_INITIALIZER } WarningType;
 
 /* Error class */
 typedef struct Error_t Error;
@@ -26,7 +19,7 @@ typedef struct Error_t Error;
  * Returns:
  *  pointer to allocated Error instance, or NULL on error.
  */
-Error * Error_init(void);
+Error *Error_init(void);
 
 /*
  * Report an error, with a line number and message
@@ -65,6 +58,5 @@ bool Error_has_errors(Error *);
  * Free up the Error class instance, and release all resources
  */
 void Error_destroy(Error *);
- 
-#endif
 
+#endif
