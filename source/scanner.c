@@ -7,6 +7,12 @@
 #include "token.h"
 
 #define TOKEN_BUFFER_SIZE 32
+#define IDENTIFIER_START_CHARACTERS \
+  "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm_"
+#define IDENTIFIER_CHARACTERS \
+  "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm_1234567890"
+
+#define MAX_KEYWORD_LENGTH 20
 
 #define count(n) sizeof(n) / sizeof(n[0])
 
@@ -50,6 +56,7 @@ static Token *get_token(Scanner *);
  */
 static bool match_character(Scanner *, const char *expected);
 static bool match_whitespace(Scanner *);
+static void consume_keyword_or_identifier(Scanner *, TokenType *);
 static void consume_number(Scanner *);
 static void consume_string(Scanner *);
 static void consume_comment(Scanner *);
@@ -104,6 +111,35 @@ static bool match_whitespace(Scanner *scanner) {
     }
   }
   return false;
+}
+
+static void consume_keyword_or_identifier(Scanner *scanner,
+                                          TokenType *token_type) {
+  const char *identifier_start = scanner->source + scanner->current;
+  int identifier_length = 1;
+
+  scanner->current++;
+
+  while (match_character(scanner, IDENTIFIER_CHARACTERS)) {
+    identifier_length++;
+  }
+
+  char *keywords[] = {
+      "auto",     "break",    "case",     "char",   "const",   "continue",
+      "default",  "do",       "double",   "else",   "enum",    "extern",
+      "float",    "for",      "goto",     "if",     "inline",  "int",
+      "long",     "register", "restrict", "return", "short",   "signed",
+      "sizeof",   "static",   "struct",   "switch", "typedef", "union",
+      "unsigned", "void",     "volatile", "while",
+  };
+
+  for (int i = 0; i < count(keywords); i++) {
+    if (strncmp(identifier_start, keywords[i], identifier_length) == 0) {
+      *token_type = AUTO + i;
+      return;
+    }
+  }
+  *token_type = IDENTIFIER;
 }
 
 static void consume_string(Scanner *scanner) {
@@ -263,6 +299,13 @@ static TokenType get_next_token_type(Scanner *scanner) {
     scanner->current--;
     consume_number(scanner);
     return CONSTANT;
+  }
+
+  if (strchr(IDENTIFIER_START_CHARACTERS, scanner->source[scanner->current])) {
+    scanner->current--;
+    TokenType token;
+    consume_keyword_or_identifier(scanner, &token);
+    return token;
   }
 
   return 0;

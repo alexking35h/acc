@@ -114,6 +114,29 @@ START_TEST(hex_literal) {
 }
 END_TEST
 
+START_TEST(keyword) {
+  const char* source =
+      "auto break case char const continue default do double else "
+      "enum extern float for goto if inline int long register "
+      "restrict return short signed sizeof static struct switch "
+      "typedef union unsigned void volatile while _identifier_1234_name";
+
+  TokenType keyword_tokens[] = {
+      AUTO,    BREAK,  CASE,     CHAR,   CONST,    CONTINUE, DEFAULT,
+      DO,      DOUBLE, ELSE,     ENUM,   EXTERN,   FLOAT,    FOR,
+      GOTO,    IF,     INLINE,   INT,    LONG,     REGISTER, RESTRICT,
+      RETURN,  SHORT,  SIGNED,   SIZEOF, STATIC,   STRUCT,   SWITCH,
+      TYPEDEF, UNION,  UNSIGNED, VOID,   VOLATILE, WHILE,    IDENTIFIER,
+      END_OF_FILE};
+
+  Scanner* scanner = Scanner_init(source);
+  for (int i = 0; i < COUNT(keyword_tokens); i++) {
+    Token* token = Scanner_get_next(scanner);
+    ck_assert(token->type == keyword_tokens[i]);
+  }
+}
+END_TEST
+
 TCase* scanner_testcase(void) {
   TCase* testcase = tcase_create("scanner");
 
@@ -124,5 +147,6 @@ TCase* scanner_testcase(void) {
   tcase_add_test(testcase, comment);
   tcase_add_test(testcase, string_literal);
   tcase_add_test(testcase, hex_literal);
+  tcase_add_test(testcase, keyword);
   return testcase;
 }
