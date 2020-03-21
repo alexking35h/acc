@@ -1,6 +1,7 @@
 #ifndef __SCANNER__
 #define __SCANNER__
 
+#include "error.h"
 #include "token.h"
 
 /* Scanner instance */
@@ -18,7 +19,7 @@ typedef struct Scanner_t Scanner;
  * Returns:
  *  pointer to allocated Scanner instance, or NULL on error.
  */
-Scanner* Scanner_init(char const* source);
+Scanner* Scanner_init(char const* source, Error* error);
 
 /*
  * Get the next token

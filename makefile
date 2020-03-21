@@ -1,12 +1,13 @@
 
 # Compiler flags
-CFLAGS=-Wall -Iinclude $(shell pkg-config --libs --cflags check)
+CFLAGS=-Wall -Iinclude $(shell pkg-config --libs --cflags cmocka) -Wl,--wrap=Error_report_error -g
 LDFLAGS=
 CC=gcc
 
 SOURCE_DIR=source
 TEST_DIR=test
 BUILD_DIR=build
+PWD=$(shell pwd)
 
 # Source files
 ACC_SOURCES=$(wildcard $(SOURCE_DIR)/*.c)
@@ -19,23 +20,19 @@ TEST_OBJECTS=$(patsubst $(TEST_DIR)/%.c, $(BUILD_DIR)/%.o, $(TEST_SOURCES))
 OBJECTS = $(ACC_OBJECTS) $(TEST_OBJECTS)
 
 .PHONY: test
-.PHONY: all
+.PHONY: format
 
-all: test acc
+test: build build/test_scanner
+	build/test_scanner
 
-test: build build/test_acc
-	./build/test_acc
+build/test_scanner: $(ACC_OBJECTS) build/test_scanner.o
+	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=Error_report_error -Wl,--wrap=Error_report_warning
 
-acc: build build/acc
+docker_build:
+	docker build --tag acc:v1 .
 
-build:
-	mkdir -p build
-
-build/acc: $(ACC_OBJECTS)
-	$(CC) $^ -o $@ $(CFLAGS) 
-
-build/test_acc: $(ACC_OBJECTS) $(TEST_OBJECTS)
-	$(CC) $^ -o $@ $(CFLAGS) 
+docker_run:
+	docker run -it --rm -v$(PWD):/home/ acc:v1 bash
 
 $(ACC_OBJECTS): build/%.o: source/%.c
 	$(CC) -c $< -o $@ $(CFLAGS)
@@ -43,5 +40,12 @@ $(ACC_OBJECTS): build/%.o: source/%.c
 $(TEST_OBJECTS): build/%.o: test/%.c
 	$(CC) -c $< -o $@ $(CFLAGS)
 
+format:
+	clang-format --style=Google -i include/*.h source/*.c test/*.c
 
+build:
+	mkdir -p build
 
+clean:
+	rm -rf build
+	

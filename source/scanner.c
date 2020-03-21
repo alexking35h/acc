@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "error.h"
 #include "scanner.h"
 #include "token.h"
 
@@ -36,6 +37,9 @@ typedef struct Scanner_t {
   // Source file
   const char *source;
 
+  // Error handler instance.
+  Error *error_handler;
+
   // Current position in the input.
   int current;
   int line_number;
@@ -58,10 +62,11 @@ static bool match_character(Scanner *, const char *expected);
 static bool match_whitespace(Scanner *);
 static void consume_keyword_or_identifier(Scanner *, TokenType *);
 static void consume_number(Scanner *);
-static void consume_string(Scanner *);
+static bool consume_string(Scanner *);
 static void consume_comment(Scanner *);
 
 static char peek(Scanner *);
+static bool end_of_file(Scanner *);
 
 static Token *get_token(Scanner *scanner) {
   if ((++scanner->token_count == TOKEN_BUFFER_SIZE) != 0) {
@@ -84,6 +89,11 @@ static char peek(Scanner *scanner) {
   if (scanner->current >= strlen(scanner->source)) return 0;
 
   return scanner->source[scanner->current];
+}
+
+static bool end_of_file(Scanner *scanner) {
+  if (scanner->current >= strlen(scanner->source)) return true;
+  return false;
 }
 
 static bool match_character(Scanner *scanner, const char *expected) {
@@ -134,22 +144,38 @@ static void consume_keyword_or_identifier(Scanner *scanner,
   };
 
   for (int i = 0; i < count(keywords); i++) {
-    if (strncmp(identifier_start, keywords[i], identifier_length) == 0) {
-      *token_type = AUTO + i;
-      return;
-    }
+    if (strlen(keywords[i]) != identifier_length) continue;
+    if (strncmp(identifier_start, keywords[i], identifier_length)) continue;
+
+    *token_type = AUTO + i;
+    return;
   }
   *token_type = IDENTIFIER;
 }
 
-static void consume_string(Scanner *scanner) {
+static bool consume_string(Scanner *scanner) {
   // Skip over the first double-quote
+  int string_line_number = scanner->line_number;
   scanner->current++;
   while (true) {
+    if (end_of_file(scanner)) {
+      Error_report_error(scanner->error_handler, SCANNER, scanner->line_number,
+                         "Unterminated string literal");
+      return false;
+    }
+
     char focus = scanner->source[scanner->current++];
 
     // End of string, stop searching.
     if (focus == '"') break;
+
+    // Reach end of line (before end of string).
+    if (focus == '\n') {
+      scanner->line_number++;
+      Error_report_error(scanner->error_handler, SCANNER, string_line_number,
+                         "Unterminated string literal");
+      return false;
+    }
 
     // Escape sequence.
     // These are replaced later. But make sure to ignore the double-quote.
@@ -157,6 +183,7 @@ static void consume_string(Scanner *scanner) {
       if (match_character(scanner, "\"")) continue;
     }
   }
+  return true;
 }
 
 /* Consume a number */
@@ -290,8 +317,7 @@ static TokenType get_next_token_type(Scanner *scanner) {
   // String literal.
   if (focus == '"') {
     scanner->current--;
-    consume_string(scanner);
-    return STRING_LITERAL;
+    return consume_string(scanner) ? STRING_LITERAL : 0;
   }
 
   // Number literal.
@@ -301,12 +327,17 @@ static TokenType get_next_token_type(Scanner *scanner) {
     return CONSTANT;
   }
 
-  if (strchr(IDENTIFIER_START_CHARACTERS, scanner->source[scanner->current])) {
+  if (strchr(IDENTIFIER_START_CHARACTERS, focus)) {
     scanner->current--;
     TokenType token;
     consume_keyword_or_identifier(scanner, &token);
     return token;
   }
+
+  char error_string[50];
+  snprintf(error_string, 50, "Invalid character in input: '%c'", focus);
+  Error_report_error(scanner->error_handler, SCANNER, scanner->line_number,
+                     error_string);
 
   return 0;
 }
@@ -323,9 +354,10 @@ static TokenType get_next_token_type(Scanner *scanner) {
  * Returns:
  *  pointer to allocated Scanner instance, or NULL on error.
  */
-Scanner *Scanner_init(char const *source) {
+Scanner *Scanner_init(char const *source, Error *error_handler) {
   Scanner *scanner = malloc(sizeof(Scanner));
 
+  scanner->error_handler = error_handler;
   scanner->source = source;
   scanner->current = 0;
   scanner->line_number = 1;
@@ -346,9 +378,12 @@ Scanner *Scanner_init(char const *source) {
  */
 Token *Scanner_get_next(Scanner *scanner) {
   TokenType token_type;
-  int token_position;
+  int token_position, token_line_number;
 
   while (true) {
+    token_position = scanner->current;
+    token_line_number = scanner->line_number;
+
     if (scanner->current >= strlen(scanner->source)) {
       token_type = END_OF_FILE;
       break;
@@ -356,8 +391,6 @@ Token *Scanner_get_next(Scanner *scanner) {
     if (match_whitespace(scanner)) {
       continue;
     }
-
-    token_position = scanner->current;
     if ((token_type = get_next_token_type(scanner))) {
       break;
     }
@@ -365,7 +398,7 @@ Token *Scanner_get_next(Scanner *scanner) {
 
   Token *token = get_token(scanner);
   token->type = token_type;
-  token->line_number = scanner->line_number;
+  token->line_number = token_line_number;
 
   if (TOKEN_STORE_LEXEME(token->type)) {
     const char *src = &(scanner->source[token_position]);
