@@ -17,7 +17,11 @@
 
 /* Token types Enum */
 typedef enum TokenType_t {
-  AUTO = 1,
+
+  // NAT - Not a Token. Used internally in the scanner.
+  NAT = 0,
+
+  AUTO,
   BREAK,
   CASE,
   CHAR,
@@ -100,12 +104,10 @@ typedef enum TokenType_t {
   BAR,           // '|'
   QUESTION,      // '?'
 
-  END_OF_FILE,
-
   IDENTIFIER = 100,
-
   CONSTANT,
-  STRING_LITERAL
+  STRING_LITERAL,
+  END_OF_FILE
 } TokenType;
 
 /* Token struct */

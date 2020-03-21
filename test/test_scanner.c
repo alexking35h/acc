@@ -142,6 +142,9 @@ static void keyword(void** state) {
   Scanner* scanner = Scanner_init(source, NULL);
   for (int i = 0; i < COUNT(keyword_tokens); i++) {
     Token* token = Scanner_get_next(scanner);
+    if (token->type != keyword_tokens[i]) {
+      assert_true(false);
+    }
     assert_int_equal(token->type, keyword_tokens[i]);
   }
 }

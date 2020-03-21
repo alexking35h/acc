@@ -15,7 +15,13 @@
 
 #define MAX_KEYWORD_LENGTH 20
 
-#define count(n) sizeof(n) / sizeof(n[0])
+#define COUNT(n) sizeof(n) / sizeof(n[0])
+#define PEEK(scanner)                         \
+  (scanner->current < strlen(scanner->source) \
+       ? scanner->source[scanner->current]    \
+       : 0)
+#define END_OF_FILE(scanner) (scanner->current >= strlen(scanner->source))
+#define ADVANCE(scanner) (scanner->current++)
 
 /*
  * Tokens are allocated in blocks of TOKEN_BUFFER_SIZE,
@@ -54,19 +60,16 @@ static Token *get_token(Scanner *);
 
 /*
  * Helper functions:
- * match_*   - return true if the input matches, advance the scanner position
- * consume_* - advance the scanner over the input, raise error if the input
- * doesn't match
+ * match_*   - conditionally advance the scanner position if the input matches
+ * consume_* - report error if the scanner input does not match the expected
+ * token doesn't match
  */
 static bool match_character(Scanner *, const char *expected);
 static bool match_whitespace(Scanner *);
-static void consume_keyword_or_identifier(Scanner *, TokenType *);
-static void consume_number(Scanner *);
+static bool consume_keyword_or_identifier(Scanner *, TokenType *);
+static bool consume_number(Scanner *);
 static bool consume_string(Scanner *);
-static void consume_comment(Scanner *);
-
-static char peek(Scanner *);
-static bool end_of_file(Scanner *);
+static bool consume_comment(Scanner *);
 
 static Token *get_token(Scanner *scanner) {
   if ((++scanner->token_count == TOKEN_BUFFER_SIZE) != 0) {
@@ -85,18 +88,9 @@ static Token *get_token(Scanner *scanner) {
   }
 }
 
-static char peek(Scanner *scanner) {
-  if (scanner->current >= strlen(scanner->source)) return 0;
-
-  return scanner->source[scanner->current];
-}
-
-static bool end_of_file(Scanner *scanner) {
-  if (scanner->current >= strlen(scanner->source)) return true;
-  return false;
-}
-
 static bool match_character(Scanner *scanner, const char *expected) {
+  if (END_OF_FILE(scanner)) return false;
+
   for (; *expected; expected++) {
     if (scanner->source[scanner->current] == *expected) {
       scanner->current++;
@@ -111,24 +105,22 @@ static bool match_whitespace(Scanner *scanner) {
   char focus = scanner->source[scanner->current];
   if (focus == '\n') {
     scanner->line_number++;
-    scanner->current++;
+    ADVANCE(scanner);
     return true;
   }
-  for (int i = 0; i < count(whitespace); i++) {
+  for (int i = 0; i < COUNT(whitespace); i++) {
     if (focus == whitespace[i]) {
-      scanner->current++;
+      ADVANCE(scanner);
       return true;
     }
   }
   return false;
 }
 
-static void consume_keyword_or_identifier(Scanner *scanner,
+static bool consume_keyword_or_identifier(Scanner *scanner,
                                           TokenType *token_type) {
-  const char *identifier_start = scanner->source + scanner->current;
+  const char *identifier_start = scanner->source + scanner->current++;
   int identifier_length = 1;
-
-  scanner->current++;
 
   while (match_character(scanner, IDENTIFIER_CHARACTERS)) {
     identifier_length++;
@@ -143,22 +135,23 @@ static void consume_keyword_or_identifier(Scanner *scanner,
       "unsigned", "void",     "volatile", "while",
   };
 
-  for (int i = 0; i < count(keywords); i++) {
+  for (int i = 0; i < COUNT(keywords); i++) {
     if (strlen(keywords[i]) != identifier_length) continue;
     if (strncmp(identifier_start, keywords[i], identifier_length)) continue;
 
     *token_type = AUTO + i;
-    return;
+    return true;
   }
   *token_type = IDENTIFIER;
+  return true;
 }
 
 static bool consume_string(Scanner *scanner) {
   // Skip over the first double-quote
-  int string_line_number = scanner->line_number;
-  scanner->current++;
+  ADVANCE(scanner);
+
   while (true) {
-    if (end_of_file(scanner)) {
+    if (END_OF_FILE(scanner)) {
       Error_report_error(scanner->error_handler, SCANNER, scanner->line_number,
                          "Unterminated string literal");
       return false;
@@ -171,9 +164,9 @@ static bool consume_string(Scanner *scanner) {
 
     // Reach end of line (before end of string).
     if (focus == '\n') {
-      scanner->line_number++;
-      Error_report_error(scanner->error_handler, SCANNER, string_line_number,
+      Error_report_error(scanner->error_handler, SCANNER, scanner->line_number,
                          "Unterminated string literal");
+      scanner->line_number++;
       return false;
     }
 
@@ -187,7 +180,7 @@ static bool consume_string(Scanner *scanner) {
 }
 
 /* Consume a number */
-static void consume_number(Scanner *scanner) {
+static bool consume_number(Scanner *scanner) {
   if (match_character(scanner, "0")) {
     if (match_character(scanner, "Xx")) {
       // Hex notation
@@ -200,11 +193,12 @@ static void consume_number(Scanner *scanner) {
     while (match_character(scanner, "1234567890")) continue;
   }
   match_character(scanner, "ulUL");
+  return true;
 }
 
 /* Consume a comment */
-static void consume_comment(Scanner *scanner) {
-  scanner->current++;
+static bool consume_comment(Scanner *scanner) {
+  ADVANCE(scanner);
   if (match_character(scanner, "/")) {
     while (scanner->source[scanner->current] != '\n') scanner->current++;
   } else if (match_character(scanner, "*")) {
@@ -218,6 +212,7 @@ static void consume_comment(Scanner *scanner) {
       break;
     }
   }
+  return true;
 }
 
 static TokenType get_next_token_type(Scanner *scanner) {
@@ -301,14 +296,14 @@ static TokenType get_next_token_type(Scanner *scanner) {
 
   if (focus == '/') {
     // Comment.
-    if (peek(scanner) == '*') {
+    if (PEEK(scanner) == '*') {
       scanner->current--;
       consume_comment(scanner);
-      return 0;
-    } else if (peek(scanner) == '/') {
+      return NAT;
+    } else if (PEEK(scanner) == '/') {
       scanner->current--;
       consume_comment(scanner);
-      return 0;
+      return NAT;
     }
 
     return match_character(scanner, "=") ? DIV_ASSIGN : SLASH;
@@ -317,21 +312,19 @@ static TokenType get_next_token_type(Scanner *scanner) {
   // String literal.
   if (focus == '"') {
     scanner->current--;
-    return consume_string(scanner) ? STRING_LITERAL : 0;
+    return consume_string(scanner) ? STRING_LITERAL : NAT;
   }
 
   // Number literal.
   if (strchr("1234567890", focus)) {
     scanner->current--;
-    consume_number(scanner);
-    return CONSTANT;
+    return consume_number(scanner) ? CONSTANT : NAT;
   }
 
   if (strchr(IDENTIFIER_START_CHARACTERS, focus)) {
     scanner->current--;
     TokenType token;
-    consume_keyword_or_identifier(scanner, &token);
-    return token;
+    return consume_keyword_or_identifier(scanner, &token) ? token : NAT;
   }
 
   char error_string[50];
@@ -391,23 +384,20 @@ Token *Scanner_get_next(Scanner *scanner) {
     if (match_whitespace(scanner)) {
       continue;
     }
-    if ((token_type = get_next_token_type(scanner))) {
-      break;
-    }
+
+    token_type = get_next_token_type(scanner);
+    if (token_type != NAT) break;
   }
 
   Token *token = get_token(scanner);
   token->type = token_type;
   token->line_number = token_line_number;
 
-  if (TOKEN_STORE_LEXEME(token->type)) {
-    const char *src = &(scanner->source[token_position]);
-    int len = scanner->current - token_position;
-    token->lexeme = calloc(1, len + 1);
-    strncpy(token->lexeme, src, len);
-  } else {
-    token->lexeme = NULL;
-  }
+  // Make a copy of the lexeme.
+  int token_len = scanner->current - token_position;
+  token->lexeme = calloc(1, token_len + 1);
+  strncpy(token->lexeme, scanner->source + token_position, token_len);
+
   return token;
 }
 
