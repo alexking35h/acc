@@ -77,6 +77,20 @@ static void assignments(void** state) {
   }
 }
 
+static void operators(void** state) {
+  Scanner * scanner = Scanner_init(">> << ++ -- -> && || <= >= == !=", NULL);
+
+  TokenType expected_tokens[] = {
+    RIGHT_OP, LEFT_OP, INC_OP, DEC_OP, PTR_OP, AND_OP, OR_OP, LE_OP, GE_OP, EQ_OP, NE_OP
+  };
+
+  for (int i = 0;i < COUNT(expected_tokens);i++) {
+    Token * token = Scanner_get_next(scanner);
+    if (expected_tokens[i] != token->type)
+      assert_true(false);
+  }  
+}
+
 static void comment(void** state) {
   char* source = ":   // jim\n;/* pam\n\n */\n!";
   Scanner* scanner = Scanner_init(source, NULL);
@@ -205,6 +219,7 @@ int main(void) {
                                      cmocka_unit_test(whitespace),
                                      cmocka_unit_test(single_character),
                                      cmocka_unit_test(assignments),
+                                     cmocka_unit_test(operators),
                                      cmocka_unit_test(comment),
                                      cmocka_unit_test(string_literal),
                                      cmocka_unit_test(hex_literal),

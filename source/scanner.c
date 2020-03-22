@@ -254,17 +254,21 @@ static TokenType get_next_token_type(Scanner *scanner) {
   if (focus == '!') return match_character(scanner, "=") ? NE_OP : BANG;
 
   // Assignments
-  if (focus == '-') return match_character(scanner, "=") ? SUB_ASSIGN : MINUS;
-
-  if (focus == '+') return match_character(scanner, "=") ? ADD_ASSIGN : PLUS;
-
   if (focus == '*') return match_character(scanner, "=") ? MUL_ASSIGN : STAR;
 
   if (focus == '%') return match_character(scanner, "=") ? MOD_ASSIGN : PERCENT;
 
   if (focus == '^') return match_character(scanner, "=") ? XOR_ASSIGN : CARET;
 
-  if (focus == '|') return match_character(scanner, "=") ? OR_ASSIGN : BAR;
+  if (focus == '|') {
+    if(match_character(scanner, "="))
+      return OR_ASSIGN;
+      
+    if(match_character(scanner, "|"))
+      return OR_OP;
+
+    return BAR;
+  }
 
   if (focus == '&') {
     if (match_character(scanner, "="))
@@ -292,6 +296,28 @@ static TokenType get_next_token_type(Scanner *scanner) {
     if (match_character(scanner, "=")) return GE_OP;
 
     return GREATER_THAN;
+  }
+  if (focus == '-') {
+    if (match_character(scanner, "="))
+      return SUB_ASSIGN;
+  
+    if(match_character(scanner, "-"))
+      return DEC_OP;
+
+    if(match_character(scanner, ">"))
+      return PTR_OP;
+
+    return MINUS;
+  }
+
+  if (focus == '+') {
+    if(match_character(scanner, "="))
+      return ADD_ASSIGN;
+  
+    if(match_character(scanner, "+"))
+      return INC_OP;
+    
+    return PLUS;
   }
 
   if (focus == '/') {
