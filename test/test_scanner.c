@@ -78,17 +78,16 @@ static void assignments(void** state) {
 }
 
 static void operators(void** state) {
-  Scanner * scanner = Scanner_init(">> << ++ -- -> && || <= >= == !=", NULL);
+  Scanner* scanner = Scanner_init(">> << ++ -- -> && || <= >= == !=", NULL);
 
-  TokenType expected_tokens[] = {
-    RIGHT_OP, LEFT_OP, INC_OP, DEC_OP, PTR_OP, AND_OP, OR_OP, LE_OP, GE_OP, EQ_OP, NE_OP
-  };
+  TokenType expected_tokens[] = {RIGHT_OP, LEFT_OP, INC_OP, DEC_OP,
+                                 PTR_OP,   AND_OP,  OR_OP,  LE_OP,
+                                 GE_OP,    EQ_OP,   NE_OP};
 
-  for (int i = 0;i < COUNT(expected_tokens);i++) {
-    Token * token = Scanner_get_next(scanner);
-    if (expected_tokens[i] != token->type)
-      assert_true(false);
-  }  
+  for (int i = 0; i < COUNT(expected_tokens); i++) {
+    Token* token = Scanner_get_next(scanner);
+    if (expected_tokens[i] != token->type) assert_true(false);
+  }
 }
 
 static void comment(void** state) {

@@ -261,11 +261,9 @@ static TokenType get_next_token_type(Scanner *scanner) {
   if (focus == '^') return match_character(scanner, "=") ? XOR_ASSIGN : CARET;
 
   if (focus == '|') {
-    if(match_character(scanner, "="))
-      return OR_ASSIGN;
-      
-    if(match_character(scanner, "|"))
-      return OR_OP;
+    if (match_character(scanner, "=")) return OR_ASSIGN;
+
+    if (match_character(scanner, "|")) return OR_OP;
 
     return BAR;
   }
@@ -298,25 +296,20 @@ static TokenType get_next_token_type(Scanner *scanner) {
     return GREATER_THAN;
   }
   if (focus == '-') {
-    if (match_character(scanner, "="))
-      return SUB_ASSIGN;
-  
-    if(match_character(scanner, "-"))
-      return DEC_OP;
+    if (match_character(scanner, "=")) return SUB_ASSIGN;
 
-    if(match_character(scanner, ">"))
-      return PTR_OP;
+    if (match_character(scanner, "-")) return DEC_OP;
+
+    if (match_character(scanner, ">")) return PTR_OP;
 
     return MINUS;
   }
 
   if (focus == '+') {
-    if(match_character(scanner, "="))
-      return ADD_ASSIGN;
-  
-    if(match_character(scanner, "+"))
-      return INC_OP;
-    
+    if (match_character(scanner, "=")) return ADD_ASSIGN;
+
+    if (match_character(scanner, "+")) return INC_OP;
+
     return PLUS;
   }
 
