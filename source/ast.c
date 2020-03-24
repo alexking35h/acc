@@ -3,6 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+int Ast_pretty_print_primary(AstNode* ast_node, char* buffer, int buffer_len);
+int Ast_pretty_print_postfix(AstNode* ast_node, char* buffer, int buffer_len);
+int Ast_pretty_print_binary(AstNode* ast_node, char* buffer, int buffer_len);
+
+/*
+ * Create a new AST node
+ *
+ * This function takes a AstNode by value (presumably allocated automatically),
+ * and copies it to a new AstNode allocated dynamically.
+ *
+ * E.g.:
+ * > Ast_create_new((AstNode){.type=...});
+ */
 AstNode* Ast_create_node(AstNode ast_node) {
   AstNode* node = calloc(1, sizeof(AstNode));
 
@@ -10,56 +23,73 @@ AstNode* Ast_create_node(AstNode ast_node) {
   return node;
 }
 
-int Ast_pretty_print(AstNode* ast_node, char* buffer, int len) {
-  int l;
-
+/*
+ * Generate a string for the given AST node.
+ *
+ * This function generates a string representation for a given AST node.
+ */
+int Ast_pretty_print(AstNode* ast_node, char* buffer, int buffer_len) {
   switch (ast_node->type) {
-    case UNARY:
-      l = snprintf(buffer, len,"(UNARY ");
-      l += snprintf(buffer+l, len-l, "%s, ", ast_node->node.unary.op->lexeme);
-      l += Ast_pretty_print(ast_node->node.unary.right, buffer+l, len-l);
-      return l + snprintf(buffer+l, len-l, ")");
-  
-    case BINARY:
-      l = snprintf(buffer, len, "(BINARY ");
-      l += Ast_pretty_print(ast_node->node.binary.left, buffer + l, len - l);
-      l += snprintf(buffer + l, len - l, ", ");
-      l += Ast_pretty_print(ast_node->node.binary.right, buffer + l, len - l);
-      return l + snprintf(buffer + l, len - l, ")");
-
     case PRIMARY:
-      l = snprintf(buffer, len, "(PRIMARY ");
-      switch (ast_node->node.primary.type) {
-        case PRIMARY_STRING_LITERAL:
-          l += snprintf(buffer + l, len - l, "%s",
-                        ast_node->node.primary.string_literal->lexeme);
-          break;
-        case PRIMARY_CONSTANT:
-          l += snprintf(buffer + l, len - 1, "%s",
-                        ast_node->node.primary.constant->lexeme);
-          break;
-        case PRIMARY_IDENTIFIER:
-          l += snprintf(buffer + l, len - 1, "$%s",
-                        ast_node->node.primary.identifier->lexeme);
-          break;
-      }
-      return l + snprintf(buffer + l, len - l, ")");
+      return Ast_pretty_print_primary(ast_node, buffer, buffer_len);
 
     case POSTFIX:
-      l = snprintf(buffer, len, "(POSTFIX ");
-      l += Ast_pretty_print(ast_node->node.postfix.left, buffer + l, len - l);
-      switch (ast_node->node.postfix.type) {
-        case POSTFIX_ARRAY_INDEX:
-          l += snprintf(buffer + l, len - l, ", ");
-          l += Ast_pretty_print(ast_node->node.postfix.index_expression,
-                                buffer + l, len - l);
-          break;
-        case POSTFIX_OP:
-          l += snprintf(buffer + l, len - 1, ", %s",
-                        ast_node->node.postfix.op->lexeme);
-          break;
-      }
-      return l + snprintf(buffer + l, len - l, ")");
+      return Ast_pretty_print_postfix(ast_node, buffer, buffer_len);
+
+    case BINARY:
+      return Ast_pretty_print_binary(ast_node, buffer, buffer_len);
+
+    case UNARY:
+      break;
   }
   return 0;
+}
+
+int Ast_pretty_print_binary(AstNode* ast_node, char* buffer, int buffer_len) {
+  int l = snprintf(buffer, buffer_len, "(BINARY ");
+  l += Ast_pretty_print(ast_node->binary.left, buffer + l, buffer_len - l);
+  l += snprintf(buffer + l, buffer_len - l, ", %s, ",
+                ast_node->binary.op->lexeme);
+  l += Ast_pretty_print(ast_node->binary.right, buffer + l, buffer_len - l);
+  return l + snprintf(buffer + l, buffer_len - l, ")");
+}
+
+int Ast_pretty_print_primary(AstNode* ast_node, char* buffer, int buffer_len) {
+  int l = snprintf(buffer, buffer_len, "(PRIMARY ");
+
+  switch (ast_node->primary.type) {
+    case PRIMARY_IDENTIFIER:
+      l += snprintf(buffer + l, buffer_len - l, "%s",
+                    ast_node->primary.identifier->lexeme);
+      break;
+
+    case PRIMARY_CONSTANT:
+      l += snprintf(buffer + l, buffer_len - l, "%s",
+                    ast_node->primary.constant->lexeme);
+      break;
+
+    case PRIMARY_STRING_LITERAL:
+      l += snprintf(buffer + l, buffer_len - l, "%s",
+                    ast_node->primary.string_literal->lexeme);
+      break;
+  }
+  return l + snprintf(buffer + l, buffer_len - l, ")");
+}
+
+int Ast_pretty_print_postfix(AstNode* ast_node, char* buffer, int buffer_len) {
+  int l = snprintf(buffer, buffer_len, "(POSTFIX ");
+  l += Ast_pretty_print(ast_node->postfix.left, buffer + l, buffer_len - 1);
+  l += snprintf(buffer + l, buffer_len - l, ", ");
+
+  switch (ast_node->postfix.type) {
+    case POSTFIX_ARRAY_INDEX:
+      l += Ast_pretty_print(ast_node->postfix.index_expression, buffer + l,
+                            buffer_len - l);
+
+      break;
+
+    case POSTFIX_OP:
+      break;
+  }
+  return l + snprintf(buffer + l, buffer_len - 1, ")");
 }

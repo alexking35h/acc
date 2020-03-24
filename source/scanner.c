@@ -56,8 +56,6 @@ typedef struct Scanner_t {
   int token_count;
 } Scanner;
 
-static Token *get_token(Scanner *);
-
 /*
  * Helper functions:
  * match_*   - conditionally advance the scanner position if the input matches
@@ -71,7 +69,7 @@ static bool consume_number(Scanner *);
 static bool consume_string(Scanner *);
 static bool consume_comment(Scanner *);
 
-static Token *get_token(Scanner *scanner) {
+Token *Scanner_create_token(Scanner *scanner) {
   if ((++scanner->token_count == TOKEN_BUFFER_SIZE) != 0) {
     return scanner->next_token++;
   } else {
@@ -408,7 +406,7 @@ Token *Scanner_get_next(Scanner *scanner) {
     if (token_type != NAT) break;
   }
 
-  Token *token = get_token(scanner);
+  Token *token = Scanner_create_token(scanner);
   token->type = token_type;
   token->line_number = token_line_number;
 

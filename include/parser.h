@@ -16,14 +16,6 @@ typedef struct Parser_t {
 } Parser;
 
 /*
- * Generate the AST
- *
- * This method implements the recursive descent parsing over the input tokens.
- * This method returns a pointer to the root node in the AST.
- */
-AstNode *Parser_generate_ast(Parser *);
-
-/*
  * Initialize the Parser instance.
  */
 Parser *Parser_init(Scanner *, Error *);
@@ -32,6 +24,14 @@ Parser *Parser_init(Scanner *, Error *);
  * Destroy the Parser instance.
  */
 void Parser_destroy(Parser *);
+
+/*
+ * Generate the AST
+ *
+ * This method implements the recursive descent parsing over the input tokens.
+ * This method returns a pointer to the root node in the AST.
+ */
+AstNode *Parser_generate_ast(Parser *);
 
 /*
  * If the next token matches, advance the token stream, and return the token.
@@ -49,14 +49,19 @@ Token *Parser_peek_token(Parser *);
  */
 bool Parser_consume_token(Parser *, TokenType);
 
-/* Recursive-descent parsing functions */
-AstNode *Parser_expression(Parser *);
-AstNode *Parser_assignment_expression(Parser *);
-AstNode *Parser_conditional_expression(Parser *);
-AstNode *Parser_logical_or_expression(Parser *);
-AstNode *Parser_logical_and_expression(Parser *);
-AstNode *Parser_unary_expression(Parser *);
-AstNode *Parser_postfix_expression(Parser *);
-AstNode *Parser_primary_expression(Parser *);
+/*
+ * Create a new token, for the purposes of desugauring syntax.
+ *
+ * This function allocates a new token (using the Scanner_create_token
+ * function), and initializes it.
+ */
+Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme);
+
+/*
+ * Recursive descent parser function definitions.
+ */
+AstNode *Parser_expression(Parser *parser);
+AstNode *Parser_statement(Parser *parser);
+AstNode *Parser_declaration(Parser *parser);
 
 #endif

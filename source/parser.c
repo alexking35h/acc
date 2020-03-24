@@ -1,6 +1,6 @@
-#include <stdlib.h>
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "ast.h"
 #include "parser.h"
@@ -67,4 +67,21 @@ bool Parser_consume_token(Parser *parser, TokenType token_type) {
     return false;
   }
   return true;
+}
+
+/*
+ * Create a new token, for the purposes of desugauring syntax.
+ *
+ * This function allocates a new token (using the Scanner_create_token
+ * function), and initializes it.
+ */
+Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme) {
+  Token *token = Scanner_create_token(parser->scanner);
+
+  token->type = type;
+  token->line_number = -1;
+  token->lexeme = calloc(1, strlen(lexeme) + 1);
+  strcpy(token->lexeme, lexeme);
+
+  return token;
 }

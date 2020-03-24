@@ -22,6 +22,14 @@ typedef struct Scanner_t Scanner;
 Scanner* Scanner_init(char const* source, Error* error);
 
 /*
+ * Allocate a new Token
+ *
+ * This is mostly used internally within the Scanner. However the
+ * Parser may also wish to create new tokens for desugauring.
+ */
+Token* Scanner_create_token(Scanner* scanner);
+
+/*
  * Get the next token
  *
  * This function generates the next token from the source file, including the
