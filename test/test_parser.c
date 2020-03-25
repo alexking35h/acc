@@ -19,6 +19,13 @@
 /* Typedef for parser functions, implemented in parser_*.c */
 typedef AstNode* (*parser_function)(Parser* parser);
 
+/* Tests are organised into fixtures around ParserTestFixture,
+ * which describes the expected AST string for a given source string. */
+typedef struct ParserTestFixture {
+  char* source;
+  char* expected_ast;
+} ParserTestFixture;
+
 void __wrap_Error_report_error(Error* error, ErrorType error_type,
                                int line_number, const char* error_string) {
   function_called();
@@ -49,16 +56,12 @@ static bool test_ast_equals_expected(char* source, char* expected,
   return true;
 }
 
-static bool test_expression_ast_equals_expected(char* source, char* expected) {
-  return test_ast_equals_expected(source, expected, Parser_expression);
-}
-
-static bool test_statement_ast_equals_expected(char* source, char* expected) {
-  return test_ast_equals_expected(source, expected, Parser_statement);
-}
-
-static bool test_declaration_ast_equals_expected(char* source, char* expected) {
-  return test_ast_equals_expected(source, expected, Parser_declaration);
+/* Assert the generated AST matches the expected AST for a given input */
+static void assert_expected_ast(ParserTestFixture* fixture,
+                                parser_function func) {
+  for (; fixture->source; fixture++)
+    assert_true(test_ast_equals_expected(fixture->source, fixture->expected_ast,
+                                         Parser_expression));
 }
 
 static void initialize_parser(void** state) {
@@ -67,43 +70,79 @@ static void initialize_parser(void** state) {
 
 static void primary_expressions(void** state) {
   // Test simple primary expressions.
-  struct {
-    char* source;
-    char* expected;
-  } expr_tests[] = {{"1", "(PRIMARY 1)"},
-                    {"q", "(PRIMARY q)"},
-                    {"((3))", "(PRIMARY 3)"},
-                    {"\"a\"", "(PRIMARY \"a\")"}};
-
-  for (int i = 0; i < COUNT(expr_tests); i++) {
-    char* source = expr_tests[i].source;
-    char* expected = expr_tests[i].expected;
-
-    assert_true(test_expression_ast_equals_expected(source, expected));
-  }
+  ParserTestFixture tests[] = {{"1", "(PRIMARY 1)"},
+                               {"q", "(PRIMARY q)"},
+                               {"((3))", "(PRIMARY 3)"},
+                               {"\"a\"", "(PRIMARY \"a\")"},
+                               {NULL, NULL}};
+  assert_expected_ast(tests, Parser_expression);
 }
 
 static void postfix_expressions(void** state) {
   // Test simple postfix expressions.
-  struct {
-    char* source;
-    char* expected;
-  } expr_tests[] = {
+  ParserTestFixture tests[] = {
       {"a[1]", "(POSTFIX (PRIMARY a), (PRIMARY 1))"},
       {"a++", "(BINARY (PRIMARY a), =, (BINARY (PRIMARY a), +, (PRIMARY 1)))"},
-      {"9--", "(BINARY (PRIMARY 9), =, (BINARY (PRIMARY 9), -, (PRIMARY 1)))"}};
+      {"9--", "(BINARY (PRIMARY 9), =, (BINARY (PRIMARY 9), -, (PRIMARY 1)))"},
+      {NULL, NULL}};
 
-  for (int i = 0; i < COUNT(expr_tests); i++) {
-    char* source = expr_tests[i].source;
-    char* expected = expr_tests[i].expected;
+  assert_expected_ast(tests, Parser_expression);
+}
 
-    assert_true(test_expression_ast_equals_expected(source, expected));
-  }
+static void unary_expressions(void** state) {
+  // Test simple unary expressions
+  ParserTestFixture tests[] = {
+      {"++a", "(BINARY (PRIMARY a), =, (BINARY (PRIMARY a), +, (PRIMARY 1)))"},
+      {"--b", "(BINARY (PRIMARY b), =, (BINARY (PRIMARY b), -, (PRIMARY 1)))"},
+      {"&Q", "(UNARY &, (PRIMARY Q))"},
+      {"*a", "(UNARY *, (PRIMARY a))"},
+      {"+1", "(UNARY +, (PRIMARY 1))"},
+      {"-a", "(UNARY -, (PRIMARY a))"},
+      {"~9", "(UNARY ~, (PRIMARY 9))"},
+      {"!1", "(UNARY !, (PRIMARY 1))"},
+      {"sizeof 1", "(UNARY sizeof, (PRIMARY 1))"},
+      {NULL, NULL}};
+  assert_expected_ast(tests, Parser_expression);
+}
+
+static void multiplicative_expressions(void** state) {
+  // Test multiplicative expressions (including right-associativity)
+  ParserTestFixture tests[] = {
+      {"1*2/3",
+       "(BINARY (BINARY (PRIMARY 1), *, (PRIMARY 2)), /, (PRIMARY 3))"},
+      {"1*2%3",
+       "(BINARY (BINARY (PRIMARY 1), *, (PRIMARY 2)), %, (PRIMARY 3))"},
+      {NULL, NULL}};
+  assert_expected_ast(tests, Parser_expression);
+}
+
+static void additive_expressions(void** state) {
+  // Test additive_expressions (including right-associativity)
+  ParserTestFixture tests[] = {
+      {"a+b-c",
+       "(BINARY (BINARY (PRIMARY a), +, (PRIMARY b)), -, (PRIMARY c))"},
+      {NULL, NULL}};
+  assert_expected_ast(tests, Parser_expression);
+}
+
+static void shift_expressions(void** state) {
+  // Test shift expressions (including right-associativity)
+  ParserTestFixture tests[] = {
+      {"a>>b<<c",
+       "(BINARY (BINARY (PRIMARY a), >>, (PRIMARY b)), <<, (PRIMARY c))"},
+      {NULL, NULL}};
+  assert_expected_ast(tests, Parser_expression);
 }
 
 int main(void) {
-  const struct CMUnitTest tests[] = {cmocka_unit_test(initialize_parser),
-                                     cmocka_unit_test(primary_expressions),
-                                     cmocka_unit_test(postfix_expressions)};
+  const struct CMUnitTest tests[] = {
+      cmocka_unit_test(initialize_parser),
+      cmocka_unit_test(primary_expressions),
+      cmocka_unit_test(postfix_expressions),
+      cmocka_unit_test(unary_expressions),
+      cmocka_unit_test(multiplicative_expressions),
+      cmocka_unit_test(additive_expressions),
+      cmocka_unit_test(shift_expressions)};
+
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

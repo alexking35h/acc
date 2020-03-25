@@ -5,18 +5,20 @@
 
 // Macro definitions for creating AST nodes.
 // These should be used instead of calling Ast_create_node directly.
-#define AST_CREATE_BINARY(...) \
+#define AST_BINARY(...) \
   Ast_create_node((AstNode){.type = BINARY, .binary = {__VA_ARGS__}})
-#define AST_CREATE_UNARY(...) \
+#define AST_UNARY(...) \
   Ast_create_node((AstNode){.type = UNARY, .unary = {__VA_ARGS__}})
-#define AST_CREATE_PRIMARY(...) \
+#define AST_PRIMARY(...) \
   Ast_create_node((AstNode){.type = PRIMARY, .primary = {__VA_ARGS__}})
-#define AST_CREATE_POSTFIX(...) \
+#define AST_POSTFIX(...) \
   Ast_create_node((AstNode){.type = POSTFIX, .postfix = {__VA_ARGS__}})
+#define AST_CAST(...) \
+  Ast_create_node((AstNode){.type = CAST, .cast = {__VA_ARGS__}})
 
 // Enum definition for each node type in
 // the generated AST.
-enum AstNodeType { BINARY, UNARY, PRIMARY, POSTFIX };
+enum AstNodeType { BINARY, UNARY, PRIMARY, POSTFIX, CAST };
 
 // For 'Primary' Nodes, enum definition for each node sub-type.
 enum AstPrimaryNodeType {
@@ -70,6 +72,12 @@ typedef struct AstNode_t {
       struct AstNode_t* index_expression;
       struct AstNode_t* left;
     } postfix;
+
+    // Cast
+    struct {
+      Token* type_token;
+      struct AstNode_t* right;
+    } cast;
   };
 
 } AstNode;
