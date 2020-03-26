@@ -37,7 +37,7 @@ AstNode *Parser_generate_ast(Parser *);
  * If the next token matches, advance the token stream, and return the token.
  * Return NULL otherwise.
  */
-Token *Parser_match_token(Parser *, TokenType);
+Token *Parser_match_token(Parser *, TokenType *);
 
 /*
  * Check out the next token.

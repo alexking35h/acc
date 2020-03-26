@@ -134,6 +134,37 @@ static void shift_expressions(void** state) {
   assert_expected_ast(tests, Parser_expression);
 }
 
+static void relational_expressions(void** state) {
+  // Test relational expresions
+  ParserTestFixture tests[] = {
+      {"a<b>c",
+       "(BINARY (BINARY (PRIMARY a), <, (PRIMARY b)), >, (PRIMARY c))"},
+      {NULL, NULL}};
+  assert_expected_ast(tests, Parser_expression);
+}
+
+static void equality_expressions(void** state) {
+  // Test equality expressions
+  ParserTestFixture tests[] = {
+      {"2==T!=P",
+       "(BINARY (BINARY (PRIMARY 2), ==, (PRIMARY T)), !=, (PRIMARY P))"},
+      {NULL, NULL}};
+
+  assert_expected_ast(tests, Parser_expression);
+}
+
+static void logical_expressions(void** state) {
+  // Test logical expressions (&, ^, |, &&, ||)
+  ParserTestFixture tests[] = {
+      {"1&2", "(BINARY (PRIMARY 1), &, (PRIMARY 2))"},
+      {"a|b", "(BINARY (PRIMARY a), |, (PRIMARY b))"},
+      {"a^b", "(BINARY (PRIMARY a), ^, (PRIMARY b))"},
+      {"a&&b", "(BINARY (PRIMARY a), &&, (PRIMARY b))"},
+      {"\"a\"||b", "(BINARY (PRIMARY \"a\"), ^, (PRIMARY b))"},
+      {NULL, NULL}};
+  assert_expected_ast(tests, Parser_expression);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(initialize_parser),
@@ -142,7 +173,10 @@ int main(void) {
       cmocka_unit_test(unary_expressions),
       cmocka_unit_test(multiplicative_expressions),
       cmocka_unit_test(additive_expressions),
-      cmocka_unit_test(shift_expressions)};
+      cmocka_unit_test(shift_expressions),
+      cmocka_unit_test(relational_expressions),
+      cmocka_unit_test(equality_expressions),
+      cmocka_unit_test(logical_expressions)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -19,6 +19,6 @@ for parser_file in parser_files:
   done = done + _done
 
 print("==== Progress implementing Parser so far: =====")
-print(f"Progress: {done} / {(todos + done)} - {int(done / (todos + done))}%")
+print(f"Progress: {done} / {(todos + done)} - {int(100 * done / (todos + done))}%")
 
   
