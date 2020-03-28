@@ -15,10 +15,12 @@
   Ast_create_node((AstNode){.type = POSTFIX, .postfix = {__VA_ARGS__}})
 #define AST_CAST(...) \
   Ast_create_node((AstNode){.type = CAST, .cast = {__VA_ARGS__}})
+#define AST_TERTIARY(...) \
+  Ast_create_node((AstNode){.type = TERTIARY, .tertiary = {__VA_ARGS__}})
 
 // Enum definition for each node type in
 // the generated AST.
-enum AstNodeType { BINARY, UNARY, PRIMARY, POSTFIX, CAST };
+enum AstNodeType { BINARY, UNARY, PRIMARY, POSTFIX, CAST, TERTIARY };
 
 // For 'Primary' Nodes, enum definition for each node sub-type.
 enum AstPrimaryNodeType {
@@ -78,6 +80,13 @@ typedef struct AstNode_t {
       Token* type_token;
       struct AstNode_t* right;
     } cast;
+
+    // Tertiary
+    struct {
+      struct AstNode_t* condition_expr;
+      struct AstNode_t* expr_true;
+      struct AstNode_t* expr_false;
+    } tertiary;
   };
 
 } AstNode;

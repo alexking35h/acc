@@ -9,6 +9,8 @@ static int pretty_print_postfix(AstNode* ast_node, char* buffer,
                                 int buffer_len);
 static int pretty_print_binary(AstNode* ast_node, char* buffer, int buffer_len);
 static int pretty_print_unary(AstNode* ast_node, char* buffer, int buffer_len);
+static int pretty_print_tertiary(AstNode* ast_node, char* buffer,
+                                 int buffer_len);
 
 /*
  * Create a new AST node
@@ -44,7 +46,9 @@ int Ast_pretty_print(AstNode* ast_node, char* buffer, int buffer_len) {
 
     case UNARY:
       return pretty_print_unary(ast_node, buffer, buffer_len);
-      break;
+
+    case TERTIARY:
+      return pretty_print_tertiary(ast_node, buffer, buffer_len);
   }
   return 0;
 }
@@ -105,5 +109,19 @@ static int pretty_print_unary(AstNode* ast_node, char* buffer, int buffer_len) {
   int l = snprintf(buffer, buffer_len, "(UNARY ");
   l += snprintf(buffer + l, buffer_len - l, "%s, ", ast_node->unary.op->lexeme);
   l += Ast_pretty_print(ast_node->unary.right, buffer + l, buffer_len - 1);
+  return l + snprintf(buffer + l, buffer_len - l, ")");
+}
+
+static int pretty_print_tertiary(AstNode* ast_node, char* buffer,
+                                 int buffer_len) {
+  int l = snprintf(buffer, buffer_len, "(TERTIARY ");
+  l += Ast_pretty_print(ast_node->tertiary.condition_expr, buffer + l,
+                        buffer_len - l);
+  l += snprintf(buffer + l, buffer_len - l, ", ");
+  l += Ast_pretty_print(ast_node->tertiary.expr_true, buffer + l,
+                        buffer_len - l);
+  l += snprintf(buffer + l, buffer_len - l, ", ");
+  l += Ast_pretty_print(ast_node->tertiary.expr_false, buffer + l,
+                        buffer_len - l);
   return l + snprintf(buffer + l, buffer_len - l, ")");
 }

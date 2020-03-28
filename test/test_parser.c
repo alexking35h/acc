@@ -26,15 +26,7 @@ typedef struct ParserTestFixture {
   char* expected_ast;
 } ParserTestFixture;
 
-void __wrap_Error_report_error(Error* error, ErrorType error_type,
-                               int line_number, const char* error_string) {
-  function_called();
-  check_expected(error);
-  check_expected(error_type);
-  check_expected(line_number);
-  check_expected(error_string);
-}
-
+/* Check if the AST for a given source string matches the expected AST */
 static bool test_ast_equals_expected(char* source, char* expected,
                                      parser_function function) {
   // Generate Scanner and Parser objects.
@@ -47,13 +39,18 @@ static bool test_ast_equals_expected(char* source, char* expected,
   char generated_ast[256] = "";
   Ast_pretty_print(ast_node, generated_ast, sizeof(generated_ast));
 
-  if (strlen(generated_ast) != strlen(expected) ||
-      strcmp(generated_ast, expected)) {
+  bool matches = (strlen(generated_ast) == strlen(expected) ||
+                  strcmp(generated_ast, expected) == 0);
+
+  if (!matches) {
     printf("%s FAIL. Expected '%s', got '%s'\n", __FUNCTION__, expected,
            generated_ast);
-    return false;
   }
-  return true;
+
+  Parser_destroy(parser);
+  Scanner_destroy(scanner);
+
+  return matches;
 }
 
 /* Assert the generated AST matches the expected AST for a given input */
@@ -160,8 +157,32 @@ static void logical_expressions(void** state) {
       {"a|b", "(BINARY (PRIMARY a), |, (PRIMARY b))"},
       {"a^b", "(BINARY (PRIMARY a), ^, (PRIMARY b))"},
       {"a&&b", "(BINARY (PRIMARY a), &&, (PRIMARY b))"},
-      {"\"a\"||b", "(BINARY (PRIMARY \"a\"), ^, (PRIMARY b))"},
+      {"\"a\"||b", "(BINARY (PRIMARY \"a\"), ||, (PRIMARY b))"},
+      {"1==2?1:3",
+       "(TERTIARY (BINARY (PRIMARY 1), ==, (PRIMARY 2)), (PRIMARY 1), (PRIMARY "
+       "3))"},
+      {"a=2=3",
+       "(BINARY (PRIMARY a), =, (BINARY (PRIMARY 2), =, (PRIMARY 3)))"},
       {NULL, NULL}};
+  assert_expected_ast(tests, Parser_expression);
+}
+
+static void assignment_expressions(void** state) {
+  ParserTestFixture tests[] = {
+      {"1*=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), *, (PRIMARY 2)))"},
+      {"1/=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), /, (PRIMARY 2)))"},
+      {"1%=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), %, (PRIMARY 2)))"},
+      {"1+=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), +, (PRIMARY 2)))"},
+      {"1-=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), -, (PRIMARY 2)))"},
+      {"1<<=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), <<, (PRIMARY 2)))"},
+      {"1>>=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), >>, (PRIMARY 2)))"},
+      {"1&=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), &, (PRIMARY 2)))"},
+      {"1^=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), ^, (PRIMARY 2)))"},
+      {"1|=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), |, (PRIMARY 2)))"},
+      {"1=2=3",
+       "(BINARY (PRIMARY a), =, (BINARY (PRIMARY 2), =, (PRIMARY 3)))"},
+      {NULL, NULL}};
+
   assert_expected_ast(tests, Parser_expression);
 }
 
@@ -176,7 +197,8 @@ int main(void) {
       cmocka_unit_test(shift_expressions),
       cmocka_unit_test(relational_expressions),
       cmocka_unit_test(equality_expressions),
-      cmocka_unit_test(logical_expressions)};
+      cmocka_unit_test(logical_expressions),
+      cmocka_unit_test(assignment_expressions)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

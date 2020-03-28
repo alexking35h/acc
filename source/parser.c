@@ -34,17 +34,16 @@ Parser *Parser_init(Scanner *scanner, Error *error) {
 void Parser_destroy(Parser *parser) { free(parser); }
 
 /*
- * If the next token matches any of the tokens 'token_types', advance the 
+ * If the next token matches any of the tokens 'token_types', advance the
  * token stream, and return the token. 'token_types' is a NULL terminated
  * array of TokenType.
  */
-Token *Parser_match_token(Parser *parser, TokenType * token_types) {
+Token *Parser_match_token(Parser *parser, TokenType *token_types) {
   if (parser->next_token == NULL)
     parser->next_token = Scanner_get_next(parser->scanner);
 
-  for(;*token_types != NAT;token_types++) {
-    if (parser->next_token->type != *token_types)
-      continue;
+  for (; *token_types != NAT; token_types++) {
+    if (parser->next_token->type != *token_types) continue;
 
     Token *return_token = parser->next_token;
     parser->next_token = NULL;

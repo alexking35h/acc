@@ -30,7 +30,7 @@ build/test_scanner: $(ACC_OBJECTS) build/test_scanner.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=Error_report_error -Wl,--wrap=Error_report_warning
 
 build/test_parser: $(ACC_OBJECTS) build/test_parser.o
-	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=Error_report_error -Wl,--wrap=Error_report_warning
+	$(CC) $^ -o $@ $(CFLAGS) 
 
 docker_build:
 	docker build --tag acc:v1 .
