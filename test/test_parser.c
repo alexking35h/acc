@@ -67,120 +67,110 @@ static void initialize_parser(void** state) {
 
 static void primary_expressions(void** state) {
   // Test simple primary expressions.
-  ParserTestFixture tests[] = {{"1", "(PRIMARY 1)"},
-                               {"q", "(PRIMARY q)"},
-                               {"((3))", "(PRIMARY 3)"},
-                               {"\"a\"", "(PRIMARY \"a\")"},
+  ParserTestFixture tests[] = {{"1", "(P 1)"},
+                               {"q", "(P q)"},
+                               {"((3))", "(P 3)"},
+                               {"\"a\"", "(P \"a\")"},
                                {NULL, NULL}};
   assert_expected_ast(tests, Parser_expression);
 }
 
 static void postfix_expressions(void** state) {
   // Test simple postfix expressions.
-  ParserTestFixture tests[] = {
-      {"a[1]", "(POSTFIX (PRIMARY a), (PRIMARY 1))"},
-      {"a++", "(BINARY (PRIMARY a), =, (BINARY (PRIMARY a), +, (PRIMARY 1)))"},
-      {"9--", "(BINARY (PRIMARY 9), =, (BINARY (PRIMARY 9), -, (PRIMARY 1)))"},
-      {NULL, NULL}};
+  ParserTestFixture tests[] = {{"a[1]", "(PF (P a), (P 1))"},
+                               {"a++", "(A (P a), (B (P a), +, (P 1)))"},
+                               {"9--", "(A (P 9), (B (P 9), -, (P 1)))"},
+                               {NULL, NULL}};
 
   assert_expected_ast(tests, Parser_expression);
 }
 
 static void unary_expressions(void** state) {
   // Test simple unary expressions
-  ParserTestFixture tests[] = {
-      {"++a", "(BINARY (PRIMARY a), =, (BINARY (PRIMARY a), +, (PRIMARY 1)))"},
-      {"--b", "(BINARY (PRIMARY b), =, (BINARY (PRIMARY b), -, (PRIMARY 1)))"},
-      {"&Q", "(UNARY &, (PRIMARY Q))"},
-      {"*a", "(UNARY *, (PRIMARY a))"},
-      {"+1", "(UNARY +, (PRIMARY 1))"},
-      {"-a", "(UNARY -, (PRIMARY a))"},
-      {"~9", "(UNARY ~, (PRIMARY 9))"},
-      {"!1", "(UNARY !, (PRIMARY 1))"},
-      {"sizeof 1", "(UNARY sizeof, (PRIMARY 1))"},
-      {NULL, NULL}};
+  ParserTestFixture tests[] = {{"++a", "(U ++, (P a))"},
+                               {"--b", "(U --, (P b))"},
+                               {"&Q", "(U &, (P Q))"},
+                               {"*a", "(U *, (P a))"},
+                               {"+1", "(U +, (P 1))"},
+                               {"-a", "(U -, (P a))"},
+                               {"~9", "(U ~, (P 9))"},
+                               {"!1", "(U !, (P 1))"},
+                               {"sizeof 1", "(U sizeof, (P 1))"},
+                               {NULL, NULL}};
   assert_expected_ast(tests, Parser_expression);
 }
 
 static void multiplicative_expressions(void** state) {
   // Test multiplicative expressions (including right-associativity)
-  ParserTestFixture tests[] = {
-      {"1*2/3",
-       "(BINARY (BINARY (PRIMARY 1), *, (PRIMARY 2)), /, (PRIMARY 3))"},
-      {"1*2%3",
-       "(BINARY (BINARY (PRIMARY 1), *, (PRIMARY 2)), %, (PRIMARY 3))"},
-      {NULL, NULL}};
+  ParserTestFixture tests[] = {{"1*2/3", "(B (B (P 1), *, (P 2)), /, (P 3))"},
+                               {"1*2%3", "(B (B (P 1), *, (P 2)), %, (P 3))"},
+                               {NULL, NULL}};
   assert_expected_ast(tests, Parser_expression);
 }
 
 static void additive_expressions(void** state) {
   // Test additive_expressions (including right-associativity)
-  ParserTestFixture tests[] = {
-      {"a+b-c",
-       "(BINARY (BINARY (PRIMARY a), +, (PRIMARY b)), -, (PRIMARY c))"},
-      {NULL, NULL}};
+  ParserTestFixture tests[] = {{"a+b-c", "(B (B (P a), +, (P b)), -, (P c))"},
+                               {NULL, NULL}};
   assert_expected_ast(tests, Parser_expression);
 }
 
 static void shift_expressions(void** state) {
   // Test shift expressions (including right-associativity)
   ParserTestFixture tests[] = {
-      {"a>>b<<c",
-       "(BINARY (BINARY (PRIMARY a), >>, (PRIMARY b)), <<, (PRIMARY c))"},
-      {NULL, NULL}};
+      {"a>>b<<c", "(B (B (P a), >>, (P b)), <<, (P c))"}, {NULL, NULL}};
   assert_expected_ast(tests, Parser_expression);
 }
 
 static void relational_expressions(void** state) {
   // Test relational expresions
-  ParserTestFixture tests[] = {
-      {"a<b>c",
-       "(BINARY (BINARY (PRIMARY a), <, (PRIMARY b)), >, (PRIMARY c))"},
-      {NULL, NULL}};
+  ParserTestFixture tests[] = {{"a<b>c", "(B (B (P a), <, (P b)), >, (P c))"},
+                               {NULL, NULL}};
   assert_expected_ast(tests, Parser_expression);
 }
 
 static void equality_expressions(void** state) {
   // Test equality expressions
   ParserTestFixture tests[] = {
-      {"2==T!=P",
-       "(BINARY (BINARY (PRIMARY 2), ==, (PRIMARY T)), !=, (PRIMARY P))"},
-      {NULL, NULL}};
+      {"2==T!=P", "(B (B (P 2), ==, (P T)), !=, (P P))"}, {NULL, NULL}};
 
   assert_expected_ast(tests, Parser_expression);
 }
 
 static void logical_expressions(void** state) {
   // Test logical expressions (&, ^, |, &&, ||)
-  ParserTestFixture tests[] = {
-      {"1&2", "(BINARY (PRIMARY 1), &, (PRIMARY 2))"},
-      {"a|b", "(BINARY (PRIMARY a), |, (PRIMARY b))"},
-      {"a^b", "(BINARY (PRIMARY a), ^, (PRIMARY b))"},
-      {"a&&b", "(BINARY (PRIMARY a), &&, (PRIMARY b))"},
-      {"\"a\"||b", "(BINARY (PRIMARY \"a\"), ||, (PRIMARY b))"},
-      {"1==2?1:3",
-       "(TERTIARY (BINARY (PRIMARY 1), ==, (PRIMARY 2)), (PRIMARY 1), (PRIMARY "
-       "3))"},
-      {"a=2=3",
-       "(BINARY (PRIMARY a), =, (BINARY (PRIMARY 2), =, (PRIMARY 3)))"},
-      {NULL, NULL}};
+  ParserTestFixture tests[] = {{"1&2", "(B (P 1), &, (P 2))"},
+                               {"a|b", "(B (P a), |, (P b))"},
+                               {"a^b", "(B (P a), ^, (P b))"},
+                               {"a&&b", "(B (P a), &&, (P b))"},
+                               {"\"a\"||b", "(B (P \"a\"), ||, (P b))"},
+                               {"1==2?1:3",
+                                "(T (B (P 1), ==, (P 2)), (P 1), (P "
+                                "3))"},
+                               {NULL, NULL}};
   assert_expected_ast(tests, Parser_expression);
 }
 
 static void assignment_expressions(void** state) {
+  ParserTestFixture tests[] = {{"1*=2", "(A (P 1), (B (P 1), *, (P 2)))"},
+                               {"1/=2", "(A (P 1), (B (P 1), /, (P 2)))"},
+                               {"1%=2", "(A (P 1), (B (P 1), %, (P 2)))"},
+                               {"1+=2", "(A (P 1), (B (P 1), +, (P 2)))"},
+                               {"1-=2", "(A (P 1), (B (P 1), -, (P 2)))"},
+                               {"1<<=2", "(A (P 1), (B (P 1), <<, (P 2)))"},
+                               {"1>>=2", "(A (P 1), (B (P 1), >>, (P 2)))"},
+                               {"1&=2", "(A (P 1), (B (P 1), &, (P 2)))"},
+                               {"1^=2", "(A (P 1), (B (P 1), ^, (P 2)))"},
+                               {"1|=2", "(A (P 1), (B (P 1), |, (P 2)))"},
+                               {"1=2=3", "(A (P a), (A (P 2), (P 3)))"},
+                               {NULL, NULL}};
+
+  assert_expected_ast(tests, Parser_expression);
+}
+
+static void expressions(void** state) {
   ParserTestFixture tests[] = {
-      {"1*=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), *, (PRIMARY 2)))"},
-      {"1/=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), /, (PRIMARY 2)))"},
-      {"1%=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), %, (PRIMARY 2)))"},
-      {"1+=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), +, (PRIMARY 2)))"},
-      {"1-=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), -, (PRIMARY 2)))"},
-      {"1<<=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), <<, (PRIMARY 2)))"},
-      {"1>>=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), >>, (PRIMARY 2)))"},
-      {"1&=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), &, (PRIMARY 2)))"},
-      {"1^=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), ^, (PRIMARY 2)))"},
-      {"1|=2", "(BINARY (PRIMARY 1), =, (BINARY (PRIMARY 1), |, (PRIMARY 2)))"},
-      {"1=2=3",
-       "(BINARY (PRIMARY a), =, (BINARY (PRIMARY 2), =, (PRIMARY 3)))"},
+      {"1+1,2+4", "(E (B (P 1), +, (P 1)), (B (P 2), +, (P 4)))"},
       {NULL, NULL}};
 
   assert_expected_ast(tests, Parser_expression);
@@ -198,7 +188,8 @@ int main(void) {
       cmocka_unit_test(relational_expressions),
       cmocka_unit_test(equality_expressions),
       cmocka_unit_test(logical_expressions),
-      cmocka_unit_test(assignment_expressions)};
+      cmocka_unit_test(assignment_expressions),
+      cmocka_unit_test(expressions)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

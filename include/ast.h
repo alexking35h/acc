@@ -17,10 +17,23 @@
   Ast_create_node((AstNode){.type = CAST, .cast = {__VA_ARGS__}})
 #define AST_TERTIARY(...) \
   Ast_create_node((AstNode){.type = TERTIARY, .tertiary = {__VA_ARGS__}})
+#define AST_ASSIGN(...) \
+  Ast_create_node((AstNode){.type = ASSIGN, .assign = {__VA_ARGS__}})
+#define AST_EXPR(...) \
+  Ast_create_node((AstNode){.type = EXPR, .expr = {__VA_ARGS__}})
 
 // Enum definition for each node type in
 // the generated AST.
-enum AstNodeType { BINARY, UNARY, PRIMARY, POSTFIX, CAST, TERTIARY };
+enum AstNodeType {
+  BINARY,
+  UNARY,
+  PRIMARY,
+  POSTFIX,
+  CAST,
+  TERTIARY,
+  ASSIGN,
+  EXPR
+};
 
 // For 'Primary' Nodes, enum definition for each node sub-type.
 enum AstPrimaryNodeType {
@@ -87,6 +100,18 @@ typedef struct AstNode_t {
       struct AstNode_t* expr_true;
       struct AstNode_t* expr_false;
     } tertiary;
+
+    // Assign
+    struct {
+      struct AstNode_t* left;
+      struct AstNode_t* right;
+    } assign;
+
+    // comma-separated expression
+    struct {
+      struct AstNode_t* expr;
+      struct AstNode_t* next;
+    } expr;
   };
 
 } AstNode;

@@ -84,8 +84,7 @@ static AstNode* desugar_assign(Parser* parser, AstNode* expr, TokenType op,
   Token* op_token = Parser_create_fake_token(parser, op, op_tok_str);
   AstNode* op_expr = AST_BINARY(.left = expr, .op = op_token, .right = operand);
 
-  Token* equal_token = Parser_create_fake_token(parser, EQUAL, "=");
-  return AST_BINARY(.left = expr, .op = equal_token, .right = op_expr);
+  return AST_ASSIGN(.left = expr, .right = op_expr);
 }
 
 static AstNode* primary_expression(Parser* parser) {  // @DONE
@@ -176,26 +175,10 @@ static AstNode* unary_expression(Parser* parser) {  // @DONE
    */
   Token* token;
 
-  if ((token = match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF)))
+  if ((token = match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF, INC_OP,
+                     DEC_OP)))
     return AST_UNARY(.op = token, .right = unary_expression(parser));
 
-  else if (match(INC_OP)) {
-    Token* constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
-    AstNode* constant_node =
-        AST_PRIMARY(.type = PRIMARY_CONSTANT, .constant = constant_token);
-
-    AstNode* expr = unary_expression(parser);
-
-    return desugar_assign(parser, expr, PLUS, constant_node);
-  } else if (match(DEC_OP)) {
-    Token* constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
-    AstNode* constant_node =
-        AST_PRIMARY(.type = PRIMARY_CONSTANT, .constant = constant_token);
-
-    AstNode* expr = unary_expression(parser);
-
-    return desugar_assign(parser, expr, MINUS, constant_node);
-  }
   return postfix_expression(parser);
 }
 
@@ -393,7 +376,7 @@ static AstNode* conditional_expression(Parser* parser) {  // @DONE
                       .expr_false = expr_false);
 }
 
-static AstNode* assignment_expression(Parser* parser) {  // @TODO
+static AstNode* assignment_expression(Parser* parser) {  // @DONE
   /*
    * conditional_expression
    * unary_expression assignment_operator assignment_expression
@@ -412,7 +395,7 @@ static AstNode* assignment_expression(Parser* parser) {  // @TODO
     operator= match(EQUAL);
     if (operator!= NULL) {
       AstNode* right = assignment_expression(parser);
-      expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+      expr = AST_ASSIGN(.left = expr, .right = right);
       continue;
     }
 
@@ -470,5 +453,11 @@ AstNode* Parser_expression(Parser* parser) {  // @TODO
    * assignment_expression
    * expression ',' assignment_expression
    */
-  return assignment_expression(parser);
+  AstNode* expr = assignment_expression(parser);
+
+  if (match(COMMA)) {
+    return AST_EXPR(.expr = expr, .next = Parser_expression(parser));
+  } else {
+    return expr;
+  }
 }
