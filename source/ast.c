@@ -66,8 +66,7 @@ static int primary(AstNode* node, char* buf, int len) {
 
   switch (node->primary.type) {
     case PRIMARY_IDENTIFIER:
-      l += snprintf(buf + l, len - l, "%s",
-                    node->primary.identifier->lexeme);
+      l += snprintf(buf + l, len - l, "%s", node->primary.identifier->lexeme);
       break;
 
     case PRIMARY_CONSTANT:
@@ -89,8 +88,7 @@ static int postfix(AstNode* node, char* buf, int len) {
 
   switch (node->postfix.type) {
     case POSTFIX_ARRAY_INDEX:
-      l += Ast_pretty_print(node->postfix.index_expression, buf + l,
-                            len - l);
+      l += Ast_pretty_print(node->postfix.index_expression, buf + l, len - l);
 
       break;
 

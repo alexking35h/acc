@@ -12,14 +12,14 @@
 #include "ast.h"
 #include "parser.h"
 
-AstNode* Parser_declaration(Parser* parser) {  // @TODO
+AstNode* declaration(Parser* parser) {  // @TODO
   /*
    * declaration_specifiers '
    */
 
   return NULL;
 }
-AstNode* Parser_declaration_specifiers(Parser* parser) {  // @TODO
+AstNode* declaration_specifiers(Parser* parser) {  // @TODO
   /*
    * storage_class_specifier declaration_specifiers
    * storage_class_specifier
@@ -35,7 +35,7 @@ AstNode* Parser_declaration_specifiers(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_init_declarator_list(Parser* parser) {  // @TODO
+AstNode* init_declarator_list(Parser* parser) {  // @TODO
   /*
    * init_declarator
    * init_declarator_list ',' init_declarator
@@ -43,7 +43,7 @@ AstNode* Parser_init_declarator_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_init_declarator(Parser* parser) {  // @TODO
+AstNode* init_declarator(Parser* parser) {  // @TODO
   /*
    * declarator '=' initializer
    * declarator
@@ -51,7 +51,7 @@ AstNode* Parser_init_declarator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_storage_class_specifier(Parser* parser) {  // @TODO
+AstNode* storage_class_specifier(Parser* parser) {  // @TODO
   /*
    * TYPEDEF
    * EXTERN
@@ -63,7 +63,7 @@ AstNode* Parser_storage_class_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_type_specifier(Parser* parser) {  // @TODO
+AstNode* type_specifier(Parser* parser) {  // @TODO
   /*
    * VOID
    * CHAR
@@ -85,7 +85,7 @@ AstNode* Parser_type_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_struct_or_union_specifier(Parser* parser) {  // @TODO
+AstNode* struct_or_union_specifier(Parser* parser) {  // @TODO
   /*
    * struct_or_union '{' struct_declaration_list '}'
    * struct_or_union IDENTIFIER '{' struct_declaration_list '}'
@@ -94,7 +94,7 @@ AstNode* Parser_struct_or_union_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_struct_or_union(Parser* parser) {  // @TODO
+AstNode* struct_or_union(Parser* parser) {  // @TODO
   /*
    * STRUCT
    * UNION
@@ -102,7 +102,7 @@ AstNode* Parser_struct_or_union(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_struct_declaration_list(Parser* parser) {  // @TODO
+AstNode* struct_declaration_list(Parser* parser) {  // @TODO
   /*
    * struct_declaration
    * struct_declaration_list struct_declaration
@@ -110,14 +110,14 @@ AstNode* Parser_struct_declaration_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_struct_declaration(Parser* parser) {  // @TODO
+AstNode* struct_declaration(Parser* parser) {  // @TODO
   /*
    * specifier_qualifier_list '
    */
 
   return NULL;
 }
-AstNode* Parser_specifier_qualifier_list(Parser* parser) {  // @TODO
+AstNode* specifier_qualifier_list(Parser* parser) {  // @TODO
   /*
    * type_specifier specifier_qualifier_list
    * type_specifier
@@ -127,7 +127,7 @@ AstNode* Parser_specifier_qualifier_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_struct_declarator_list(Parser* parser) {  // @TODO
+AstNode* struct_declarator_list(Parser* parser) {  // @TODO
   /*
    * struct_declarator
    * struct_declarator_list ',' struct_declarator
@@ -135,7 +135,7 @@ AstNode* Parser_struct_declarator_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_struct_declarator(Parser* parser) {  // @TODO
+AstNode* struct_declarator(Parser* parser) {  // @TODO
   /*
    * ':' constant_expression
    * declarator ':' constant_expression
@@ -144,7 +144,7 @@ AstNode* Parser_struct_declarator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_enum_specifier(Parser* parser) {  // @TODO
+AstNode* enum_specifier(Parser* parser) {  // @TODO
   /*
    * ENUM '{' enumerator_list '}'
    * ENUM '{' enumerator_list ',' '}'
@@ -155,7 +155,7 @@ AstNode* Parser_enum_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_enumerator_list(Parser* parser) {  // @TODO
+AstNode* enumerator_list(Parser* parser) {  // @TODO
   /*
    * enumerator
    * enumerator_list ',' enumerator
@@ -163,7 +163,7 @@ AstNode* Parser_enumerator_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_enumerator(Parser* parser) {  // @TODO
+AstNode* enumerator(Parser* parser) {  // @TODO
   /*
    * enumeration_constant '=' constant_expression
    * enumeration_constant
@@ -171,14 +171,14 @@ AstNode* Parser_enumerator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_atomic_type_specifier(Parser* parser) {  // @TODO
+AstNode* atomic_type_specifier(Parser* parser) {  // @TODO
   /*
    * ATOMIC '(' type_name ')'
    */
 
   return NULL;
 }
-AstNode* Parser_type_qualifier(Parser* parser) {  // @TODO
+AstNode* type_qualifier(Parser* parser) {  // @TODO
   /*
    * CONST
    * RESTRICT
@@ -188,7 +188,7 @@ AstNode* Parser_type_qualifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_function_specifier(Parser* parser) {  // @TODO
+AstNode* function_specifier(Parser* parser) {  // @TODO
   /*
    * INLINE
    * NORETURN
@@ -196,7 +196,7 @@ AstNode* Parser_function_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_alignment_specifier(Parser* parser) {  // @TODO
+AstNode* alignment_specifier(Parser* parser) {  // @TODO
   /*
    * ALIGNAS '(' type_name ')'
    * ALIGNAS '(' constant_expression ')'
@@ -204,7 +204,7 @@ AstNode* Parser_alignment_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_declarator(Parser* parser) {  // @TODO
+AstNode* declarator(Parser* parser) {  // @TODO
   /*
    * pointer direct_declarator
    * direct_declarator
@@ -212,7 +212,7 @@ AstNode* Parser_declarator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_direct_declarator(Parser* parser) {  // @TODO
+AstNode* direct_declarator(Parser* parser) {  // @TODO
   /*
    * IDENTIFIER
    * '(' declarator ')'
@@ -232,7 +232,7 @@ AstNode* Parser_direct_declarator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_pointer(Parser* parser) {  // @TODO
+AstNode* pointer(Parser* parser) {  // @TODO
   /*
    * '*' type_qualifier_list pointer
    * '*' type_qualifier_list
@@ -242,7 +242,7 @@ AstNode* Parser_pointer(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_type_qualifier_list(Parser* parser) {  // @TODO
+AstNode* type_qualifier_list(Parser* parser) {  // @TODO
   /*
    * type_qualifier
    * type_qualifier_list type_qualifier
@@ -250,7 +250,7 @@ AstNode* Parser_type_qualifier_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_parameter_type_list(Parser* parser) {  // @TODO
+AstNode* parameter_type_list(Parser* parser) {  // @TODO
   /*
    * parameter_list ',' ELLIPSIS
    * parameter_list
@@ -258,7 +258,7 @@ AstNode* Parser_parameter_type_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_parameter_list(Parser* parser) {  // @TODO
+AstNode* parameter_list(Parser* parser) {  // @TODO
   /*
    * parameter_declaration
    * parameter_list ',' parameter_declaration
@@ -266,7 +266,7 @@ AstNode* Parser_parameter_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_parameter_declaration(Parser* parser) {  // @TODO
+AstNode* parameter_declaration(Parser* parser) {  // @TODO
   /*
    * declaration_specifiers declarator
    * declaration_specifiers abstract_declarator
@@ -275,7 +275,7 @@ AstNode* Parser_parameter_declaration(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_identifier_list(Parser* parser) {  // @TODO
+AstNode* identifier_list(Parser* parser) {  // @TODO
   /*
    * IDENTIFIER
    * identifier_list ',' IDENTIFIER
@@ -283,7 +283,7 @@ AstNode* Parser_identifier_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_type_name(Parser* parser) {  // @TODO
+AstNode* type_name(Parser* parser) {  // @TODO
   /*
    * specifier_qualifier_list abstract_declarator
    * specifier_qualifier_list
@@ -291,7 +291,7 @@ AstNode* Parser_type_name(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_abstract_declarator(Parser* parser) {  // @TODO
+AstNode* abstract_declarator(Parser* parser) {  // @TODO
   /*
    * pointer direct_abstract_declarator
    * pointer
@@ -300,35 +300,22 @@ AstNode* Parser_abstract_declarator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_direct_abstract_declarator(Parser* parser) {  // @TODO
+AstNode* direct_abstract_declarator(Parser* parser) {  // @TODO
   /*
-   * '(' abstract_declarator ')'
-   * '[' ']'
-   * '[' '*' ']'
-   * '[' STATIC type_qualifier_list assignment_expression ']'
-   * '[' STATIC assignment_expression ']'
-   * '[' type_qualifier_list STATIC assignment_expression ']'
-   * '[' type_qualifier_list assignment_expression ']'
-   * '[' type_qualifier_list ']'
-   * '[' assignment_expression ']'
-   * direct_abstract_declarator '[' ']'
-   * direct_abstract_declarator '[' '*' ']'
-   * direct_abstract_declarator '[' STATIC type_qualifier_list
-   * assignment_expression ']' direct_abstract_declarator '[' STATIC
-   * assignment_expression ']' direct_abstract_declarator '['
-   * type_qualifier_list assignment_expression ']' direct_abstract_declarator
-   * '[' type_qualifier_list STATIC assignment_expression ']'
-   * direct_abstract_declarator '[' type_qualifier_list ']'
-   * direct_abstract_declarator '[' assignment_expression ']'
-   * '(' ')'
-   * '(' parameter_type_list ')'
-   * direct_abstract_declarator '(' ')'
-   * direct_abstract_declarator '(' parameter_type_list ')'
+	 * '(' abstract_declarator ')'
+	 * '[' ']'
+	 * '[' constant_expression ']'
+	 * direct_abstract_declarator '[' ']'
+	 * direct_abstract_declarator '[' constant_expression ']'
+	 * '(' ')'
+	 * '(' parameter_type_list ')'
+	 * direct_abstract_declarator '(' ')'
+	 * direct_abstract_declarator '(' parameter_type_list ')'
    */
 
   return NULL;
 }
-AstNode* Parser_initializer(Parser* parser) {  // @TODO
+AstNode* initializer(Parser* parser) {  // @TODO
   /*
    * '{' initializer_list '}'
    * '{' initializer_list ',' '}'
@@ -337,7 +324,7 @@ AstNode* Parser_initializer(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_initializer_list(Parser* parser) {  // @TODO
+AstNode* initializer_list(Parser* parser) {  // @TODO
   /*
    * designation initializer
    * initializer
@@ -347,14 +334,14 @@ AstNode* Parser_initializer_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_designation(Parser* parser) {  // @TODO
+AstNode* designation(Parser* parser) {  // @TODO
   /*
    * designator_list '='
    */
 
   return NULL;
 }
-AstNode* Parser_designator_list(Parser* parser) {  // @TODO
+AstNode* designator_list(Parser* parser) {  // @TODO
   /*
    * designator
    * designator_list designator
@@ -362,7 +349,7 @@ AstNode* Parser_designator_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_designator(Parser* parser) {  // @TODO
+AstNode* designator(Parser* parser) {  // @TODO
   /*
    * '[' constant_expression ']'
    * '.' IDENTIFIER
@@ -370,14 +357,14 @@ AstNode* Parser_designator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_static_assert_declaration(Parser* parser) {  // @TODO
+AstNode* static_assert_declaration(Parser* parser) {  // @TODO
   /*
    * STATIC_ASSERT '(' constant_expression ',' STRING_LITERAL ')' '
    */
 
   return NULL;
 }
-AstNode* Parser_translation_unit(Parser* parser) {  // @TODO
+AstNode* translation_unit(Parser* parser) {  // @TODO
   /*
    * external_declaration
    * translation_unit external_declaration
@@ -385,7 +372,7 @@ AstNode* Parser_translation_unit(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_external_declaration(Parser* parser) {  // @TODO
+AstNode* external_declaration(Parser* parser) {  // @TODO
   /*
    * function_definition
    * declaration
@@ -393,7 +380,7 @@ AstNode* Parser_external_declaration(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_function_definition(Parser* parser) {  // @TODO
+AstNode* function_definition(Parser* parser) {  // @TODO
   /*
    * declaration_specifiers declarator declaration_list compound_statement
    * declaration_specifiers declarator compound_statement
@@ -401,7 +388,7 @@ AstNode* Parser_function_definition(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_declaration_list(Parser* parser) {  // @TODO
+AstNode* declaration_list(Parser* parser) {  // @TODO
   /*
    * declaration
    * declaration_list declaration

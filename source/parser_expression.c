@@ -18,7 +18,7 @@
 #define peek() Parser_peek_token(parser)
 
 // Horrible hack, for now, to get rid of the compiler warnings
-#define static
+//#define static
 
 static AstNode* primary_expression(Parser*);
 static AstNode* postfix_expression(Parser*);
@@ -42,7 +42,7 @@ static AstNode* desugar_assign(Parser* parser, AstNode* expr, TokenType op,
                                AstNode* operand) {
   /* A bunch of the C syntax is treated as syntactic sugar, to make the AST more
    * homogeneous and (hopefully) make it easier to implement later parts of the
-   * compiler. This includes ++ and -- pre/postfix operators, and assignment
+   * compiler. This includes ++ and -- postfix operators, and assignment
    * operators (+=, -=, /=, etc.)
    */
   char* op_tok_str;

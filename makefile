@@ -22,14 +22,17 @@ OBJECTS = $(ACC_OBJECTS) $(TEST_OBJECTS)
 .PHONY: test
 .PHONY: format
 
-test: build build/test_scanner build/test_parser
+test: build build/test_scanner build/test_parser_expression
 	build/test_scanner
-	build/test_parser
+	build/test_parser_expression
 
 build/test_scanner: $(ACC_OBJECTS) build/test_scanner.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=Error_report_error -Wl,--wrap=Error_report_warning
 
-build/test_parser: $(ACC_OBJECTS) build/test_parser.o
+build/test_parser_expression: $(ACC_OBJECTS) build/test_parser_expression.o
+	$(CC) $^ -o $@ $(CFLAGS) 
+
+build/test_parser_declaration: $(ACC_OBJECTS) build/test_parser_declaration.o
 	$(CC) $^ -o $@ $(CFLAGS) 
 
 docker_build:
