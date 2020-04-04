@@ -10,6 +10,7 @@ void ctype_set_primitive_type(CType* type, TypeSpecifier type_specifier,
                               TypeStorageSpecifier storage_specifier) {
   TypeSpecifier* specifier = &type->primitive.type_specifier;
   TypeQualifier* qualifier = &type->primitive.type_qualifier;
+  TypeStorageSpecifier* storage = &type->primitive.storage_class_specifier;
 
   // Signed-ness
   if (type_specifier & TYPE_SIGNEDNESS) {
@@ -40,7 +41,15 @@ void ctype_set_primitive_type(CType* type, TypeSpecifier type_specifier,
     // Check that a qualifier flag has not already been set
     if (*qualifier != 0) goto err;
 
-    *qualifier |= type_qualifier;
+    *qualifier = type_qualifier;
+  }
+
+  // Storage class specifiers
+  if (storage_specifier != 0) {
+    // Check that a storage class specifier has not already been set
+    if (*storage != 0) goto err;
+    
+    *storage = storage_specifier;
   }
   
 err:

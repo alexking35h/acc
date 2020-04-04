@@ -127,6 +127,21 @@ static CType* declaration_specifiers(Parser* parser) {  // @TODO
         ctype_set_primitive_type(type, 0, TYPE_VOLATILE, 0);
         break;
 
+      // Storage-specifiers
+      // extern, auto, static, register
+      case EXTERN:
+        ctype_set_primitive_type(type, 0, 0, TYPE_EXTERN);
+        break;
+      case AUTO:
+        ctype_set_primitive_type(type, 0, 0, TYPE_AUTO);
+        break;
+      case STATIC:
+        ctype_set_primitive_type(type, 0, 0, TYPE_STATIC);  
+        break;
+      case REGISTER:
+        ctype_set_primitive_type(type, 0, 0, TYPE_REGISTER);
+        break;
+
       default:
         keep_reading = false;
     }

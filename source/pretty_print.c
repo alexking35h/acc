@@ -156,9 +156,16 @@ static void pp_type_primitive(CType* type, StringBuffer* buf) {
   // storage specifier first.
   switch (type->primitive.storage_class_specifier) {
     case TYPE_EXTERN:
+      pp_printf(buf, "extern ");
+      break;
     case TYPE_STATIC:
+      pp_printf(buf, "static ");
+      break;
     case TYPE_AUTO:
+      pp_printf(buf, "auto ");
+      break;
     case TYPE_REGISTER:
+      pp_printf(buf, "register ");
       break;
   }
 

@@ -33,6 +33,12 @@ static void primitive_declaration(void** state) {
       {"const char c", "(D [const unsigned char], c)"},
       {"volatile int x", "(D [volatile signed int], x)"},
 
+      // Storage-class specifiers
+      {"extern int abc", "(D [extern signed int], abc)"},
+      {"auto char a", "(D [auto unsigned char], a)"},
+      {"static int b", "(D [static signed int], b)"},
+      {"register void a", "(D [register void], a)"},
+
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
 }
