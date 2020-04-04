@@ -28,7 +28,7 @@ bool test_ast_compare_expr(const char* source, const char* expected) {
   char generated_ast[256] = "";
   pretty_print_expr(ast_node, generated_ast, sizeof(generated_ast));
 
-  bool matches = (strlen(generated_ast) == strlen(expected) ||
+  bool matches = (strlen(generated_ast) == strlen(expected) &&
                   strcmp(generated_ast, expected) == 0);
 
   if (!matches) {
@@ -57,7 +57,7 @@ bool test_ast_compare_decl(const char* source, const char* expected) {
   char generated_ast[256] = "";
   pretty_print_decl(ast_node, generated_ast, sizeof(generated_ast));
 
-  bool matches = (strlen(generated_ast) == strlen(expected) ||
+  bool matches = (strlen(generated_ast) == strlen(expected) &&
                   strcmp(generated_ast, expected) == 0);
 
   if (!matches) {

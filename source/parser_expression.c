@@ -13,6 +13,22 @@
 #include "parser.h"
 #include "token.h"
 
+#define EXPR_BINARY(...) \
+  Ast_create_expr_node((ExprAstNode){.type = BINARY, .binary = {__VA_ARGS__}})
+#define EXPR_UNARY(...) \
+  Ast_create_expr_node((ExprAstNode){.type = UNARY, .unary = {__VA_ARGS__}})
+#define EXPR_PRIMARY(...) \
+  Ast_create_expr_node((ExprAstNode){.type = PRIMARY, .primary = {__VA_ARGS__}})
+#define EXPR_POSTFIX(...) \
+  Ast_create_expr_node((ExprAstNode){.type = POSTFIX, .postfix = {__VA_ARGS__}})
+#define EXPR_CAST(...) \
+  Ast_create_expr_node((ExprAstNode){.type = CAST, .cast = {__VA_ARGS__}})
+#define EXPR_TERTIARY(...) \
+  Ast_create_expr_node(    \
+      (ExprAstNode){.type = TERTIARY, .tertiary = {__VA_ARGS__}})
+#define EXPR_ASSIGN(...) \
+  Ast_create_expr_node((ExprAstNode){.type = ASSIGN, .assign = {__VA_ARGS__}})
+
 #define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 #define consume(t) Parser_consume_token(parser, t)
 #define peek() Parser_peek_token(parser)

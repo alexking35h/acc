@@ -14,6 +14,8 @@
 #include "ctype.h"
 #include "parser.h"
 
+#define DECL(...) Ast_create_decl_node((DeclAstNode){__VA_ARGS__})
+
 #define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 #define consume(t) Parser_consume_token(parser, t)
 #define peek() Parser_peek_token(parser)
@@ -40,8 +42,9 @@ static DeclAstNode* atomic_type_specifier(Parser* parser);              // @TODO
 static DeclAstNode* type_qualifier(Parser* parser);                     // @TODO
 static DeclAstNode* function_specifier(Parser* parser);                 // @TODO
 static DeclAstNode* alignment_specifier(Parser* parser);                // @TODO
-static DeclAstNode* declarator(Parser* parser);                         // @TODO
-static DeclAstNode* direct_declarator(Parser* parser);                  // @TODO
+static DeclAstNode* declarator(Parser* parser, CType* ctype);           // @TODO
+static CType * direct_declarator_end(Parser*, CType*);
+static DeclAstNode* direct_declarator(Parser* parser, CType* ctype);    // @TODO
 static DeclAstNode* pointer(Parser* parser);                            // @TODO
 static DeclAstNode* type_qualifier_list(Parser* parser);                // @TODO
 static DeclAstNode* parameter_type_list(Parser* parser);                // @TODO
@@ -70,7 +73,6 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
   CType* type = declaration_specifiers(parser);
 
   if (match(SEMICOLON)) return DECL(.type = type);
-
   return init_declarator_list(parser, type);
 }
 static CType* declaration_specifiers(Parser* parser) {  // @TODO
@@ -87,70 +89,68 @@ static CType* declaration_specifiers(Parser* parser) {  // @TODO
    * alignment_specifier
    */
   CType* type = calloc(1, sizeof(CType));
-  bool keep_reading = true;
 
-  while (keep_reading) {
+  while (true) {
     TokenType token_type = peek()->type;
     switch (token_type) {
       // Type specifiers
       // int, char, void, short, long, signed, unsigned
       case INT:
-        ctype_set_primitive_type(type, TYPE_INT, 0, 0);
+        ctype_set_primitive_specifier(type, TYPE_INT);
         break;
       case CHAR:
-        ctype_set_primitive_type(type, TYPE_CHAR, 0, 0);
+        ctype_set_primitive_specifier(type, TYPE_CHAR);
         break;
       case VOID:
-        ctype_set_primitive_type(type, TYPE_VOID, 0, 0);
+        ctype_set_primitive_specifier(type, TYPE_VOID);
         break;
 
       case SHORT:
-        ctype_set_primitive_type(type, TYPE_SHORT, 0, 0);
+        ctype_set_primitive_specifier(type, TYPE_SHORT);
         break;
       case LONG:
-        ctype_set_primitive_type(type, TYPE_LONG, 0, 0);
+        ctype_set_primitive_specifier(type, TYPE_LONG);
         break;
 
       case SIGNED:
-        ctype_set_primitive_type(type, TYPE_SIGNED, 0, 0);
+        ctype_set_primitive_specifier(type, TYPE_SIGNED);
         break;
       case UNSIGNED:
-        ctype_set_primitive_type(type, TYPE_UNSIGNED, 0, 0);
+        ctype_set_primitive_specifier(type, TYPE_UNSIGNED);
         break;
 
       // Type qualifiers
       // const, volatile
       case CONST:
-        ctype_set_primitive_type(type, 0, TYPE_CONST, 0);
+        ctype_set_primitive_qualifier(type, TYPE_CONST);
         break;
       case VOLATILE:
-        ctype_set_primitive_type(type, 0, TYPE_VOLATILE, 0);
+        ctype_set_primitive_qualifier(type, TYPE_VOLATILE);
         break;
 
       // Storage-specifiers
       // extern, auto, static, register
       case EXTERN:
-        ctype_set_primitive_type(type, 0, 0, TYPE_EXTERN);
+        ctype_set_primitive_storage_specifier(type, TYPE_EXTERN);
         break;
       case AUTO:
-        ctype_set_primitive_type(type, 0, 0, TYPE_AUTO);
+        ctype_set_primitive_storage_specifier(type, TYPE_AUTO);
         break;
       case STATIC:
-        ctype_set_primitive_type(type, 0, 0, TYPE_STATIC);  
+        ctype_set_primitive_storage_specifier(type, TYPE_STATIC);
         break;
       case REGISTER:
-        ctype_set_primitive_type(type, 0, 0, TYPE_REGISTER);
+        ctype_set_primitive_storage_specifier(type, TYPE_REGISTER);
         break;
 
       default:
-        keep_reading = false;
+        goto end;
     }
-
-    if (keep_reading) advance();
+    advance();
   }
 
-  ctype_finalize_primitive_type(type);
-
+end:
+  ctype_finalise_primitive_type(type);
   return type;
 }
 static DeclAstNode* init_declarator_list(Parser* parser,
@@ -173,47 +173,9 @@ static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
    * declarator '=' initializer
    * declarator
    */
-  // For now, the 'declarator' must be an identifier.
-  Token* identifier;
-  if ((identifier = match(IDENTIFIER))) {
-    return DECL(.type = type, .identifier = identifier);
-  }
-  return DECL(.type = type);
+  return declarator(parser, type);
 }
-static DeclAstNode* storage_class_specifier(Parser* parser) {  // @TODO
-  /*
-   * TYPEDEF
-   * EXTERN
-   * STATIC
-   * THREAD_LOCAL
-   * AUTO
-   * REGISTER
-   */
 
-  return NULL;
-}
-static DeclAstNode* type_specifier(Parser* parser) {  // @TODO
-  /*
-   * VOID
-   * CHAR
-   * SHORT
-   * INT
-   * LONG
-   * FLOAT
-   * DOUBLE
-   * SIGNED
-   * UNSIGNED
-   * BOOL
-   * COMPLEX
-   * IMAGINARY
-   * atomic_type_specifier
-   * struct_or_union_specifier
-   * enum_specifier
-   * TYPEDEF_NAME
-   */
-
-  return NULL;
-}
 static DeclAstNode* struct_or_union_specifier(Parser* parser) {  // @TODO
   /*
    * struct_or_union '{' struct_declaration_list '}'
@@ -307,16 +269,6 @@ static DeclAstNode* atomic_type_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-static DeclAstNode* type_qualifier(Parser* parser) {  // @TODO
-  /*
-   * CONST
-   * RESTRICT
-   * VOLATILE
-   * ATOMIC
-   */
-
-  return NULL;
-}
 static DeclAstNode* function_specifier(Parser* parser) {  // @TODO
   /*
    * INLINE
@@ -333,15 +285,21 @@ static DeclAstNode* alignment_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-static DeclAstNode* declarator(Parser* parser) {  // @TODO
+static DeclAstNode* declarator(Parser* parser, CType* ctype) {  // @TODO
   /*
    * pointer direct_declarator
    * direct_declarator
    */
+  while (match(STAR)) {
+    CType* pointer = calloc(1, sizeof(CType));
+    pointer->type = TYPE_POINTER;
+    pointer->pointer.target = ctype;
+    ctype = pointer;
+  }
 
-  return NULL;
+  return direct_declarator(parser, ctype);
 }
-static DeclAstNode* direct_declarator(Parser* parser) {  // @TODO
+static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
   /*
    * IDENTIFIER
    * '(' declarator ')'
@@ -358,9 +316,31 @@ static DeclAstNode* direct_declarator(Parser* parser) {  // @TODO
    * direct_declarator '(' ')'
    * direct_declarator '(' identifier_list ')'
    */
-
-  return NULL;
+  Token* tok;
+  DeclAstNode* decl_node;
+  if ((tok = match(IDENTIFIER))) {
+    decl_node = DECL(.identifier = tok, .type = ctype);
+  }
+  else if ((tok = match(LEFT_PAREN))) {
+    return 3/0;
+  }
+  decl_node->type = direct_declarator_end(parser, ctype);
 }
+
+static CType * direct_declarator_end(Parser* parser, CType* ctype) {
+  while(match(LEFT_SQUARE)) {
+    Token* array_size = match(CONSTANT); 
+    CType* array = calloc(1, sizeof(CType));
+
+    array->type = TYPE_ARRAY;
+    array->array.type = ctype;
+    array->array.size = 4;
+
+    ctype = array;
+  }
+  return ctype;
+}
+
 static DeclAstNode* pointer(Parser* parser) {  // @TODO
   /*
    * '*' type_qualifier_list pointer

@@ -1,6 +1,33 @@
+/*
+ * C type system implementation.
+ *
+ * Types in C are divided into:
+ *  - Primitive - char, integers, floating types. These are complete
+ *    (known size at compile time).
+ *  - Derived - arrays, structs, unions, functions,
+ *    and pointers.
+ *
+ * Derived types in C extend primitive types. Primitive types are composed of:
+ *  - Type specifier - void, char, short, int, long, float, double,
+ *    signed, unsigned. The C11 standard regards all valid permutations
+ *    of type specifiers as separate types in their own right.
+ *  - Type qualifier - const, volatile.
+ *  - Storage-class specifier - audo, static, extern, register.
+ *
+ * Types are represented with the CType struct below. Primitive types
+ * encapsulate type information in the type_specifier, type_qualifier,
+ * and storage_class_specifier. Derived types encapsulate a pointer
+ * to the CType they derive from.
+ */
+
 #ifndef __CTYPE__
 #define __CTYPE__
 
+/*
+ * Type specifier Enum. This is a bitmask to allow valid
+ * permutations of types (e.g., long int). Invalid permutations
+ * (short void) are checked in ctype_finalize_primitive_type.
+ */
 typedef enum {
   TYPE_VOID = 1,
   TYPE_CHAR = 2,
@@ -23,8 +50,8 @@ typedef enum {
 } TypeStorageSpecifier;
 
 typedef struct CType {
-  // C Types are either scaller types (arithmetic or pointer),
-  // or aggregate (array, struct, union).
+  // C Types are either primitive types (arithmetic or pointer),
+  // or derived types (array, struct, union).
 
   enum { TYPE_PRIMITIVE, TYPE_ARRAY, TYPE_POINTER } type;
 
@@ -55,9 +82,22 @@ typedef struct CType {
 
 } CType;
 
-void ctype_set_primitive_type(CType* type, TypeSpecifier, TypeQualifier,
-                              TypeStorageSpecifier);
+/* Set the type specifier for a type */
+void ctype_set_primitive_specifier(CType* type, TypeSpecifier);
 
-void ctype_finalize_primitive_type(CType* type);
+/* Set the type qualifier for a type */
+void ctype_set_primitive_qualifier(CType* type, TypeQualifier);
+
+/* Set the storage-class specifier for a type */
+void ctype_set_primitive_storage_specifier(CType* type, TypeStorageSpecifier);
+
+/*
+ * Finalise Primitive C type
+ *
+ * Validate the C type (e.g., void is not long/short), and set default values
+ * (e.g. char -> unsigned char). This functiokn should be called once all
+ * type specifiers/qualifiers/storage-specifiers have been parsed.
+ */
+void ctype_finalise_primitive_type(CType* type);
 
 #endif

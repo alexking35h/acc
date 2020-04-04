@@ -5,12 +5,8 @@
 #define TYPE_SPECIFIERS (TYPE_VOID | TYPE_CHAR | TYPE_INT)
 #define TYPE_SIZE (TYPE_LONG | TYPE_SHORT)
 
-void ctype_set_primitive_type(CType* type, TypeSpecifier type_specifier,
-                              TypeQualifier type_qualifier,
-                              TypeStorageSpecifier storage_specifier) {
-  TypeSpecifier* specifier = &type->primitive.type_specifier;
-  TypeQualifier* qualifier = &type->primitive.type_qualifier;
-  TypeStorageSpecifier* storage = &type->primitive.storage_class_specifier;
+void ctype_set_primitive_specifier(CType *type, TypeSpecifier type_specifier) {
+  TypeSpecifier *specifier = &type->primitive.type_specifier;
 
   // Signed-ness
   if (type_specifier & TYPE_SIGNEDNESS) {
@@ -35,6 +31,12 @@ void ctype_set_primitive_type(CType* type, TypeSpecifier type_specifier,
 
     *specifier |= (TYPE_SIZE & type_specifier);
   }
+err:
+  return;
+}
+
+void ctype_set_primitive_qualifier(CType *type, TypeQualifier type_qualifier) {
+  TypeQualifier *qualifier = &type->primitive.type_qualifier;
 
   // Type qualifiers
   if (type_qualifier != 0) {
@@ -43,21 +45,28 @@ void ctype_set_primitive_type(CType* type, TypeSpecifier type_specifier,
 
     *qualifier = type_qualifier;
   }
+err:
+  return;
+}
+
+void ctype_set_primitive_storage_specifier(
+    CType *type, TypeStorageSpecifier storage_specifier) {
+  TypeStorageSpecifier *storage = &type->primitive.storage_class_specifier;
 
   // Storage class specifiers
   if (storage_specifier != 0) {
     // Check that a storage class specifier has not already been set
     if (*storage != 0) goto err;
-    
+
     *storage = storage_specifier;
   }
-  
+
 err:
   return;
 }
 
-void ctype_finalize_primitive_type(CType* type) {
-  TypeSpecifier* specifier = &type->primitive.type_specifier;
+void ctype_finalise_primitive_type(CType *type) {
+  TypeSpecifier *specifier = &type->primitive.type_specifier;
 
   // Set the default type to 'int', if not specified.
   if (!(*specifier & TYPE_SPECIFIERS)) *specifier |= TYPE_INT;

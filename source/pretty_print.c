@@ -144,9 +144,13 @@ static void pp_type(CType* type, StringBuffer* buf) {
       break;
 
     case TYPE_ARRAY:
+      pp_printf(buf, "[%d] ", type->array.size);
+      pp_type(type->array.type, buf);
       break;
 
     case TYPE_POINTER:
+      pp_printf(buf, "* ");
+      pp_type(type->pointer.target, buf);
       break;
   }
   pp_printf(buf, "]");
