@@ -29,10 +29,10 @@ static bool test_ast_equals_expected(char* source, char* expected) {
   Parser* parser = Parser_init(scanner, NULL);
 
   // Generate the AST
-  AstNode* ast_node = Parser_expression(parser);
+  ExprAstNode* ast_node = Parser_expression(parser);
 
   char generated_ast[256] = "";
-  Ast_pretty_print(ast_node, generated_ast, sizeof(generated_ast));
+  Ast_pretty_print_expr(ast_node, generated_ast, sizeof(generated_ast));
 
   bool matches = (strlen(generated_ast) == strlen(expected) ||
                   strcmp(generated_ast, expected) == 0);

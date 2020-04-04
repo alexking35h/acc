@@ -8,16 +8,6 @@
 #include "token.h"
 
 /*
- * Generate the AST
- *
- * This method implements the recursive descent parsing over the input tokens.
- * This method returns a pointer to the root node in the AST.
- */
-AstNode *Parser_generate_ast(Parser *parser) {
-  return Parser_expression(parser);
-}
-
-/*
  * Initialize the Parser instance.
  */
 Parser *Parser_init(Scanner *scanner, Error *error) {

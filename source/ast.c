@@ -3,28 +3,50 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int primary(AstNode* node, char* buf, int len);
-static int postfix(AstNode* node, char* buf, int len);
-static int binary(AstNode* node, char* buf, int len);
-static int unary(AstNode* node, char* buf, int len);
-static int tertiary(AstNode* node, char* buf, int len);
-static int assign(AstNode* node, char* buf, int len);
-static int expr(AstNode* node, char* buf, int len);
+#define pp_printf(buf, ...) \
+  buf->start += snprintf(buf->start, buf->end - buf->start, __VA_ARGS__);\
 
-/*
- * Create a new AST node
+typedef struct StringBuffer_t {
+  char* start;
+  char* end;
+} StringBuffer;
+
+static void pp_expr(ExprAstNode* node, StringBuffer* buf);
+static void pp_primary(ExprAstNode* node, StringBuffer* buf);
+static void pp_postfix(ExprAstNode* node, StringBuffer* buf);
+static void pp_binary(ExprAstNode* node, StringBuffer* buf);
+static void pp_unary(ExprAstNode* node, StringBuffer* buf);
+static void pp_tertiary(ExprAstNode* node, StringBuffer* buf);
+static void pp_assign(ExprAstNode* node, StringBuffer* buf);
+
+/* Create new AST nodes
  *
- * This function takes a AstNode by value (presumably allocated automatically),
- * and copies it to a new AstNode allocated dynamically.
+ * These functions take an AST by value (presumably allocated automatically),
+ * and copy it to a new ExprAstNode/DeclAstNode allocated dynamically.
  *
  * E.g.:
- * > Ast_create_new((AstNode){.type=...});
+ * > Ast_create_expr_node((ExprAstNode){.primary.identifier=...});
  */
-AstNode* Ast_create_node(AstNode ast_node) {
-  AstNode* node = calloc(1, sizeof(AstNode));
+ExprAstNode* Ast_create_expr_node(ExprAstNode ast_node) {
+  ExprAstNode* node = calloc(1, sizeof(ExprAstNode));
 
   memcpy(node, &ast_node, sizeof(ast_node));
   return node;
+}
+DeclAstNode* Ast_create_decl_node(DeclAstNode ast_node) {
+  DeclAstNode* node = calloc(1, sizeof(DeclAstNode));
+
+  memcpy(node, &ast_node, sizeof(ast_node));
+  return node;
+}
+
+/*
+ * Generate a string for the given ExprAstNode.
+ */
+int Ast_pretty_print_expr(ExprAstNode* node, char* buf, int len) {
+  StringBuffer str_buf = {buf, buf + len};
+  pp_expr(node, &str_buf);
+  return str_buf.end - str_buf.start;
 }
 
 /*
@@ -32,109 +54,86 @@ AstNode* Ast_create_node(AstNode ast_node) {
  *
  * This function generates a string representation for a given AST node.
  */
-int Ast_pretty_print(AstNode* node, char* buf, int len) {
+static void pp_expr(ExprAstNode* node, StringBuffer* buf) {
+  pp_printf(buf, "(");
   switch (node->type) {
     case PRIMARY:
-      return primary(node, buf, len);
-
+      pp_primary(node, buf);
+      break;
+  
     case POSTFIX:
-      return postfix(node, buf, len);
-
+      pp_postfix(node, buf);
+      break;
+  
     case BINARY:
-      return binary(node, buf, len);
-
+      pp_binary(node, buf);
+      break;
+  
     case UNARY:
-      return unary(node, buf, len);
-
+      pp_unary(node, buf);
+      break;
+  
     case TERTIARY:
-      return tertiary(node, buf, len);
-
+      pp_tertiary(node, buf);
+      break;
+  
     case CAST:
-      return 0;
-
+  
     case ASSIGN:
-      return assign(node, buf, len);
-
-    case EXPR:
-      return expr(node, buf, len);
-  }
-  return 0;
-}
-
-static int primary(AstNode* node, char* buf, int len) {
-  int l = snprintf(buf, len, "(P ");
-
-  switch (node->primary.type) {
-    case PRIMARY_IDENTIFIER:
-      l += snprintf(buf + l, len - l, "%s", node->primary.identifier->lexeme);
-      break;
-
-    case PRIMARY_CONSTANT:
-      l += snprintf(buf + l, len - l, "%s", node->primary.constant->lexeme);
-      break;
-
-    case PRIMARY_STRING_LITERAL:
-      l += snprintf(buf + l, len - l, "%s",
-                    node->primary.string_literal->lexeme);
+      pp_assign(node, buf);
       break;
   }
-  return l + snprintf(buf + l, len - l, ")");
+  pp_printf(buf, ")");
 }
 
-static int postfix(AstNode* node, char* buf, int len) {
-  int l = snprintf(buf, len, "(PF ");
-  l += Ast_pretty_print(node->postfix.left, buf + l, len - 1);
-  l += snprintf(buf + l, len - l, ", ");
+static void pp_primary(ExprAstNode* node, StringBuffer* buf) {
+  pp_printf(buf, "P ");
 
-  switch (node->postfix.type) {
-    case POSTFIX_ARRAY_INDEX:
-      l += Ast_pretty_print(node->postfix.index_expression, buf + l, len - l);
-
-      break;
-
-    case POSTFIX_OP:
-      break;
+  if (node->primary.identifier)
+  {
+    pp_printf(buf, "%s", node->primary.identifier->lexeme);
   }
-  return l + snprintf(buf + l, len - 1, ")");
+  else if (node->primary.constant) {
+    pp_printf(buf, "%s", node->primary.constant->lexeme);
+  }
+  else if (node->primary.string_literal) {
+    pp_printf(buf, "%s", node->primary.string_literal->lexeme);
+  }
 }
 
-static int binary(AstNode* node, char* buf, int len) {
-  int l = snprintf(buf, len, "(B ");
-  l += Ast_pretty_print(node->binary.left, buf + l, len - l);
-  l += snprintf(buf + l, len - l, ", %s, ", node->binary.op->lexeme);
-  l += Ast_pretty_print(node->binary.right, buf + l, len - l);
-  return l + snprintf(buf + l, len - l, ")");
+static void pp_postfix(ExprAstNode* node, StringBuffer* buf) {
+  pp_printf(buf, "PF ");
+  pp_expr(node->postfix.left, buf);
+  pp_printf(buf, ", ");
+
+  if (node->postfix.index_expression)
+    pp_expr(node->postfix.index_expression, buf);
 }
 
-static int unary(AstNode* node, char* buf, int len) {
-  int l = snprintf(buf, len, "(U ");
-  l += snprintf(buf + l, len - l, "%s, ", node->unary.op->lexeme);
-  l += Ast_pretty_print(node->unary.right, buf + l, len - 1);
-  return l + snprintf(buf + l, len - l, ")");
+static void pp_binary(ExprAstNode* node, StringBuffer* buf) {
+  pp_printf(buf, "B ");
+  pp_expr(node->binary.left, buf);
+  pp_printf(buf, ", %s, ", node->binary.op->lexeme);
+  pp_expr(node->binary.right, buf);
 }
 
-static int tertiary(AstNode* node, char* buf, int len) {
-  int l = snprintf(buf, len, "(T ");
-  l += Ast_pretty_print(node->tertiary.condition_expr, buf + l, len - l);
-  l += snprintf(buf + l, len - l, ", ");
-  l += Ast_pretty_print(node->tertiary.expr_true, buf + l, len - l);
-  l += snprintf(buf + l, len - l, ", ");
-  l += Ast_pretty_print(node->tertiary.expr_false, buf + l, len - l);
-  return l + snprintf(buf + l, len - l, ")");
+static void pp_unary(ExprAstNode* node, StringBuffer* buf) {
+  pp_printf(buf, "U %s, ", node->unary.op->lexeme);
+  pp_expr(node->unary.right, buf);
 }
 
-static int assign(AstNode* node, char* buf, int len) {
-  int l = snprintf(buf, len, "(A ");
-  l += Ast_pretty_print(node->assign.left, buf + l, len - l);
-  l += snprintf(buf + l, len - l, ", ");
-  l += Ast_pretty_print(node->assign.right, buf + l, len - l);
-  return l + snprintf(buf + l, len - l, ")");
+static void pp_tertiary(ExprAstNode* node, StringBuffer* buf) {
+  pp_printf(buf, "T ");
+  pp_expr(node->tertiary.condition_expr, buf);
+  pp_printf(buf, ", ");
+  pp_expr(node->tertiary.expr_true, buf);
+  pp_printf(buf, ", ");
+  pp_expr(node->tertiary.expr_false, buf);
 }
 
-static int expr(AstNode* node, char* buf, int len) {
-  int l = snprintf(buf, len, "(E ");
-  l += Ast_pretty_print(node->expr.expr, buf + l, len - l);
-  l += snprintf(buf + l, len - l, ", ");
-  l += Ast_pretty_print(node->expr.next, buf + l, len - l);
-  return l + snprintf(buf + l, len - l, ")");
+static void pp_assign(ExprAstNode* node, StringBuffer* buf) {
+  pp_printf(buf, "A ");
+  pp_expr(node->assign.left, buf);
+  pp_printf(buf, ", ");
+  pp_expr(node->assign.right, buf);
 }

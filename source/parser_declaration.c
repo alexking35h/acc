@@ -12,14 +12,65 @@
 #include "ast.h"
 #include "parser.h"
 
-AstNode* declaration(Parser* parser) {  // @TODO
-  /*
-   * declaration_specifiers '
-   */
+#define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
+#define consume(t) Parser_consume_token(parser, t)
+#define peek() Parser_peek_token(parser)
 
-  return NULL;
+#define static
+
+static CType* declaration_specifiers(Parser* parser);                   // @TODO
+static DeclAstNode* init_declarator_list(Parser* parser, CType* type);  // @TODO
+static DeclAstNode* init_declarator(Parser* parser, CType* type);       // @TODO
+static DeclAstNode* storage_class_specifier(Parser* parser);            // @TODO
+static DeclAstNode* type_specifier(Parser* parser);                     // @TODO
+static DeclAstNode* struct_or_union_specifier(Parser* parser);          // @TODO
+static DeclAstNode* struct_or_union(Parser* parser);                    // @TODO
+static DeclAstNode* struct_declaration_list(Parser* parser);            // @TODO
+static DeclAstNode* struct_declaration(Parser* parser);                 // @TODO
+static DeclAstNode* specifier_qualifier_list(Parser* parser);           // @TODO
+static DeclAstNode* struct_declarator_list(Parser* parser);             // @TODO
+static DeclAstNode* struct_declarator(Parser* parser);                  // @TODO
+static DeclAstNode* enum_specifier(Parser* parser);                     // @TODO
+static DeclAstNode* enumerator_list(Parser* parser);                    // @TODO
+static DeclAstNode* enumerator(Parser* parser);                         // @TODO
+static DeclAstNode* atomic_type_specifier(Parser* parser);              // @TODO
+static DeclAstNode* type_qualifier(Parser* parser);                     // @TODO
+static DeclAstNode* function_specifier(Parser* parser);                 // @TODO
+static DeclAstNode* alignment_specifier(Parser* parser);                // @TODO
+static DeclAstNode* declarator(Parser* parser);                         // @TODO
+static DeclAstNode* direct_declarator(Parser* parser);                  // @TODO
+static DeclAstNode* pointer(Parser* parser);                            // @TODO
+static DeclAstNode* type_qualifier_list(Parser* parser);                // @TODO
+static DeclAstNode* parameter_type_list(Parser* parser);                // @TODO
+static DeclAstNode* parameter_list(Parser* parser);                     // @TODO
+static DeclAstNode* parameter_declaration(Parser* parser);              // @TODO
+static DeclAstNode* identifier_list(Parser* parser);                    // @TODO
+static DeclAstNode* type_name(Parser* parser);                          // @TODO
+static DeclAstNode* abstract_declarator(Parser* parser);                // @TODO
+static DeclAstNode* direct_abstract_declarator(Parser* parser);         // @TODO
+static DeclAstNode* initializer(Parser* parser);                        // @TODO
+static DeclAstNode* initializer_list(Parser* parser);                   // @TODO
+static DeclAstNode* designation(Parser* parser);                        // @TODO
+static DeclAstNode* designator_list(Parser* parser);                    // @TODO
+static DeclAstNode* designator(Parser* parser);                         // @TODO
+static DeclAstNode* static_assert_declaration(Parser* parser);          // @TODO
+static DeclAstNode* translation_unit(Parser* parser);                   // @TODO
+static DeclAstNode* external_declaration(Parser* parser);               // @TODO
+static DeclAstNode* function_definition(Parser* parser);                // @TODO
+static DeclAstNode* declaration_list(Parser* parser);                   // @TODO
+
+DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
+  /*
+   * declaration_specifiers ';'
+   * declaration_specifiers init_declarator_list ';'
+   */
+  CType* type = declaration_specifiers(parser);
+
+  if (!match(SEMICOLON)) return DECL(.type = type);
+
+  return init_declarator_list(parser, type);
 }
-AstNode* declaration_specifiers(Parser* parser) {  // @TODO
+static CType* declaration_specifiers(Parser* parser) {  // @TODO
   /*
    * storage_class_specifier declaration_specifiers
    * storage_class_specifier
@@ -35,23 +86,34 @@ AstNode* declaration_specifiers(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* init_declarator_list(Parser* parser) {  // @TODO
+static DeclAstNode* init_declarator_list(Parser* parser,
+                                         CType* type) {  // @TODO
   /*
    * init_declarator
    * init_declarator_list ',' init_declarator
    */
+  DeclAstNode* node = init_declarator(parser, type);
 
-  return NULL;
+  while (match(COMMA)) {
+    DeclAstNode* decl_node = init_declarator(parser, type);
+    decl_node->next = node;
+    node = decl_node;
+  }
+  return node;
 }
-AstNode* init_declarator(Parser* parser) {  // @TODO
+static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
   /*
    * declarator '=' initializer
    * declarator
    */
-
+  // For now, the 'declarator' must be an identifier.
+  Token* identifier;
+  if ((identifier = match(IDENTIFIER))) {
+    return DECL(.type = type, .identifier = identifier);
+  }
   return NULL;
 }
-AstNode* storage_class_specifier(Parser* parser) {  // @TODO
+static DeclAstNode* storage_class_specifier(Parser* parser) {  // @TODO
   /*
    * TYPEDEF
    * EXTERN
@@ -63,7 +125,7 @@ AstNode* storage_class_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* type_specifier(Parser* parser) {  // @TODO
+static DeclAstNode* type_specifier(Parser* parser) {  // @TODO
   /*
    * VOID
    * CHAR
@@ -85,7 +147,7 @@ AstNode* type_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* struct_or_union_specifier(Parser* parser) {  // @TODO
+static DeclAstNode* struct_or_union_specifier(Parser* parser) {  // @TODO
   /*
    * struct_or_union '{' struct_declaration_list '}'
    * struct_or_union IDENTIFIER '{' struct_declaration_list '}'
@@ -94,7 +156,7 @@ AstNode* struct_or_union_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* struct_or_union(Parser* parser) {  // @TODO
+static DeclAstNode* struct_or_union(Parser* parser) {  // @TODO
   /*
    * STRUCT
    * UNION
@@ -102,7 +164,7 @@ AstNode* struct_or_union(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* struct_declaration_list(Parser* parser) {  // @TODO
+static DeclAstNode* struct_declaration_list(Parser* parser) {  // @TODO
   /*
    * struct_declaration
    * struct_declaration_list struct_declaration
@@ -110,14 +172,14 @@ AstNode* struct_declaration_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* struct_declaration(Parser* parser) {  // @TODO
+static DeclAstNode* struct_declaration(Parser* parser) {  // @TODO
   /*
    * specifier_qualifier_list '
    */
 
   return NULL;
 }
-AstNode* specifier_qualifier_list(Parser* parser) {  // @TODO
+static DeclAstNode* specifier_qualifier_list(Parser* parser) {  // @TODO
   /*
    * type_specifier specifier_qualifier_list
    * type_specifier
@@ -127,7 +189,7 @@ AstNode* specifier_qualifier_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* struct_declarator_list(Parser* parser) {  // @TODO
+static DeclAstNode* struct_declarator_list(Parser* parser) {  // @TODO
   /*
    * struct_declarator
    * struct_declarator_list ',' struct_declarator
@@ -135,7 +197,7 @@ AstNode* struct_declarator_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* struct_declarator(Parser* parser) {  // @TODO
+static DeclAstNode* struct_declarator(Parser* parser) {  // @TODO
   /*
    * ':' constant_expression
    * declarator ':' constant_expression
@@ -144,7 +206,7 @@ AstNode* struct_declarator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* enum_specifier(Parser* parser) {  // @TODO
+static DeclAstNode* enum_specifier(Parser* parser) {  // @TODO
   /*
    * ENUM '{' enumerator_list '}'
    * ENUM '{' enumerator_list ',' '}'
@@ -155,7 +217,7 @@ AstNode* enum_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* enumerator_list(Parser* parser) {  // @TODO
+static DeclAstNode* enumerator_list(Parser* parser) {  // @TODO
   /*
    * enumerator
    * enumerator_list ',' enumerator
@@ -163,7 +225,7 @@ AstNode* enumerator_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* enumerator(Parser* parser) {  // @TODO
+static DeclAstNode* enumerator(Parser* parser) {  // @TODO
   /*
    * enumeration_constant '=' constant_expression
    * enumeration_constant
@@ -171,14 +233,14 @@ AstNode* enumerator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* atomic_type_specifier(Parser* parser) {  // @TODO
+static DeclAstNode* atomic_type_specifier(Parser* parser) {  // @TODO
   /*
    * ATOMIC '(' type_name ')'
    */
 
   return NULL;
 }
-AstNode* type_qualifier(Parser* parser) {  // @TODO
+static DeclAstNode* type_qualifier(Parser* parser) {  // @TODO
   /*
    * CONST
    * RESTRICT
@@ -188,7 +250,7 @@ AstNode* type_qualifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* function_specifier(Parser* parser) {  // @TODO
+static DeclAstNode* function_specifier(Parser* parser) {  // @TODO
   /*
    * INLINE
    * NORETURN
@@ -196,7 +258,7 @@ AstNode* function_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* alignment_specifier(Parser* parser) {  // @TODO
+static DeclAstNode* alignment_specifier(Parser* parser) {  // @TODO
   /*
    * ALIGNAS '(' type_name ')'
    * ALIGNAS '(' constant_expression ')'
@@ -204,7 +266,7 @@ AstNode* alignment_specifier(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* declarator(Parser* parser) {  // @TODO
+static DeclAstNode* declarator(Parser* parser) {  // @TODO
   /*
    * pointer direct_declarator
    * direct_declarator
@@ -212,7 +274,7 @@ AstNode* declarator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* direct_declarator(Parser* parser) {  // @TODO
+static DeclAstNode* direct_declarator(Parser* parser) {  // @TODO
   /*
    * IDENTIFIER
    * '(' declarator ')'
@@ -232,7 +294,7 @@ AstNode* direct_declarator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* pointer(Parser* parser) {  // @TODO
+static DeclAstNode* pointer(Parser* parser) {  // @TODO
   /*
    * '*' type_qualifier_list pointer
    * '*' type_qualifier_list
@@ -242,7 +304,7 @@ AstNode* pointer(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* type_qualifier_list(Parser* parser) {  // @TODO
+static DeclAstNode* type_qualifier_list(Parser* parser) {  // @TODO
   /*
    * type_qualifier
    * type_qualifier_list type_qualifier
@@ -250,7 +312,7 @@ AstNode* type_qualifier_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* parameter_type_list(Parser* parser) {  // @TODO
+static DeclAstNode* parameter_type_list(Parser* parser) {  // @TODO
   /*
    * parameter_list ',' ELLIPSIS
    * parameter_list
@@ -258,7 +320,7 @@ AstNode* parameter_type_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* parameter_list(Parser* parser) {  // @TODO
+static DeclAstNode* parameter_list(Parser* parser) {  // @TODO
   /*
    * parameter_declaration
    * parameter_list ',' parameter_declaration
@@ -266,7 +328,7 @@ AstNode* parameter_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* parameter_declaration(Parser* parser) {  // @TODO
+static DeclAstNode* parameter_declaration(Parser* parser) {  // @TODO
   /*
    * declaration_specifiers declarator
    * declaration_specifiers abstract_declarator
@@ -275,7 +337,7 @@ AstNode* parameter_declaration(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* identifier_list(Parser* parser) {  // @TODO
+static DeclAstNode* identifier_list(Parser* parser) {  // @TODO
   /*
    * IDENTIFIER
    * identifier_list ',' IDENTIFIER
@@ -283,7 +345,7 @@ AstNode* identifier_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* type_name(Parser* parser) {  // @TODO
+static DeclAstNode* type_name(Parser* parser) {  // @TODO
   /*
    * specifier_qualifier_list abstract_declarator
    * specifier_qualifier_list
@@ -291,7 +353,7 @@ AstNode* type_name(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* abstract_declarator(Parser* parser) {  // @TODO
+static DeclAstNode* abstract_declarator(Parser* parser) {  // @TODO
   /*
    * pointer direct_abstract_declarator
    * pointer
@@ -300,22 +362,22 @@ AstNode* abstract_declarator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* direct_abstract_declarator(Parser* parser) {  // @TODO
+static DeclAstNode* direct_abstract_declarator(Parser* parser) {  // @TODO
   /*
-	 * '(' abstract_declarator ')'
-	 * '[' ']'
-	 * '[' constant_expression ']'
-	 * direct_abstract_declarator '[' ']'
-	 * direct_abstract_declarator '[' constant_expression ']'
-	 * '(' ')'
-	 * '(' parameter_type_list ')'
-	 * direct_abstract_declarator '(' ')'
-	 * direct_abstract_declarator '(' parameter_type_list ')'
+   * '(' abstract_declarator ')'
+   * '[' ']'
+   * '[' constant_expression ']'
+   * direct_abstract_declarator '[' ']'
+   * direct_abstract_declarator '[' constant_expression ']'
+   * '(' ')'
+   * '(' parameter_type_list ')'
+   * direct_abstract_declarator '(' ')'
+   * direct_abstract_declarator '(' parameter_type_list ')'
    */
 
   return NULL;
 }
-AstNode* initializer(Parser* parser) {  // @TODO
+static DeclAstNode* initializer(Parser* parser) {  // @TODO
   /*
    * '{' initializer_list '}'
    * '{' initializer_list ',' '}'
@@ -324,7 +386,7 @@ AstNode* initializer(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* initializer_list(Parser* parser) {  // @TODO
+static DeclAstNode* initializer_list(Parser* parser) {  // @TODO
   /*
    * designation initializer
    * initializer
@@ -334,14 +396,14 @@ AstNode* initializer_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* designation(Parser* parser) {  // @TODO
+static DeclAstNode* designation(Parser* parser) {  // @TODO
   /*
    * designator_list '='
    */
 
   return NULL;
 }
-AstNode* designator_list(Parser* parser) {  // @TODO
+static DeclAstNode* designator_list(Parser* parser) {  // @TODO
   /*
    * designator
    * designator_list designator
@@ -349,7 +411,7 @@ AstNode* designator_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* designator(Parser* parser) {  // @TODO
+static DeclAstNode* designator(Parser* parser) {  // @TODO
   /*
    * '[' constant_expression ']'
    * '.' IDENTIFIER
@@ -357,14 +419,14 @@ AstNode* designator(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* static_assert_declaration(Parser* parser) {  // @TODO
+static DeclAstNode* static_assert_declaration(Parser* parser) {  // @TODO
   /*
    * STATIC_ASSERT '(' constant_expression ',' STRING_LITERAL ')' '
    */
 
   return NULL;
 }
-AstNode* translation_unit(Parser* parser) {  // @TODO
+static DeclAstNode* translation_unit(Parser* parser) {  // @TODO
   /*
    * external_declaration
    * translation_unit external_declaration
@@ -372,7 +434,7 @@ AstNode* translation_unit(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* external_declaration(Parser* parser) {  // @TODO
+static DeclAstNode* external_declaration(Parser* parser) {  // @TODO
   /*
    * function_definition
    * declaration
@@ -380,7 +442,7 @@ AstNode* external_declaration(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* function_definition(Parser* parser) {  // @TODO
+static DeclAstNode* function_definition(Parser* parser) {  // @TODO
   /*
    * declaration_specifiers declarator declaration_list compound_statement
    * declaration_specifiers declarator compound_statement
@@ -388,7 +450,7 @@ AstNode* function_definition(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* declaration_list(Parser* parser) {  // @TODO
+static DeclAstNode* declaration_list(Parser* parser) {  // @TODO
   /*
    * declaration
    * declaration_list declaration

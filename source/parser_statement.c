@@ -12,7 +12,7 @@
 #include "ast.h"
 #include "parser.h"
 
-AstNode* Parser_statement(Parser* parser) {  // @TODO
+ExprAstNode* Parser_statement(Parser* parser) {  // @TODO
   /*
    * labeled_statement
    * compound_statement
@@ -24,7 +24,7 @@ AstNode* Parser_statement(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_labeled_statement(Parser* parser) {  // @TODO
+ExprAstNode* Parser_labeled_statement(Parser* parser) {  // @TODO
   /*
    * IDENTIFIER ':' statement
    * CASE constant_expression ':' statement
@@ -33,7 +33,7 @@ AstNode* Parser_labeled_statement(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_compound_statement(Parser* parser) {  // @TODO
+ExprAstNode* Parser_compound_statement(Parser* parser) {  // @TODO
   /*
    * '{' '}'
    * '{'  block_item_list '}'
@@ -41,7 +41,7 @@ AstNode* Parser_compound_statement(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_block_item_list(Parser* parser) {  // @TODO
+ExprAstNode* Parser_block_item_list(Parser* parser) {  // @TODO
   /*
    * block_item
    * block_item_list block_item
@@ -49,7 +49,7 @@ AstNode* Parser_block_item_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_block_item(Parser* parser) {  // @TODO
+ExprAstNode* Parser_block_item(Parser* parser) {  // @TODO
   /*
    * declaration
    * statement
@@ -57,14 +57,14 @@ AstNode* Parser_block_item(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_expression_statement(Parser* parser) {  // @TODO
+ExprAstNode* Parser_expression_statement(Parser* parser) {  // @TODO
   /*
    * '
    */
 
   return NULL;
 }
-AstNode* Parser_selection_statement(Parser* parser) {  // @TODO
+ExprAstNode* Parser_selection_statement(Parser* parser) {  // @TODO
   /*
    * IF '(' expression ')' statement ELSE statement
    * IF '(' expression ')' statement
@@ -73,7 +73,7 @@ AstNode* Parser_selection_statement(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_iteration_statement(Parser* parser) {  // @TODO
+ExprAstNode* Parser_iteration_statement(Parser* parser) {  // @TODO
   /*
    * WHILE '(' expression ')' statement
    * DO statement WHILE '(' expression ')' '
@@ -81,7 +81,7 @@ AstNode* Parser_iteration_statement(Parser* parser) {  // @TODO
 
   return NULL;
 }
-AstNode* Parser_jump_statement(Parser* parser) {  // @TODO
+ExprAstNode* Parser_jump_statement(Parser* parser) {  // @TODO
   /*
    * GOTO IDENTIFIER '
    */

@@ -17,29 +17,28 @@
 #define consume(t) Parser_consume_token(parser, t)
 #define peek() Parser_peek_token(parser)
 
-// Horrible hack, for now, to get rid of the compiler warnings
-//#define static
+#define static
 
-static AstNode* primary_expression(Parser*);
-static AstNode* postfix_expression(Parser*);
-static AstNode* argument_expression_list(Parser*);
-static AstNode* unary_expression(Parser*);
-static AstNode* cast_expression(Parser*);
-static AstNode* multiplicative_expression(Parser*);
-static AstNode* additive_expression(Parser*);
-static AstNode* shift_expression(Parser*);
-static AstNode* relational_expression(Parser*);
-static AstNode* equality_expression(Parser*);
-static AstNode* and_expression(Parser*);
-static AstNode* exclusive_or_expression(Parser*);
-static AstNode* inclusive_or_expression(Parser*);
-static AstNode* logical_and_expression(Parser*);
-static AstNode* logical_or_expression(Parser*);
-static AstNode* conditional_expression(Parser*);
-static AstNode* assignment_expression(Parser*);
+static ExprAstNode* primary_expression(Parser*);
+static ExprAstNode* postfix_expression(Parser*);
+static ExprAstNode* argument_expression_list(Parser*);
+static ExprAstNode* unary_expression(Parser*);
+static ExprAstNode* cast_expression(Parser*);
+static ExprAstNode* multiplicative_expression(Parser*);
+static ExprAstNode* additive_expression(Parser*);
+static ExprAstNode* shift_expression(Parser*);
+static ExprAstNode* relational_expression(Parser*);
+static ExprAstNode* equality_expression(Parser*);
+static ExprAstNode* and_expression(Parser*);
+static ExprAstNode* exclusive_or_expression(Parser*);
+static ExprAstNode* inclusive_or_expression(Parser*);
+static ExprAstNode* logical_and_expression(Parser*);
+static ExprAstNode* logical_or_expression(Parser*);
+static ExprAstNode* conditional_expression(Parser*);
+static ExprAstNode* assignment_expression(Parser*);
 
-static AstNode* desugar_assign(Parser* parser, AstNode* expr, TokenType op,
-                               AstNode* operand) {
+static ExprAstNode* desugar_assign(Parser* parser, ExprAstNode* expr,
+                                   TokenType op, ExprAstNode* operand) {
   /* A bunch of the C syntax is treated as syntactic sugar, to make the AST more
    * homogeneous and (hopefully) make it easier to implement later parts of the
    * compiler. This includes ++ and -- postfix operators, and assignment
@@ -82,12 +81,13 @@ static AstNode* desugar_assign(Parser* parser, AstNode* expr, TokenType op,
       break;
   }
   Token* op_token = Parser_create_fake_token(parser, op, op_tok_str);
-  AstNode* op_expr = AST_BINARY(.left = expr, .op = op_token, .right = operand);
+  ExprAstNode* op_expr =
+      EXPR_BINARY(.left = expr, .op = op_token, .right = operand);
 
-  return AST_ASSIGN(.left = expr, .right = op_expr);
+  return EXPR_ASSIGN(.left = expr, .right = op_expr);
 }
 
-static AstNode* primary_expression(Parser* parser) {  // @DONE
+static ExprAstNode* primary_expression(Parser* parser) {  // @DONE
   /*
    * IDENTIFIER
    * constant
@@ -97,24 +97,22 @@ static AstNode* primary_expression(Parser* parser) {  // @DONE
    */
   Token* next;
 
-  if ((next = match(IDENTIFIER)))
-    return AST_PRIMARY(.type = PRIMARY_IDENTIFIER, .identifier = next);
+  if ((next = match(IDENTIFIER))) return EXPR_PRIMARY(.identifier = next);
 
-  if ((next = match(CONSTANT)))
-    return AST_PRIMARY(.type = PRIMARY_CONSTANT, .constant = next);
+  if ((next = match(CONSTANT))) return EXPR_PRIMARY(.constant = next);
 
   if ((next = match(STRING_LITERAL)))
-    return AST_PRIMARY(.type = PRIMARY_STRING_LITERAL, .string_literal = next);
+    return EXPR_PRIMARY(.string_literal = next);
 
   if (match(LEFT_PAREN)) {
-    AstNode* expr = Parser_expression(parser);
+    ExprAstNode* expr = Parser_expression(parser);
     consume(RIGHT_PAREN);
     return expr;
   }
 
   return NULL;
 }
-static AstNode* postfix_expression(Parser* parser) {
+static ExprAstNode* postfix_expression(Parser* parser) {
   /*
    * primary_expression
    * postfix_expression '[' expression ']'
@@ -127,27 +125,24 @@ static AstNode* postfix_expression(Parser* parser) {
    * '(' type_name ')' '{' initializer_list '}'           @TODO
    * '(' type_name ')' '{' initializer_list ',' '}'       @TODO
    */
-  AstNode* expr = primary_expression(parser);
+  ExprAstNode* expr = primary_expression(parser);
   Token* token;
 
   while (true) {
     if (match(LEFT_SQUARE)) {
-      AstNode* index = Parser_expression(parser);
+      ExprAstNode* index = Parser_expression(parser);
       consume(RIGHT_SQUARE);
-      expr = AST_POSTFIX(.type = POSTFIX_ARRAY_INDEX, .left = expr,
-                         .index_expression = index);
+      expr = EXPR_POSTFIX(.left = expr, .index_expression = index);
     } else if ((token = match(INC_OP))) {
       // INC_OP is desugaured into: a++ -> a=a+1
       Token* constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
-      AstNode* constant_node =
-          AST_PRIMARY(.type = PRIMARY_CONSTANT, .constant = constant_token);
+      ExprAstNode* constant_node = EXPR_PRIMARY(.constant = constant_token);
 
       return desugar_assign(parser, expr, PLUS, constant_node);
     } else if ((token = match(DEC_OP))) {
       // DEC_OP is desugaured into: a++ -> a=a-1
       Token* constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
-      AstNode* constant_node =
-          AST_PRIMARY(.type = PRIMARY_CONSTANT, .constant = constant_token);
+      ExprAstNode* constant_node = EXPR_PRIMARY(.constant = constant_token);
 
       return desugar_assign(parser, expr, MINUS, constant_node);
     } else
@@ -155,7 +150,7 @@ static AstNode* postfix_expression(Parser* parser) {
   }
   return expr;
 }
-static AstNode* argument_expression_list(Parser* parser) {  // @TODO
+static ExprAstNode* argument_expression_list(Parser* parser) {  // @TODO
   /*
    * assignment_expression
    * argument_expression_list ',' assignment_expression
@@ -163,7 +158,7 @@ static AstNode* argument_expression_list(Parser* parser) {  // @TODO
 
   return NULL;
 }
-static AstNode* unary_expression(Parser* parser) {  // @DONE
+static ExprAstNode* unary_expression(Parser* parser) {  // @DONE
   /*
    * postfix_expression
    * INC_OP unary_expression
@@ -177,71 +172,71 @@ static AstNode* unary_expression(Parser* parser) {  // @DONE
 
   if ((token = match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF, INC_OP,
                      DEC_OP)))
-    return AST_UNARY(.op = token, .right = unary_expression(parser));
+    return EXPR_UNARY(.op = token, .right = unary_expression(parser));
 
   return postfix_expression(parser);
 }
 
-static AstNode* cast_expression(Parser* parser) {  // @TODO
+static ExprAstNode* cast_expression(Parser* parser) {  // @TODO
   /*
    * unary_expression
    * '(' type_name ')' cast_expression
    */
   return unary_expression(parser);
 }
-static AstNode* multiplicative_expression(Parser* parser) {  // @DONE
+static ExprAstNode* multiplicative_expression(Parser* parser) {  // @DONE
   /*
    * cast_expression
    * multiplicative_expression '*' cast_expression
    * multiplicative_expression '/' cast_expression
    * multiplicative_expression '%' cast_expression
    */
-  AstNode* expr = cast_expression(parser);
+  ExprAstNode* expr = cast_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(STAR, SLASH, PERCENT))) break;
 
-    AstNode* right = cast_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = cast_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 }
-static AstNode* additive_expression(Parser* parser) {  // @DONE
+static ExprAstNode* additive_expression(Parser* parser) {  // @DONE
   /*
    * multiplicative_expression
    * additive_expression '+' multiplicative_expression
    * additive_expression '-' multiplicative_expression
    */
-  AstNode* expr = multiplicative_expression(parser);
+  ExprAstNode* expr = multiplicative_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(PLUS, MINUS))) break;
 
-    AstNode* right = multiplicative_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = multiplicative_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 }
-static AstNode* shift_expression(Parser* parser) {  // @DONE
+static ExprAstNode* shift_expression(Parser* parser) {  // @DONE
   /*
    * additive_expression
    * shift_expression LEFT_OP additive_expression
    * shift_expression RIGHT_OP additive_expression
    */
-  AstNode* expr = additive_expression(parser);
+  ExprAstNode* expr = additive_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(LEFT_OP, RIGHT_OP))) break;
 
-    AstNode* right = additive_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = additive_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 }
-static AstNode* relational_expression(Parser* parser) {  // @DONE
+static ExprAstNode* relational_expression(Parser* parser) {  // @DONE
   /*
    * shift_expression
    * relational_expression '<' shift_expression
@@ -249,134 +244,134 @@ static AstNode* relational_expression(Parser* parser) {  // @DONE
    * relational_expression LE_OP shift_expression
    * relational_expression GE_OP shift_expression
    */
-  AstNode* expr = shift_expression(parser);
+  ExprAstNode* expr = shift_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(LESS_THAN, GREATER_THAN, LE_OP, GE_OP))) break;
 
-    AstNode* right = shift_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = shift_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 }
-static AstNode* equality_expression(Parser* parser) {  // @DONE
+static ExprAstNode* equality_expression(Parser* parser) {  // @DONE
   /*
    * relational_expression
    * equality_expression EQ_OP relational_expression
    * equality_expression NE_OP relational_expression
    */
-  AstNode* expr = relational_expression(parser);
+  ExprAstNode* expr = relational_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(EQ_OP, NE_OP))) break;
 
-    AstNode* right = relational_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = relational_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 
   return relational_expression(parser);
 }
-static AstNode* and_expression(Parser* parser) {  // @DONE
+static ExprAstNode* and_expression(Parser* parser) {  // @DONE
   /*
    * equality_expression
    * and_expression '&' equality_expression
    */
-  AstNode* expr = equality_expression(parser);
+  ExprAstNode* expr = equality_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(AMPERSAND))) break;
 
-    AstNode* right = equality_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = equality_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 }
-static AstNode* exclusive_or_expression(Parser* parser) {  // @DONE
+static ExprAstNode* exclusive_or_expression(Parser* parser) {  // @DONE
   /*
    * and_expression
    * exclusive_or_expression '^' and_expression
    */
-  AstNode* expr = and_expression(parser);
+  ExprAstNode* expr = and_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(CARET))) break;
 
-    AstNode* right = and_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = and_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 }
-static AstNode* inclusive_or_expression(Parser* parser) {  // @DONE
+static ExprAstNode* inclusive_or_expression(Parser* parser) {  // @DONE
   /*
    * exclusive_or_expression
    * inclusive_or_expression '|' exclusive_or_expression
    */
-  AstNode* expr = exclusive_or_expression(parser);
+  ExprAstNode* expr = exclusive_or_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(BAR))) break;
 
-    AstNode* right = exclusive_or_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = exclusive_or_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 }
-static AstNode* logical_and_expression(Parser* parser) {  // @DONE
+static ExprAstNode* logical_and_expression(Parser* parser) {  // @DONE
   /*
    * inclusive_or_expression
    * logical_and_expression AND_OP inclusive_or_expression
    */
-  AstNode* expr = inclusive_or_expression(parser);
+  ExprAstNode* expr = inclusive_or_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(AND_OP))) break;
 
-    AstNode* right = inclusive_or_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = inclusive_or_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 }
-static AstNode* logical_or_expression(Parser* parser) {  // @DONE
+static ExprAstNode* logical_or_expression(Parser* parser) {  // @DONE
   /*
    * logical_and_expression
    * logical_or_expression OR_OP logical_and_expression
    */
-  AstNode* expr = logical_and_expression(parser);
+  ExprAstNode* expr = logical_and_expression(parser);
   Token* operator;
 
   while (true) {
     if (NULL == (operator= match(OR_OP))) break;
 
-    AstNode* right = logical_and_expression(parser);
-    expr = AST_BINARY(.left = expr, .op = operator, .right = right);
+    ExprAstNode* right = logical_and_expression(parser);
+    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
   }
   return expr;
 }
 
-static AstNode* conditional_expression(Parser* parser) {  // @DONE
+static ExprAstNode* conditional_expression(Parser* parser) {  // @DONE
   /*
    * logical_or_expression
    * logical_or_expression '?' expression ':' conditional_expression
    */
-  AstNode* expr = logical_or_expression(parser);
+  ExprAstNode* expr = logical_or_expression(parser);
   if (!match(QUESTION)) return expr;
 
-  AstNode* expr_true = Parser_expression(parser);
+  ExprAstNode* expr_true = Parser_expression(parser);
   consume(COLON);
-  AstNode* expr_false = conditional_expression(parser);
+  ExprAstNode* expr_false = conditional_expression(parser);
 
-  return AST_TERTIARY(.condition_expr = expr, .expr_true = expr_true,
-                      .expr_false = expr_false);
+  return EXPR_TERTIARY(.condition_expr = expr, .expr_true = expr_true,
+                       .expr_false = expr_false);
 }
 
-static AstNode* assignment_expression(Parser* parser) {  // @DONE
+static ExprAstNode* assignment_expression(Parser* parser) {  // @DONE
   /*
    * conditional_expression
    * unary_expression assignment_operator assignment_expression
@@ -388,14 +383,14 @@ static AstNode* assignment_expression(Parser* parser) {  // @DONE
   // conditional_expression assignment_operator conditional_expression.
   //
   // Later we'll come back to make sure the lvalue is valid.
-  AstNode* expr = conditional_expression(parser);
+  ExprAstNode* expr = conditional_expression(parser);
   Token* operator;
 
   while (true) {
     operator= match(EQUAL);
     if (operator!= NULL) {
-      AstNode* right = assignment_expression(parser);
-      expr = AST_ASSIGN(.left = expr, .right = right);
+      ExprAstNode* right = assignment_expression(parser);
+      expr = EXPR_ASSIGN(.left = expr, .right = right);
       continue;
     }
 
@@ -439,7 +434,7 @@ static AstNode* assignment_expression(Parser* parser) {  // @DONE
         default:
           break;
       }
-      AstNode* right = assignment_expression(parser);
+      ExprAstNode* right = assignment_expression(parser);
       expr = desugar_assign(parser, expr, tok_type, right);
     } else {
       break;
@@ -448,16 +443,10 @@ static AstNode* assignment_expression(Parser* parser) {  // @DONE
   return expr;
 }
 
-AstNode* Parser_expression(Parser* parser) {  // @TODO
+ExprAstNode* Parser_expression(Parser* parser) {  // @DONE
   /*
    * assignment_expression
-   * expression ',' assignment_expression
+   * expression ',' assignment_expression // @TODO
    */
-  AstNode* expr = assignment_expression(parser);
-
-  if (match(COMMA)) {
-    return AST_EXPR(.expr = expr, .next = Parser_expression(parser));
-  } else {
-    return expr;
-  }
+  return assignment_expression(parser);
 }

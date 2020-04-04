@@ -16,8 +16,8 @@
 #define COUNT(x) ((sizeof(x)) / (sizeof(x[0])))
 
 typedef struct Fixture {
-  char * source;
-  char * expected_ast;
+  char* source;
+  char* expected_ast;
 } Fixture;
 
 /* Check if the AST for a given source string matches the expected AST */
@@ -27,7 +27,7 @@ static bool test_ast_equals_expected(char* source, char* expected) {
   Parser* parser = Parser_init(scanner, NULL);
 
   // Generate the AST
-  AstNode* ast_node = Parser_expression(parser);
+  DeclAstNode* ast_node = Parser_declaration(parser);
 
   char generated_ast[256] = "";
   Ast_pretty_print(ast_node, generated_ast, sizeof(generated_ast));
@@ -53,15 +53,13 @@ static void assert_expected_ast(Fixture* fixture) {
         test_ast_equals_expected(fixture->source, fixture->expected_ast));
 }
 
-static void empty_declaration(void** state) {
-  Fixture tests[] = {
-    {"void char short int", "[DS void, [DS char, [DS short, [DS int]]]]"},
-    {NULL, NULL}};
-  assert_expected_ast(tests);  
+static void primitive_declaration(void** state) {
+  Fixture tests[] = { {"int c;", "(D [int], c)"}, {NULL, NULL};
+  assert_expected_ast(tests);
 }
-  
+
 int main(void) {
-  const struct CMUnitTest tests[] = {cmocka_unit_test(empty_declaration)};
+  const struct CMUnitTest tests[] = {cmocka_unit_test(primitive_declaration)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

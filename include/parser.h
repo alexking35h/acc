@@ -26,14 +26,6 @@ Parser *Parser_init(Scanner *, Error *);
 void Parser_destroy(Parser *);
 
 /*
- * Generate the AST
- *
- * This method implements the recursive descent parsing over the input tokens.
- * This method returns a pointer to the root node in the AST.
- */
-AstNode *Parser_generate_ast(Parser *);
-
-/*
  * If the next token matches, advance the token stream, and return the token.
  * Return NULL otherwise.
  */
@@ -60,8 +52,8 @@ Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme);
 /*
  * Recursive descent parser function definitions.
  */
-AstNode *Parser_expression(Parser *parser);
-AstNode *Parser_statement(Parser *parser);
-AstNode *Parser_declaration(Parser *parser);
+ExprAstNode *Parser_expression(Parser *parser);
+ExprAstNode *Parser_statement(Parser *parser);
+DeclAstNode *Parser_declaration(Parser *parser);
 
 #endif

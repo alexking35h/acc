@@ -22,7 +22,7 @@ OBJECTS = $(ACC_OBJECTS) $(TEST_OBJECTS)
 .PHONY: test
 .PHONY: format
 
-test: build build/test_scanner build/test_parser_expression
+test: build build/test_scanner build/test_parser_expression 
 	build/test_scanner
 	build/test_parser_expression
 
