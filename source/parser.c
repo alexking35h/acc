@@ -63,6 +63,11 @@ bool Parser_consume_token(Parser *parser, TokenType token_type) {
 }
 
 /*
+ * Advance the token input.
+ */
+void Parser_advance_token(Parser *parser) { parser->next_token = NULL; }
+
+/*
  * Create a new token, for the purposes of desugauring syntax.
  *
  * This function allocates a new token (using the Scanner_create_token

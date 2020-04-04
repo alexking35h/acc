@@ -42,6 +42,11 @@ Token *Parser_peek_token(Parser *);
 bool Parser_consume_token(Parser *, TokenType);
 
 /*
+ * Advance the parser to the next token
+ */
+void Parser_advance_token(Parser *);
+
+/*
  * Create a new token, for the purposes of desugauring syntax.
  *
  * This function allocates a new token (using the Scanner_create_token

@@ -8,13 +8,16 @@
  */
 
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "ast.h"
+#include "ctype.h"
 #include "parser.h"
 
 #define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 #define consume(t) Parser_consume_token(parser, t)
 #define peek() Parser_peek_token(parser)
+#define advance() Parser_advance_token(parser)
 
 #define static
 
@@ -66,7 +69,7 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
    */
   CType* type = declaration_specifiers(parser);
 
-  if (!match(SEMICOLON)) return DECL(.type = type);
+  if (match(SEMICOLON)) return DECL(.type = type);
 
   return init_declarator_list(parser, type);
 }
@@ -83,8 +86,57 @@ static CType* declaration_specifiers(Parser* parser) {  // @TODO
    * alignment_specifier declaration_specifiers
    * alignment_specifier
    */
+  CType* type = calloc(1, sizeof(CType));
+  bool keep_reading = true;
 
-  return NULL;
+  while (keep_reading) {
+    TokenType token_type = peek()->type;
+    switch (token_type) {
+      // Type specifiers
+      // int, char, void, short, long, signed, unsigned
+      case INT:
+        ctype_set_primitive_type(type, TYPE_INT, 0, 0);
+        break;
+      case CHAR:
+        ctype_set_primitive_type(type, TYPE_CHAR, 0, 0);
+        break;
+      case VOID:
+        ctype_set_primitive_type(type, TYPE_VOID, 0, 0);
+        break;
+
+      case SHORT:
+        ctype_set_primitive_type(type, TYPE_SHORT, 0, 0);
+        break;
+      case LONG:
+        ctype_set_primitive_type(type, TYPE_LONG, 0, 0);
+        break;
+
+      case SIGNED:
+        ctype_set_primitive_type(type, TYPE_SIGNED, 0, 0);
+        break;
+      case UNSIGNED:
+        ctype_set_primitive_type(type, TYPE_UNSIGNED, 0, 0);
+        break;
+
+      // Type qualifiers
+      // const, volatile
+      case CONST:
+        ctype_set_primitive_type(type, 0, TYPE_CONST, 0);
+        break;
+      case VOLATILE:
+        ctype_set_primitive_type(type, 0, TYPE_VOLATILE, 0);
+        break;
+
+      default:
+        keep_reading = false;
+    }
+
+    if (keep_reading) advance();
+  }
+
+  ctype_finalize_primitive_type(type);
+
+  return type;
 }
 static DeclAstNode* init_declarator_list(Parser* parser,
                                          CType* type) {  // @TODO
@@ -111,7 +163,7 @@ static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
   if ((identifier = match(IDENTIFIER))) {
     return DECL(.type = type, .identifier = identifier);
   }
-  return NULL;
+  return DECL(.type = type);
 }
 static DeclAstNode* storage_class_specifier(Parser* parser) {  // @TODO
   /*

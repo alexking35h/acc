@@ -105,7 +105,6 @@ typedef struct DeclAstNode {
   Token* identifier;
   CType* type;
   struct DeclAstNode* next;
-
 } DeclAstNode;
 
 /*
@@ -126,12 +125,5 @@ ExprAstNode* Ast_create_expr_node(ExprAstNode ast_node);
  * allocated dynamically.
  */
 DeclAstNode* Ast_create_decl_node(DeclAstNode ast_node);
-
-/*
- * Generate a string for the given AST node.
- *
- * This function generates a string representation for a given AST node.
- */
-int Ast_pretty_print(ExprAstNode* ast_node, char* buffer, int buffer_len);
 
 #endif
