@@ -301,20 +301,8 @@ static DeclAstNode* declarator(Parser* parser, CType* ctype) {  // @TODO
 }
 static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
   /*
-   * IDENTIFIER
-   * '(' declarator ')'
-   * direct_declarator '[' ']'
-   * direct_declarator '[' '*' ']'
-   * direct_declarator '[' STATIC type_qualifier_list assignment_expression ']'
-   * direct_declarator '[' STATIC assignment_expression ']'
-   * direct_declarator '[' type_qualifier_list '*' ']'
-   * direct_declarator '[' type_qualifier_list STATIC assignment_expression ']'
-   * direct_declarator '[' type_qualifier_list assignment_expression ']'
-   * direct_declarator '[' type_qualifier_list ']'
-   * direct_declarator '[' assignment_expression ']'
-   * direct_declarator '(' parameter_type_list ')'
-   * direct_declarator '(' ')'
-   * direct_declarator '(' identifier_list ')'
+   * IDENTIFIER direct_declarator_end
+   * '(' declarator ')' direct_declarator_end
    */
   Token* tok;
   DeclAstNode* decl_node;
@@ -322,21 +310,31 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
     decl_node = DECL(.identifier = tok, .type = ctype);
   }
   else if ((tok = match(LEFT_PAREN))) {
-    return 3/0;
+    decl_node = declarator(parser, ctype);
+    consume(RIGHT_PAREN);
   }
-  decl_node->type = direct_declarator_end(parser, ctype);
+  decl_node->type = direct_declarator_end(parser, decl_node->type);
+  return decl_node;
 }
 
 static CType * direct_declarator_end(Parser* parser, CType* ctype) {
-  while(match(LEFT_SQUARE)) {
+  /*
+   * direct_declarator_end '[' constant_expression ']'
+   * direct_declarator_end '[' ']'
+   * direct_declarator_end '(' parameter_type_list ')'
+   * direct_declarator_end '(' identifier_list ')'
+   * direct_declarator_end '(' ')'
+   */
+  if(match(LEFT_SQUARE)) {
     Token* array_size = match(CONSTANT); 
+    consume(RIGHT_SQUARE);
     CType* array = calloc(1, sizeof(CType));
 
     array->type = TYPE_ARRAY;
-    array->array.type = ctype;
-    array->array.size = 4;
+    array->array.size = array_size->literal.const_value;
+    array->array.type = direct_declarator_end(parser, ctype);
 
-    ctype = array;
+    return array;
   }
   return ctype;
 }

@@ -415,6 +415,11 @@ Token *Scanner_get_next(Scanner *scanner) {
   token->lexeme = calloc(1, token_len + 1);
   strncpy(token->lexeme, scanner->source + token_position, token_len);
 
+  // The literal value for the token, if it's a
+  // string literal or constant.
+  if (token->type == CONSTANT)
+    token->literal.const_value = atoi(token->lexeme);
+
   return token;
 }
 

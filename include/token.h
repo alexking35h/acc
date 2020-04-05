@@ -120,6 +120,10 @@ typedef struct Token_t {
 
   /* Token lexeme. Null-terminated string */
   char* lexeme;
+
+  union {
+    long int const_value;
+  } literal;   
 } Token;
 
 #endif
