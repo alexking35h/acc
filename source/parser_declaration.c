@@ -309,7 +309,7 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
   if ((tok = match(IDENTIFIER))) {
     decl_node = DECL(.identifier = tok, .type = ctype);
   }
-  else if ((tok = match(LEFT_PAREN))) {
+  else if (match(LEFT_PAREN)) {
     decl_node = declarator(parser, ctype);
     consume(RIGHT_PAREN);
   }
