@@ -123,7 +123,7 @@ typedef struct Token_t {
 
   union {
     long int const_value;
-  } literal;   
+  } literal;
 } Token;
 
 #endif

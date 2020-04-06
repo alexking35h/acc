@@ -23,6 +23,11 @@
 #ifndef __CTYPE__
 #define __CTYPE__
 
+#include "token.h"
+
+struct CType;
+struct ParameterListItem;
+
 /*
  * Type specifier Enum. This is a bitmask to allow valid
  * permutations of types (e.g., long int). Invalid permutations
@@ -49,11 +54,18 @@ typedef enum {
   TYPE_REGISTER
 } TypeStorageSpecifier;
 
+typedef struct ParameterListItem {
+  Token* name;
+  struct CType* type;
+
+  struct ParameterListItem* next;
+} ParameterListItem;
+
 typedef struct CType {
   // C Types are either primitive types (arithmetic or pointer),
   // or derived types (array, struct, union).
 
-  enum { TYPE_PRIMITIVE, TYPE_ARRAY, TYPE_POINTER } type;
+  enum { TYPE_PRIMITIVE, TYPE_ARRAY, TYPE_POINTER, TYPE_FUNCTION } type;
 
   union {
     // primitive arithmetic data types
@@ -78,6 +90,12 @@ typedef struct CType {
     struct {
       struct CType* target;
     } pointer;
+
+    // Function type
+    struct {
+      struct ParameterListItem* params;
+      struct CType* return_type;
+    } function;
   };
 
 } CType;

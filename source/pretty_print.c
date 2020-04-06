@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "ast.h"
+#include "ctype.h"
 #include "pretty_print.h"
 
 #define pp_printf(buf, ...) \
@@ -23,6 +24,7 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf);
 
 static void pp_type(CType* type, StringBuffer* buf);
 static void pp_type_primitive(CType* type, StringBuffer* buf);
+static void pp_type_function(CType* type, StringBuffer* buf);
 
 /*
  * Generate a string for the given ExprAstNode.
@@ -152,6 +154,10 @@ static void pp_type(CType* type, StringBuffer* buf) {
       pp_printf(buf, "* ");
       pp_type(type->pointer.target, buf);
       break;
+
+    case TYPE_FUNCTION:
+      pp_type_function(type, buf);
+      break;
   }
   pp_printf(buf, "]");
 }
@@ -203,4 +209,16 @@ static void pp_type_primitive(CType* type, StringBuffer* buf) {
   } else if (type->primitive.type_specifier & TYPE_INT) {
     pp_printf(buf, "int");
   }
+}
+
+static void pp_type_function(CType* type, StringBuffer* buf) {
+  pp_printf(buf, "f(");
+  for(ParameterListItem* p = type->function.params;p;p = p->next) {
+    pp_type(p->type, buf);
+    pp_printf(buf, ":%s", p->name->lexeme);
+  
+    if(p->next) pp_printf(buf, ",");
+  }
+  pp_printf(buf, ") ");
+  pp_type(type->function.return_type, buf);
 }

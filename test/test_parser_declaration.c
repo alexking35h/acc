@@ -56,11 +56,11 @@ static void pointer_declaration(void** state) {
 
 static void array_declaration(void** state) {
   AstTestFixture tests[] = {
-    
+
       {"char rahc[4]", "(D [[4] [unsigned char]], rahc)"},
       {"int * bc[2]", "(D [[2] [* [signed int]]], bc)"},
       {"int q[1][2]", "(D [[1] [[2] [signed int]]], q)"},
-    
+
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
 }
@@ -69,17 +69,31 @@ static void grouped_type_declaration(void** state) {
   AstTestFixture tests[] = {
 
       {"char (* u);", "(D [* [unsigned char]], u)"},
-      {"int (* u)[2];", "(D [[2] [* [signed int]]], u)"},
-      {"int (* p[1][2])[3];", "(D [[3] [[1] [[2] [* [signed int]]]]], p)"},
+      {"int (* u)[2];", "(D [* [[2] [signed int]]], u)"},
+      {"int (* p[1][2])[3];", "(D [[1] [[2] [* [[3] [signed int]]]]], p)"},
+      {"void *(*Q);", "(D [* [* [void]]], Q)"},
+
+      {NULL, NULL}};
+  assert_expected_ast_decl(tests);
+}
+
+static void function_type_declaration(void** state) {
+  AstTestFixture tests[] = {
+      {"char a();", "(D [f() [unsigned char]], a)"},
+      {"int b(char a);", "(D [f([unsigned char]:a) [signed int]], b)"},
+      {"void q(int b, char c);", "(D [f([signed int]:b,[unsigned char]:c) [void]], q)"},
+      {"int (* q)();", "(D [* [f() [signed int]], q)"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
 }
 int main(void) {
-  const struct CMUnitTest tests[] = {cmocka_unit_test(primitive_declaration),
-                                     cmocka_unit_test(pointer_declaration),
-                                     cmocka_unit_test(array_declaration),
-                                     cmocka_unit_test(grouped_type_declaration)};
+  const struct CMUnitTest tests[] = {
+      cmocka_unit_test(primitive_declaration),
+      cmocka_unit_test(pointer_declaration),
+      cmocka_unit_test(array_declaration),
+      cmocka_unit_test(grouped_type_declaration),
+      cmocka_unit_test(function_type_declaration)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
