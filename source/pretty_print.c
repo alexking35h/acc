@@ -146,13 +146,13 @@ static void pp_type(CType* type, StringBuffer* buf) {
       break;
 
     case TYPE_ARRAY:
-      pp_printf(buf, "[%d] ", type->array.size);
-      pp_type(type->array.type, buf);
+      pp_printf(buf, "[%d] ", type->derived.array_size);
+      pp_type(type->derived.type, buf);
       break;
 
     case TYPE_POINTER:
       pp_printf(buf, "* ");
-      pp_type(type->pointer.target, buf);
+      pp_type(type->derived.type, buf);
       break;
 
     case TYPE_FUNCTION:
@@ -213,12 +213,12 @@ static void pp_type_primitive(CType* type, StringBuffer* buf) {
 
 static void pp_type_function(CType* type, StringBuffer* buf) {
   pp_printf(buf, "f(");
-  for(ParameterListItem* p = type->function.params;p;p = p->next) {
+  for(ParameterListItem* p = type->derived.params;p;p = p->next) {
     pp_type(p->type, buf);
     pp_printf(buf, ":%s", p->name->lexeme);
   
     if(p->next) pp_printf(buf, ",");
   }
   pp_printf(buf, ") ");
-  pp_type(type->function.return_type, buf);
+  pp_type(type->derived.type, buf);
 }

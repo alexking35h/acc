@@ -80,22 +80,14 @@ typedef struct CType {
       TypeStorageSpecifier storage_class_specifier;
     } primitive;
 
-    // Array data type.
+    // Derived types
     struct {
       struct CType* type;
-      int size;
-    } array;
+      struct CType* parent_type;
 
-    // Pointer data type.
-    struct {
-      struct CType* target;
-    } pointer;
-
-    // Function type
-    struct {
+      int array_size;
       struct ParameterListItem* params;
-      struct CType* return_type;
-    } function;
+    } derived;
   };
 
 } CType;

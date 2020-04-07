@@ -82,7 +82,7 @@ static void function_type_declaration(void** state) {
       {"char a();", "(D [f() [unsigned char]], a)"},
       {"int b(char a);", "(D [f([unsigned char]:a) [signed int]], b)"},
       {"void q(int b, char c);", "(D [f([signed int]:b,[unsigned char]:c) [void]], q)"},
-      {"int (* q)();", "(D [* [f() [signed int]], q)"},
+      {"int (* q)();", "(D [* [f() [signed int]]], q)"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);

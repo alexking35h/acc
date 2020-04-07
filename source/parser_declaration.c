@@ -293,7 +293,8 @@ static DeclAstNode* declarator(Parser* parser, CType* ctype) {  // @TODO
   while (match(STAR)) {
     CType* pointer = calloc(1, sizeof(CType));
     pointer->type = TYPE_POINTER;
-    pointer->pointer.target = ctype;
+    pointer->derived.type = ctype;
+    ctype->derived.parent_type = pointer;
     ctype = pointer;
   }
 
@@ -307,12 +308,20 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
   Token* tok;
   DeclAstNode* decl_node;
   if ((tok = match(IDENTIFIER))) {
-    decl_node = DECL(.identifier = tok, .type = ctype);
+    ctype = direct_declarator_end(parser, ctype);
+    return DECL(.identifier=tok, .type = ctype);
+
   } else if (match(LEFT_PAREN)) {
-    decl_node = declarator(parser, ctype);
+  
+    CType null_type;
+    decl_node = declarator(parser, &null_type);
     consume(RIGHT_PAREN);
+
+    CType * par = null_type.derived.parent_type;
+    par->derived.type = direct_declarator_end(parser, ctype);
+
+    return decl_node;
   }
-  decl_node->type = direct_declarator_end(parser, decl_node->type);
   return decl_node;
 }
 
@@ -324,34 +333,45 @@ static CType* direct_declarator_end(Parser* parser, CType* ctype) {
    * direct_declarator_end '(' identifier_list ')'
    * direct_declarator_end '(' ')'
    */
-  if (match(LEFT_SQUARE)) {
-    // Array declaration
-    Token* array_size = match(CONSTANT);
-    consume(RIGHT_SQUARE);
-    CType* array = calloc(1, sizeof(CType));
+  CType * head = NULL, *next = NULL, *prev = NULL;
 
-    array->type = TYPE_ARRAY;
-    array->array.size = array_size->literal.const_value;
-    array->array.type = direct_declarator_end(parser, ctype);
+  while (true) {
+    next = calloc(1, sizeof(CType));
+    if(!head) head = next;
 
-    return array;
-  } else if (match(LEFT_PAREN)) {
-    // Function declaration - parameters.
-    CType* function = calloc(1, sizeof(CType));
-    function->type = TYPE_FUNCTION;
+    if(match(LEFT_SQUARE)) {
+      Token* sz = match(CONSTANT);
+      consume(RIGHT_SQUARE);
 
-    if(match(RIGHT_PAREN)) {
-      function->function.params = NULL;
-    } else {
-      function->function.params = parameter_type_list(parser);
-      consume(RIGHT_PAREN);
+      next->type = TYPE_ARRAY;
+      next->derived.array_size = sz->literal.const_value;
+      next->derived.parent_type = prev;
+      
+      if(prev) prev->derived.type = next;
+      prev = next;
     }
+    else if (match(LEFT_PAREN)) {
+      next->type = TYPE_FUNCTION;
+  
+      if(match(RIGHT_PAREN)) {
+        next->derived.params = NULL;
+      } else {
+        next->derived.params = parameter_type_list(parser);
+        consume(RIGHT_PAREN);
+      }
 
-    function->function.return_type = direct_declarator_end(parser, ctype);
-
-    return function;
+      if(prev) prev->derived.type = next;
+      prev = next;
+    }
+    else break;
   }
-  return ctype;
+  if(prev) {
+    prev->derived.type = ctype;
+    ctype->derived.parent_type = prev;
+    return head;
+  } else {
+    return ctype;
+  }
 }
 
 static DeclAstNode* pointer(Parser* parser) {  // @TODO
