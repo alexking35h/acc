@@ -15,4 +15,12 @@ one platform - probably x86, and is not designed with extensibility/porting in m
 
 ## Design
 
+The compiler is split into the front-end and back-end, which focus on the reading the
+source language and generating the output code respectively. The components that make 
+up the compiler are listed below, including design & implementation notes.
 
+|Component                      |Notes|
+|-------------------------------|-----|
+|Scanner                        |Generate a flat sequence of tokens from the source input.|
+|[Parser](design/parser.md)     |Generate the Abstract Syntax Tree (AST) from the output of the Scanner. This includes parsing type declarations|
+|                               |
