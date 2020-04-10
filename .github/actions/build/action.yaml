@@ -3,5 +3,4 @@ name: 'Build and Test'
 runs:
   using: 'Docker'
   image: 'Dockerfile'
-  args:
-    - uname -a
+

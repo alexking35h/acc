@@ -1,3 +1,5 @@
+[![](https://github.com/alexking35h/acc/workflows/Build%20and%20Test/badge.svg)](https://github.com/alexking35h/acc/actions?query=workflow%3A%22Build+and+Test%22)
+
 # Alex's C Compiler
 
 Welcome! ACC is a work-in-progress implementation of a C11 compiler, written in C.
