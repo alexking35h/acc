@@ -128,8 +128,13 @@ static void pp_assign(ExprAstNode* node, StringBuffer* buf) {
 
 static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
   pp_printf(buf, "(D ");
-  pp_type(node->type, buf);
 
+  if (node->next) {
+    pp_decl(node->next, buf);
+    pp_printf(buf, ", ");
+  }
+
+  pp_type(node->type, buf);
   if (node->identifier) {
     pp_printf(buf, ", %s", node->identifier->lexeme);
   }
@@ -220,7 +225,12 @@ static void pp_type_function(CType* type, StringBuffer* buf) {
   pp_printf(buf, "f(");
   for (ParameterListItem* p = type->derived.params; p; p = p->next) {
     pp_type(p->type, buf);
-    pp_printf(buf, ":%s", p->name->lexeme);
+
+    if(p->name) {
+      pp_printf(buf, ":%s", p->name->lexeme);
+    } else {
+      pp_printf(buf, ":");
+    }
 
     if (p->next) pp_printf(buf, ",");
   }

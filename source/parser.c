@@ -55,11 +55,10 @@ Token *Parser_peek_token(Parser *parser) {
 /*
  * If the next token does not match, report an error and return false.
  */
-bool Parser_consume_token(Parser *parser, TokenType token_type) {
+void Parser_consume_token(Parser *parser, TokenType token_type) {
   if (NULL == Parser_match_token(parser, (TokenType[]){token_type, NAT})) {
-    return false;
+    Error_report_error(parser->error, PARSER, Parser_peek_token(parser)->line_number, "No consume");
   }
-  return true;
 }
 
 /*

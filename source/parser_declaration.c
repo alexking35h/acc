@@ -73,7 +73,11 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
   CType* type = declaration_specifiers(parser);
 
   if (match(SEMICOLON)) return DECL(.type = type);
-  return init_declarator_list(parser, type);
+
+  DeclAstNode* decl = init_declarator_list(parser, type);
+  consume(SEMICOLON);
+  
+  return decl;
 }
 static CType* declaration_specifiers(Parser* parser) {  // @TODO
   /*
@@ -327,7 +331,10 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
 
     return decl_node;
   }
-  return NULL;
+
+  // Abstract declarator!
+  printf("abstract declarator!\n");
+  return DECL(.type=ctype);
 }
 
 static CType* direct_declarator_end(Parser* parser, CType* ctype) {

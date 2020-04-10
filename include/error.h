@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-typedef enum ErrorType_t { SCANNER } ErrorType;
+typedef enum ErrorType_t { SCANNER, PARSER } ErrorType;
 
 typedef enum WarningType { INVALID_INITIALIZER } WarningType;
 

@@ -23,7 +23,9 @@ Error *Error_init(void) { return NULL; }
  *  message (this can be NULL)
  */
 void Error_report_error(Error *error, ErrorType error_type, int line_number,
-                        const char *msg) {}
+                        const char *msg) {
+  *((int *)0) = 0;
+}
 
 /*
  * Report a warning, with a line number and message

@@ -24,20 +24,24 @@ static void primitive_declaration(void** state) {
       {"signed int c;", "(D [signed int], c)"},
       {"unsigned int c;", "(D [unsigned int], c)"},
 
-      {"char q", "(D [unsigned char], q)"},
+      {"char q;", "(D [unsigned char], q)"},
       {"signed char t;", "(D [signed char], t)"},
 
       {"void diov;", "(D [void], diov)"},
 
       // Type qualifiers
-      {"const char c", "(D [const unsigned char], c)"},
-      {"volatile int x", "(D [volatile signed int], x)"},
+      {"const char c;", "(D [const unsigned char], c)"},
+      {"volatile int x;", "(D [volatile signed int], x)"},
 
       // Storage-class specifiers
-      {"extern int abc", "(D [extern signed int], abc)"},
-      {"auto char a", "(D [auto unsigned char], a)"},
-      {"static int b", "(D [static signed int], b)"},
-      {"register void a", "(D [register void], a)"},
+      {"extern int abc;", "(D [extern signed int], abc)"},
+      {"auto char a;", "(D [auto unsigned char], a)"},
+      {"static int b;", "(D [static signed int], b)"},
+      {"register void a;", "(D [register void], a)"},
+
+      // Declarator list.
+      {"char a, b;", "(D (D [unsigned char], a), [unsigned char], b)"},
+
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
@@ -49,6 +53,7 @@ static void pointer_declaration(void** state) {
       {"char * c;", "(D [* [unsigned char]], c)"},
       {"short * p;", "(D [* [signed short int]], p)"},
       {"void ** q;", "(D [* [* [void]]], q)"},
+      {"int a, *b;", "(D (D [signed int], a), [* [signed int]], b)"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
@@ -57,9 +62,10 @@ static void pointer_declaration(void** state) {
 static void array_declaration(void** state) {
   AstTestFixture tests[] = {
 
-      {"char rahc[4]", "(D [[4] [unsigned char]], rahc)"},
-      {"int * bc[2]", "(D [[2] [* [signed int]]], bc)"},
-      {"int q[1][2]", "(D [[1] [[2] [signed int]]], q)"},
+      {"char rahc[4];", "(D [[4] [unsigned char]], rahc)"},
+      {"int * bc[2];", "(D [[2] [* [signed int]]], bc)"},
+      {"int q[1][2];", "(D [[1] [[2] [signed int]]], q)"},
+      {"void q, w[1];", "(D (D [void], q), [[1] [void]], w)"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
@@ -95,8 +101,18 @@ static void declaration_initializer(void** state) {
       {"char a = 1;", "(D [unsigned char], a, (P 1))"},
       {"int a = 2*3;", "(D [signed int], a, (B (P 2), *, (P 3)))"},
       {"char* s = \"hw\";", "(D [* [unsigned char]], s, (P \"hw\"))"},
+      {"int a=2, b=3;", "(D (D [signed int], a, (P 2)), [signed int], b, (P 3))"},
 
       {NULL, NULL}};
+  assert_expected_ast_decl(tests);
+}
+
+static void abstract_declarators(void** state) {
+  AstTestFixture tests[] = {
+    {"void x(int);", "(D [f([signed int]:) [void]], x)"},
+    {"int f(char, void*);", "(D [f([unsigned char]:,[* [void]]:) [signed int]], f)"},
+
+    {NULL, NULL}};
   assert_expected_ast_decl(tests);
 }
 
@@ -107,7 +123,8 @@ int main(void) {
       cmocka_unit_test(array_declaration),
       cmocka_unit_test(grouped_type_declaration),
       cmocka_unit_test(function_type_declaration),
-      cmocka_unit_test(declaration_initializer)};
+      cmocka_unit_test(declaration_initializer),
+      cmocka_unit_test(abstract_declarators)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -39,7 +39,7 @@ Token *Parser_peek_token(Parser *);
 /*
  * If the next token does not match, report an error and return false.
  */
-bool Parser_consume_token(Parser *, TokenType);
+void Parser_consume_token(Parser *, TokenType);
 
 /*
  * Advance the parser to the next token
