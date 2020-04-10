@@ -76,7 +76,7 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
 
   DeclAstNode* decl = init_declarator_list(parser, type);
   consume(SEMICOLON);
-  
+
   return decl;
 }
 static CType* declaration_specifiers(Parser* parser) {  // @TODO
@@ -178,9 +178,8 @@ static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
    * declarator
    */
   DeclAstNode* decl = declarator(parser, type);
-  
-  if(match(EQUAL))
-    decl->initializer = Parser_assignment_expression(parser);
+
+  if (match(EQUAL)) decl->initializer = Parser_assignment_expression(parser);
 
   return decl;
 }
@@ -317,7 +316,7 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
   DeclAstNode* decl_node;
   if ((tok = match(IDENTIFIER))) {
     ctype = direct_declarator_end(parser, ctype);
-    return DECL(.identifier = tok, .type = ctype);
+    return DECL(.decl_type = CONCRETE, .identifier = tok, .type = ctype);
 
   } else if (match(LEFT_PAREN)) {
     CType tmp_type;
@@ -333,8 +332,7 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
   }
 
   // Abstract declarator!
-  printf("abstract declarator!\n");
-  return DECL(.type=ctype);
+  return DECL(.decl_type = ABSTRACT, .type = ctype);
 }
 
 static CType* direct_declarator_end(Parser* parser, CType* ctype) {
@@ -402,7 +400,13 @@ static ParameterListItem* parameter_type_list(Parser* parser) {  // @TODO
 
     DeclAstNode* tmp_node = declarator(parser, (*curr)->type);
     (*curr)->type = tmp_node->type;
-    (*curr)->name = tmp_node->identifier;
+
+    if (tmp_node->decl_type == CONCRETE) {
+      (*curr)->name = tmp_node->identifier;
+    } else {
+      (*curr)->name = NULL;
+    }
+
     curr = &((*curr)->next);
 
   } while (match(COMMA));
@@ -472,8 +476,6 @@ static DeclAstNode* initializer(Parser* parser) {  // @TODO
    * '{' initializer_list ',' '}'
    * assignment_expression
    */
-  
-  
 
   return NULL;
 }

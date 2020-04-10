@@ -226,7 +226,7 @@ static void pp_type_function(CType* type, StringBuffer* buf) {
   for (ParameterListItem* p = type->derived.params; p; p = p->next) {
     pp_type(p->type, buf);
 
-    if(p->name) {
+    if (p->name) {
       pp_printf(buf, ":%s", p->name->lexeme);
     } else {
       pp_printf(buf, ":");

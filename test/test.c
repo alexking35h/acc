@@ -36,7 +36,7 @@ bool test_ast_compare_expr(const char* source, const char* expected) {
            generated_ast);
   }
 
-  if(Parser_peek_token(parser)->type != END_OF_FILE) {
+  if (Parser_peek_token(parser)->type != END_OF_FILE) {
     printf("%s FAIL (%s). Scanner not @ EOF\n", __FUNCTION__, expected);
     matches = false;
   }

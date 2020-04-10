@@ -42,7 +42,6 @@ static void primitive_declaration(void** state) {
       // Declarator list.
       {"char a, b;", "(D (D [unsigned char], a), [unsigned char], b)"},
 
-
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
 }
@@ -101,7 +100,8 @@ static void declaration_initializer(void** state) {
       {"char a = 1;", "(D [unsigned char], a, (P 1))"},
       {"int a = 2*3;", "(D [signed int], a, (B (P 2), *, (P 3)))"},
       {"char* s = \"hw\";", "(D [* [unsigned char]], s, (P \"hw\"))"},
-      {"int a=2, b=3;", "(D (D [signed int], a, (P 2)), [signed int], b, (P 3))"},
+      {"int a=2, b=3;",
+       "(D (D [signed int], a, (P 2)), [signed int], b, (P 3))"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
@@ -109,10 +109,11 @@ static void declaration_initializer(void** state) {
 
 static void abstract_declarators(void** state) {
   AstTestFixture tests[] = {
-    {"void x(int);", "(D [f([signed int]:) [void]], x)"},
-    {"int f(char, void*);", "(D [f([unsigned char]:,[* [void]]:) [signed int]], f)"},
+      {"void x(int);", "(D [f([signed int]:) [void]], x)"},
+      {"int f(char, void*);",
+       "(D [f([unsigned char]:,[* [void]]:) [signed int]], f)"},
 
-    {NULL, NULL}};
+      {NULL, NULL}};
   assert_expected_ast_decl(tests);
 }
 

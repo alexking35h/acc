@@ -57,7 +57,8 @@ Token *Parser_peek_token(Parser *parser) {
  */
 void Parser_consume_token(Parser *parser, TokenType token_type) {
   if (NULL == Parser_match_token(parser, (TokenType[]){token_type, NAT})) {
-    Error_report_error(parser->error, PARSER, Parser_peek_token(parser)->line_number, "No consume");
+    Error_report_error(parser->error, PARSER,
+                       Parser_peek_token(parser)->line_number, "No consume");
   }
 }
 

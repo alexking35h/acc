@@ -80,9 +80,23 @@ typedef struct ExprAstNode_t {
 } ExprAstNode;
 
 typedef struct DeclAstNode {
+  // Declarators are typically 'concrete', meaning tied to an identifier
+  // (e.g. `int a;`). However we can also have 'abstract declarators'
+  // in cast expressions and parameter lists (e.g., `void (int*, char, void*)`.
+  enum { CONCRETE, ABSTRACT } decl_type;
+
+  // C data type for this declaration.
   CType* type;
+
+  // Identifier token for this declaration.
   Token* identifier;
+
+  // Initial value expression
   ExprAstNode* initializer;
+
+  // Declarations can be concatenated with ',', such as `int a=1, *b;`. The C11
+  // grammar in this case is left-recursive; *next points to the nested
+  // declaration.
   struct DeclAstNode* next;
 } DeclAstNode;
 
