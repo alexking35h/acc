@@ -48,8 +48,8 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype);  // @TODO
 static DeclAstNode* pointer(Parser* parser);                          // @TODO
 static DeclAstNode* type_qualifier_list(Parser* parser);              // @TODO
 static ParameterListItem* parameter_type_list(Parser* parser);        // @TODO
-static DeclAstNode* parameter_list(Parser* parser);                   // @TODO
-static DeclAstNode* parameter_declaration(Parser* parser);            // @TODO
+static ParameterListItem* parameter_list(Parser* parser);                   // @TODO
+static ParameterListItem* parameter_declaration(Parser* parser);            // @TODO
 static DeclAstNode* identifier_list(Parser* parser);                  // @TODO
 static DeclAstNode* type_name(Parser* parser);                        // @TODO
 static DeclAstNode* abstract_declarator(Parser* parser);              // @TODO
@@ -390,6 +390,8 @@ static ParameterListItem* parameter_type_list(Parser* parser) {  // @TODO
    * parameter_list ',' ELLIPSIS
    * parameter_list
    */
+  return parameter_list(parser);
+
   ParameterListItem* head;
   ParameterListItem** curr = &head;
 
@@ -413,22 +415,41 @@ static ParameterListItem* parameter_type_list(Parser* parser) {  // @TODO
 
   return head;
 }
-static DeclAstNode* parameter_list(Parser* parser) {  // @TODO
+static ParameterListItem* parameter_list(Parser* parser) {  // @TODO
   /*
    * parameter_declaration
    * parameter_list ',' parameter_declaration
    */
+  ParameterListItem* param = parameter_declaration(parser);
+  
+  if(match(COMMA)) {
+    param->next = parameter_list(parser);
+  } else {
+    param->next = NULL;
+  }
 
-  return NULL;
+  return param;
 }
-static DeclAstNode* parameter_declaration(Parser* parser) {  // @TODO
+static ParameterListItem* parameter_declaration(Parser* parser) {  // @TODO
   /*
    * declaration_specifiers declarator
    * declaration_specifiers abstract_declarator
    * declaration_specifiers
    */
+  ParameterListItem* param = calloc(1, sizeof(ParameterListItem));
 
-  return NULL;
+  CType* primitive_type = declaration_specifiers(parser);
+  DeclAstNode* tmp_node = declarator(parser, primitive_type);
+
+  param->type = tmp_node->type;
+
+  if (tmp_node->decl_type == CONCRETE) {
+    param->name = tmp_node->identifier;
+  } else {
+    param->name = NULL;
+  }
+
+  return param;
 }
 static DeclAstNode* identifier_list(Parser* parser) {  // @TODO
   /*
@@ -443,8 +464,10 @@ static DeclAstNode* type_name(Parser* parser) {  // @TODO
    * specifier_qualifier_list abstract_declarator
    * specifier_qualifier_list
    */
+  CType* type = declaration_specifiers(parser);
 
-  return NULL;
+  DeclAstNode* type_name = declarator(parser, type);
+  return type_name;
 }
 static DeclAstNode* abstract_declarator(Parser* parser) {  // @TODO
   /*

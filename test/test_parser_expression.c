@@ -102,6 +102,15 @@ static void assignment_expressions(void** state) {
   assert_expected_ast_expr(tests);
 }
 
+static void cast_expressions(void** state) {
+  AstTestFixture tests[] = {
+      {"(char)1", "(C [unsigned char], (P 1))"},
+      
+      {NULL, NULL}};
+
+  assert_expected_ast_expr(tests);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {cmocka_unit_test(initialize_parser),
                                      cmocka_unit_test(primary_expressions),
@@ -110,7 +119,8 @@ int main(void) {
                                      cmocka_unit_test(binary_expressions),
                                      cmocka_unit_test(comparison_expressions),
                                      cmocka_unit_test(logical_expressions),
-                                     cmocka_unit_test(assignment_expressions)};
+                                     cmocka_unit_test(assignment_expressions),
+                                     cmocka_unit_test(cast_expressions)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

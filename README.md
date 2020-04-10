@@ -23,4 +23,13 @@ up the compiler are listed below, including design & implementation notes.
 |-------------------------------|-----|
 |Scanner                        |Generate a flat sequence of tokens from the source input.|
 |[Parser](design/parser.md)     |Generate the Abstract Syntax Tree (AST) from the output of the Scanner. This includes parsing type declarations|
-|                               |
+
+## Missing
+
+Generally speaking, I've implemented language features depth-first in the front-end (how very Agile!), 
+adding support for incremental subsets of the grammar in the parser and type system. Unfortunately,
+this means it's missing some (many) features of the C11 grammar. Let's call it C--.
+
+
+
+
