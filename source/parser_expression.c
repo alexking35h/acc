@@ -51,7 +51,6 @@ static ExprAstNode* inclusive_or_expression(Parser*);
 static ExprAstNode* logical_and_expression(Parser*);
 static ExprAstNode* logical_or_expression(Parser*);
 static ExprAstNode* conditional_expression(Parser*);
-static ExprAstNode* assignment_expression(Parser*);
 
 static ExprAstNode* desugar_assign(Parser* parser, ExprAstNode* expr,
                                    TokenType op, ExprAstNode* operand) {
@@ -168,8 +167,8 @@ static ExprAstNode* postfix_expression(Parser* parser) {
 }
 static ExprAstNode* argument_expression_list(Parser* parser) {  // @TODO
   /*
-   * assignment_expression
-   * argument_expression_list ',' assignment_expression
+   * Parser_assignment_expression
+   * argument_expression_list ',' Parser_assignment_expression
    */
 
   return NULL;
@@ -387,15 +386,15 @@ static ExprAstNode* conditional_expression(Parser* parser) {  // @DONE
                        .expr_false = expr_false);
 }
 
-static ExprAstNode* assignment_expression(Parser* parser) {  // @DONE
+ExprAstNode* Parser_assignment_expression(Parser* parser) {  // @DONE
   /*
    * conditional_expression
-   * unary_expression assignment_operator assignment_expression
+   * unary_expression assignment_operator Parser_assignment_expression
    */
 
   // The FIRST sets for the grammar rules 'conditional_expression' and
   // 'unary_expression' are not disjoint. To sidestep this,
-  // 'assignment_expression is parsed as: : conditional_expression |
+  // 'Parser_assignment_expression is parsed as: : conditional_expression |
   // conditional_expression assignment_operator conditional_expression.
   //
   // Later we'll come back to make sure the lvalue is valid.
@@ -405,7 +404,7 @@ static ExprAstNode* assignment_expression(Parser* parser) {  // @DONE
   while (true) {
     operator= match(EQUAL);
     if (operator!= NULL) {
-      ExprAstNode* right = assignment_expression(parser);
+      ExprAstNode* right = Parser_assignment_expression(parser);
       expr = EXPR_ASSIGN(.left = expr, .right = right);
       continue;
     }
@@ -450,7 +449,7 @@ static ExprAstNode* assignment_expression(Parser* parser) {  // @DONE
         default:
           break;
       }
-      ExprAstNode* right = assignment_expression(parser);
+      ExprAstNode* right = Parser_assignment_expression(parser);
       expr = desugar_assign(parser, expr, tok_type, right);
     } else {
       break;
@@ -461,8 +460,8 @@ static ExprAstNode* assignment_expression(Parser* parser) {  // @DONE
 
 ExprAstNode* Parser_expression(Parser* parser) {  // @DONE
   /*
-   * assignment_expression
-   * expression ',' assignment_expression // @TODO
+   * Parser_assignment_expression
+   * expression ',' Parser_assignment_expression // @TODO
    */
-  return assignment_expression(parser);
+  return Parser_assignment_expression(parser);
 }

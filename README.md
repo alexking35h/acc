@@ -10,3 +10,7 @@ The goals of ACC are:
 
 Optimizations are a nice-to-have, as is portability: ACC will support only
 one platform - probably x86, and is not designed with extensibility/porting in mind.
+
+## Design
+
+

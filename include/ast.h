@@ -80,8 +80,9 @@ typedef struct ExprAstNode_t {
 } ExprAstNode;
 
 typedef struct DeclAstNode {
-  Token* identifier;
   CType* type;
+  Token* identifier;
+  ExprAstNode* initializer;
   struct DeclAstNode* next;
 } DeclAstNode;
 

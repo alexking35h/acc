@@ -96,7 +96,7 @@ static void assignment_expressions(void** state) {
                             {"1&=2", "(A (P 1), (B (P 1), &, (P 2)))"},
                             {"1^=2", "(A (P 1), (B (P 1), ^, (P 2)))"},
                             {"1|=2", "(A (P 1), (B (P 1), |, (P 2)))"},
-                            {"1=2=3", "(A (P a), (A (P 2), (P 3)))"},
+                            {"1=2=3", "(A (P 1), (A (P 2), (P 3)))"},
                             {NULL, NULL}};
 
   assert_expected_ast_expr(tests);

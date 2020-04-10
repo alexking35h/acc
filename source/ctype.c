@@ -65,7 +65,7 @@ err:
   return;
 }
 
-void ctype_finalise_primitive_type(CType *type) {
+void ctype_set_primitive_finalise(CType *type) {
   TypeSpecifier *specifier = &type->primitive.type_specifier;
 
   // Set the default type to 'int', if not specified.
@@ -91,4 +91,9 @@ void ctype_finalise_primitive_type(CType *type) {
   }
 err:
   return;
+}
+
+void ctype_set_derived(CType *parent, CType *child) {
+  parent->derived.type = child;
+  child->derived.parent_type = parent;
 }

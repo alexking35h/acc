@@ -150,7 +150,7 @@ static CType* declaration_specifiers(Parser* parser) {  // @TODO
   }
 
 end:
-  ctype_finalise_primitive_type(type);
+  ctype_set_primitive_finalise(type);
   return type;
 }
 static DeclAstNode* init_declarator_list(Parser* parser,
@@ -173,7 +173,12 @@ static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
    * declarator '=' initializer
    * declarator
    */
-  return declarator(parser, type);
+  DeclAstNode* decl = declarator(parser, type);
+  
+  if(match(EQUAL))
+    decl->initializer = Parser_assignment_expression(parser);
+
+  return decl;
 }
 
 static DeclAstNode* struct_or_union_specifier(Parser* parser) {  // @TODO
@@ -293,8 +298,7 @@ static DeclAstNode* declarator(Parser* parser, CType* ctype) {  // @TODO
   while (match(STAR)) {
     CType* pointer = calloc(1, sizeof(CType));
     pointer->type = TYPE_POINTER;
-    pointer->derived.type = ctype;
-    ctype->derived.parent_type = pointer;
+    ctype_set_derived(pointer, ctype);
     ctype = pointer;
   }
 
@@ -309,20 +313,21 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
   DeclAstNode* decl_node;
   if ((tok = match(IDENTIFIER))) {
     ctype = direct_declarator_end(parser, ctype);
-    return DECL(.identifier=tok, .type = ctype);
+    return DECL(.identifier = tok, .type = ctype);
 
   } else if (match(LEFT_PAREN)) {
-  
-    CType null_type;
-    decl_node = declarator(parser, &null_type);
+    CType tmp_type;
+    decl_node = declarator(parser, &tmp_type);
     consume(RIGHT_PAREN);
 
-    CType * par = null_type.derived.parent_type;
-    par->derived.type = direct_declarator_end(parser, ctype);
+    CType* parent_type = tmp_type.derived.parent_type;
+    CType* child_type = direct_declarator_end(parser, ctype);
+
+    ctype_set_derived(parent_type, child_type);
 
     return decl_node;
   }
-  return decl_node;
+  return NULL;
 }
 
 static CType* direct_declarator_end(Parser* parser, CType* ctype) {
@@ -333,45 +338,28 @@ static CType* direct_declarator_end(Parser* parser, CType* ctype) {
    * direct_declarator_end '(' identifier_list ')'
    * direct_declarator_end '(' ')'
    */
-  CType * head = NULL, *next = NULL, *prev = NULL;
+  if (match(LEFT_SQUARE)) {
+    CType* next = calloc(1, sizeof(CType));
+    next->type = TYPE_ARRAY;
+    next->derived.array_size = match(CONSTANT)->literal.const_value;
+    consume(RIGHT_SQUARE);
 
-  while (true) {
-    next = calloc(1, sizeof(CType));
-    if(!head) head = next;
+    ctype_set_derived(next, direct_declarator_end(parser, ctype));
+    return next;
+  } else if (match(LEFT_PAREN)) {
+    CType* next = calloc(1, sizeof(CType));
+    next->type = TYPE_FUNCTION;
 
-    if(match(LEFT_SQUARE)) {
-      Token* sz = match(CONSTANT);
-      consume(RIGHT_SQUARE);
-
-      next->type = TYPE_ARRAY;
-      next->derived.array_size = sz->literal.const_value;
-      next->derived.parent_type = prev;
-      
-      if(prev) prev->derived.type = next;
-      prev = next;
+    if (match(RIGHT_PAREN)) {
+      next->derived.params = NULL;
+    } else {
+      next->derived.params = parameter_type_list(parser);
+      consume(RIGHT_PAREN);
     }
-    else if (match(LEFT_PAREN)) {
-      next->type = TYPE_FUNCTION;
-  
-      if(match(RIGHT_PAREN)) {
-        next->derived.params = NULL;
-      } else {
-        next->derived.params = parameter_type_list(parser);
-        consume(RIGHT_PAREN);
-      }
-
-      if(prev) prev->derived.type = next;
-      prev = next;
-    }
-    else break;
-  }
-  if(prev) {
-    prev->derived.type = ctype;
-    ctype->derived.parent_type = prev;
-    return head;
-  } else {
+    ctype_set_derived(next, direct_declarator_end(parser, ctype));
+    return next;
+  } else
     return ctype;
-  }
 }
 
 static DeclAstNode* pointer(Parser* parser) {  // @TODO
@@ -397,20 +385,20 @@ static ParameterListItem* parameter_type_list(Parser* parser) {  // @TODO
    * parameter_list ',' ELLIPSIS
    * parameter_list
    */
-  ParameterListItem * head;
-  ParameterListItem ** curr = &head;
+  ParameterListItem* head;
+  ParameterListItem** curr = &head;
 
   do {
     *curr = calloc(1, sizeof(ParameterListItem));
 
-    ((*curr))->type = declaration_specifiers(parser);
+    (*curr)->type = declaration_specifiers(parser);
 
-    DeclAstNode * tmp_node = declarator(parser, (*curr)->type);
+    DeclAstNode* tmp_node = declarator(parser, (*curr)->type);
     (*curr)->type = tmp_node->type;
     (*curr)->name = tmp_node->identifier;
     curr = &((*curr)->next);
 
-  } while(match(COMMA));
+  } while (match(COMMA));
 
   return head;
 }
@@ -477,6 +465,8 @@ static DeclAstNode* initializer(Parser* parser) {  // @TODO
    * '{' initializer_list ',' '}'
    * assignment_expression
    */
+  
+  
 
   return NULL;
 }

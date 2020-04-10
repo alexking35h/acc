@@ -81,19 +81,33 @@ static void function_type_declaration(void** state) {
   AstTestFixture tests[] = {
       {"char a();", "(D [f() [unsigned char]], a)"},
       {"int b(char a);", "(D [f([unsigned char]:a) [signed int]], b)"},
-      {"void q(int b, char c);", "(D [f([signed int]:b,[unsigned char]:c) [void]], q)"},
+      {"void q(int b, char c);",
+       "(D [f([signed int]:b,[unsigned char]:c) [void]], q)"},
       {"int (* q)();", "(D [* [f() [signed int]]], q)"},
+      {"void *(*p)(int a);", "(D [* [f([signed int]:a) [* [void]]]], p)"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
 }
+
+static void declaration_initializer(void** state) {
+  AstTestFixture tests[] = {
+      {"char a = 1;", "(D [unsigned char], a, (P 1))"},
+      {"int a = 2*3;", "(D [signed int], a, (B (P 2), *, (P 3)))"},
+      {"char* s = \"hw\";", "(D [* [unsigned char]], s, (P \"hw\"))"},
+
+      {NULL, NULL}};
+  assert_expected_ast_decl(tests);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(primitive_declaration),
       cmocka_unit_test(pointer_declaration),
       cmocka_unit_test(array_declaration),
       cmocka_unit_test(grouped_type_declaration),
-      cmocka_unit_test(function_type_declaration)};
+      cmocka_unit_test(function_type_declaration),
+      cmocka_unit_test(declaration_initializer)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
