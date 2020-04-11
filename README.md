@@ -28,8 +28,10 @@ up the compiler are listed below, including design & implementation notes.
 
 Generally speaking, I've implemented language features depth-first in the front-end (how very Agile!), 
 adding support for incremental subsets of the grammar in the parser and type system. Unfortunately,
-this means it's missing some (many) features of the C11 grammar. Let's call it C--.
+this means it's missing some (many) features of the C11 grammar, which really make it closer to C99. Let's call it C--.
 
+ * `_Thread_local`, `_Noreturn`, `_Alignas`, `_Atomic`, `_Bool`, `_Complex`, `_Imaginary` type-specifiers are not implemented.
+   The first four were both new additions in C11, the others were added in C99.
 
-
+ * `_Alignof`, `_Generic`, `_Static_assert`, and `__func__` are not implemented. (All were added in C11.)
 
