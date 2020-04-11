@@ -103,10 +103,9 @@ static void assignment_expressions(void** state) {
 }
 
 static void cast_expressions(void** state) {
-  AstTestFixture tests[] = {
-      {"(char)1", "(C [unsigned char], (P 1))"},
-      
-      {NULL, NULL}};
+  AstTestFixture tests[] = {{"(char)1", "(C [unsigned char], (P 1))"},
+
+                            {NULL, NULL}};
 
   assert_expected_ast_expr(tests);
 }

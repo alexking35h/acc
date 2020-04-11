@@ -61,5 +61,6 @@ ExprAstNode *Parser_expression(Parser *parser);
 ExprAstNode *Parser_assignment_expression(Parser *parser);
 ExprAstNode *Parser_statement(Parser *parser);
 DeclAstNode *Parser_declaration(Parser *parser);
+CType *Parser_type_name(Parser *parser);
 
 #endif

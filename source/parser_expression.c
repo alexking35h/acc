@@ -119,14 +119,9 @@ static ExprAstNode* primary_expression(Parser* parser) {  // @DONE
   if ((next = match(STRING_LITERAL)))
     return EXPR_PRIMARY(.string_literal = next);
 
-  if (match(LEFT_PAREN)) {
-    ExprAstNode* expr = Parser_expression(parser);
-    consume(RIGHT_PAREN);
-    return expr;
-  }
-
   return NULL;
 }
+
 static ExprAstNode* postfix_expression(Parser* parser) {
   /*
    * primary_expression
@@ -197,7 +192,37 @@ static ExprAstNode* cast_expression(Parser* parser) {  // @TODO
    * unary_expression
    * '(' type_name ')' cast_expression
    */
-  return unary_expression(parser);
+  if (!match(LEFT_PAREN)) return unary_expression(parser);
+  ;
+
+  // We're either looking at a cast expression (e.g. `(int)a`),
+  // or a parenthesized primary expression (e.g. `(a + 2)`).
+  // Distinquish between the two based on the FIRST set of
+  // `type_name` (type-specifiers and -qualifiers). Cast expressions
+  // cannot be nested (such as `((int))a`, so this should work.
+  ExprAstNode* expr;
+
+  switch (peek()->type) {
+    case VOID:
+    case CHAR:
+    case SHORT:
+    case INT:
+    case LONG:
+    case FLOAT:
+    case DOUBLE:
+    case SIGNED:
+    case UNSIGNED:
+      break;
+    default:
+      expr = Parser_expression(parser);
+      consume(RIGHT_PAREN);
+      return expr;
+  }
+
+  // Cast expression.
+  CType* type = Parser_type_name(parser);
+  consume(RIGHT_PAREN);
+  return EXPR_CAST(.type = type, .right = cast_expression(parser));
 }
 static ExprAstNode* multiplicative_expression(Parser* parser) {  // @DONE
   /*

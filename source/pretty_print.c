@@ -19,6 +19,7 @@ static void pp_postfix(ExprAstNode* node, StringBuffer* buf);
 static void pp_binary(ExprAstNode* node, StringBuffer* buf);
 static void pp_unary(ExprAstNode* node, StringBuffer* buf);
 static void pp_tertiary(ExprAstNode* node, StringBuffer* buf);
+static void pp_cast(ExprAstNode* node, StringBuffer* buf);
 static void pp_assign(ExprAstNode* node, StringBuffer* buf);
 static void pp_decl(DeclAstNode* node, StringBuffer* buf);
 
@@ -68,6 +69,7 @@ static void pp_expr(ExprAstNode* node, StringBuffer* buf) {
       break;
 
     case CAST:
+      pp_cast(node, buf);
       break;
 
     case ASSIGN:
@@ -117,6 +119,13 @@ static void pp_tertiary(ExprAstNode* node, StringBuffer* buf) {
   pp_expr(node->tertiary.expr_true, buf);
   pp_printf(buf, ", ");
   pp_expr(node->tertiary.expr_false, buf);
+}
+
+static void pp_cast(ExprAstNode* node, StringBuffer* buf) {
+  pp_printf(buf, "C ");
+  pp_type(node->cast.type, buf);
+  pp_printf(buf, ", ");
+  pp_expr(node->cast.right, buf);
 }
 
 static void pp_assign(ExprAstNode* node, StringBuffer* buf) {

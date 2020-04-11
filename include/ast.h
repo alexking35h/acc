@@ -59,7 +59,7 @@ typedef struct ExprAstNode_t {
 
     // Cast
     struct {
-      Token* type_token;
+      CType* type;
       struct ExprAstNode_t* right;
     } cast;
 
