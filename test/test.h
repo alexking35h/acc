@@ -30,4 +30,10 @@ void assert_expected_ast_expr(AstTestFixture* fixture);
  */
 void assert_expected_ast_decl(AstTestFixture* fixture);
 
+/*
+ * Assert the string representation for the statement AST matches the expected
+ * AST for a given C source input.
+ */
+void assert_expected_ast_stmt(AstTestFixture* fixture);
+
 #endif

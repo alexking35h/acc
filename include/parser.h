@@ -59,7 +59,7 @@ Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme);
  */
 ExprAstNode *Parser_expression(Parser *parser);
 ExprAstNode *Parser_assignment_expression(Parser *parser);
-ExprAstNode *Parser_statement(Parser *parser);
+StmtAstNode *Parser_statement(Parser *parser);
 DeclAstNode *Parser_declaration(Parser *parser);
 CType *Parser_type_name(Parser *parser);
 

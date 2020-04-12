@@ -53,7 +53,7 @@ static ParameterListItem* parameter_declaration(Parser* parser);      // @TODO
 static DeclAstNode* identifier_list(Parser* parser);                  // @TODO
 static DeclAstNode* abstract_declarator(Parser* parser);              // @TODO
 static DeclAstNode* direct_abstract_declarator(Parser* parser);       // @TODO
-static DeclAstNode* initializer(Parser* parser);                      // @TODO
+static ExprAstNode* initializer(Parser* parser);                      // @TODO
 static DeclAstNode* initializer_list(Parser* parser);                 // @TODO
 static DeclAstNode* designation(Parser* parser);                      // @TODO
 static DeclAstNode* designator_list(Parser* parser);                  // @TODO
@@ -178,7 +178,7 @@ static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
    */
   DeclAstNode* decl = declarator(parser, type);
 
-  if (match(EQUAL)) decl->initializer = Parser_assignment_expression(parser);
+  if (match(EQUAL)) decl->initializer = initializer(parser);
 
   return decl;
 }
@@ -466,38 +466,13 @@ CType* Parser_type_name(Parser* parser) {  // @TODO
   CType* type = declaration_specifiers(parser);
   return declarator(parser, type)->type;
 }
-static DeclAstNode* abstract_declarator(Parser* parser) {  // @TODO
-  /*
-   * pointer direct_abstract_declarator
-   * pointer
-   * direct_abstract_declarator
-   */
-
-  return NULL;
-}
-static DeclAstNode* direct_abstract_declarator(Parser* parser) {  // @TODO
-  /*
-   * '(' abstract_declarator ')'
-   * '[' ']'
-   * '[' constant_expression ']'
-   * direct_abstract_declarator '[' ']'
-   * direct_abstract_declarator '[' constant_expression ']'
-   * '(' ')'
-   * '(' parameter_type_list ')'
-   * direct_abstract_declarator '(' ')'
-   * direct_abstract_declarator '(' parameter_type_list ')'
-   */
-
-  return NULL;
-}
-static DeclAstNode* initializer(Parser* parser) {  // @TODO
+static ExprAstNode* initializer(Parser* parser) {  // @TODO
   /*
    * '{' initializer_list '}'
    * '{' initializer_list ',' '}'
    * assignment_expression
    */
-
-  return NULL;
+  return Parser_assignment_expression(parser);
 }
 static DeclAstNode* initializer_list(Parser* parser) {  // @TODO
   /*

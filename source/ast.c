@@ -23,3 +23,9 @@ DeclAstNode* Ast_create_decl_node(DeclAstNode ast_node) {
   memcpy(node, &ast_node, sizeof(ast_node));
   return node;
 }
+StmtAstNode* Ast_create_stmt_node(StmtAstNode ast_node) {
+  StmtAstNode* node = calloc(1, sizeof(StmtAstNode));
+  
+  memcpy(node, &ast_node, sizeof(ast_node));
+  return node;
+}

@@ -12,7 +12,13 @@
 #include "ast.h"
 #include "parser.h"
 
-ExprAstNode* Parser_statement(Parser* parser) {  // @TODO
+#define STMT_EXPR(...) Ast_create_stmt_node((StmtAstNode){__VA_ARGS__})
+
+#define consume(t) Parser_consume_token(parser, t)
+
+static StmtAstNode* expression_statement(Parser* parser);
+
+StmtAstNode* Parser_statement(Parser* parser) {  // @TODO
   /*
    * labeled_statement
    * compound_statement
@@ -21,8 +27,7 @@ ExprAstNode* Parser_statement(Parser* parser) {  // @TODO
    * iteration_statement
    * jump_statement
    */
-
-  return NULL;
+  return expression_statement(parser);
 }
 ExprAstNode* Parser_labeled_statement(Parser* parser) {  // @TODO
   /*
@@ -57,12 +62,13 @@ ExprAstNode* Parser_block_item(Parser* parser) {  // @TODO
 
   return NULL;
 }
-ExprAstNode* Parser_expression_statement(Parser* parser) {  // @TODO
+static StmtAstNode* expression_statement(Parser* parser) {
   /*
-   * '
+   * expression ';'
    */
-
-  return NULL;
+  StmtAstNode* stmt = STMT_EXPR(.expr=Parser_expression(parser));
+  consume(SEMICOLON);
+  return stmt;
 }
 ExprAstNode* Parser_selection_statement(Parser* parser) {  // @TODO
   /*

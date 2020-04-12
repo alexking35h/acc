@@ -39,7 +39,7 @@ static void primitive_declaration(void** state) {
       {"static int b;", "(D [static signed int], b)"},
       {"register void a;", "(D [register void], a)"},
 
-      // Declarator list.
+      // Declarator lists.
       {"char a, b;", "(D (D [unsigned char], a), [unsigned char], b)"},
 
       {NULL, NULL}};

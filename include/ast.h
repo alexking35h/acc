@@ -100,6 +100,10 @@ typedef struct DeclAstNode {
   struct DeclAstNode* next;
 } DeclAstNode;
 
+typedef struct StmtAstNode {
+  ExprAstNode* expr;
+} StmtAstNode;
+
 /*
  * Create new AST nodes
  *
@@ -111,5 +115,6 @@ typedef struct DeclAstNode {
  */
 ExprAstNode* Ast_create_expr_node(ExprAstNode ast_node);
 DeclAstNode* Ast_create_decl_node(DeclAstNode ast_node);
+StmtAstNode* Ast_create_stmt_node(StmtAstNode ast_node);
 
 #endif

@@ -22,6 +22,7 @@ static void pp_tertiary(ExprAstNode* node, StringBuffer* buf);
 static void pp_cast(ExprAstNode* node, StringBuffer* buf);
 static void pp_assign(ExprAstNode* node, StringBuffer* buf);
 static void pp_decl(DeclAstNode* node, StringBuffer* buf);
+static void pp_stmt(StmtAstNode* node, StringBuffer* buf);
 
 static void pp_type(CType* type, StringBuffer* buf);
 static void pp_type_primitive(CType* type, StringBuffer* buf);
@@ -42,6 +43,15 @@ int pretty_print_expr(ExprAstNode* node, char* buf, int len) {
 int pretty_print_decl(DeclAstNode* node, char* buf, int len) {
   StringBuffer str_buf = {buf, buf + len};
   pp_decl(node, &str_buf);
+  return str_buf.end - str_buf.start;
+}
+
+/*
+ * Generate a string for the given StmtAstNode.
+ */
+int pretty_print_stmt(StmtAstNode* node, char* buf, int len) {
+  StringBuffer str_buf = {buf, buf+len};
+  pp_stmt(node, &str_buf);
   return str_buf.end - str_buf.start;
 }
 
@@ -154,6 +164,12 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
   }
 
   pp_printf(buf, ")");
+}
+
+static void pp_stmt(StmtAstNode* node, StringBuffer* buf) {
+  pp_printf(buf, "{E ");
+  pp_expr(node->expr, buf);
+  pp_printf(buf, "}");
 }
 
 static void pp_type(CType* type, StringBuffer* buf) {
