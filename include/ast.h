@@ -103,7 +103,7 @@ typedef struct DeclAstNode {
 
 typedef struct StmtAstNode {
   // Type of this statement node.
-  enum { DECL, EXPR, BLOCK } type;
+  enum { DECL, EXPR, BLOCK, WHILE_LOOP} type;
 
   union {
     // Declaration
@@ -120,11 +120,15 @@ typedef struct StmtAstNode {
     struct {
       struct StmtAstNode* head;
     } block;
+
+    // While statement
+    struct {
+      ExprAstNode* expr;
+      struct StmtAstNode* block;
+    } while_loop;
   };
 
-  // s
   struct StmtAstNode* next;
-
 } StmtAstNode;
 
 /*

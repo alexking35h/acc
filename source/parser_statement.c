@@ -19,6 +19,8 @@
   Ast_create_stmt_node((StmtAstNode){.type = DECL, .decl = {__VA_ARGS__}})
 #define STMT_BLOCK(...) \
   Ast_create_stmt_node((StmtAstNode){.type = BLOCK, .block = {__VA_ARGS__}})
+#define STMT_WHILE(...) \
+  Ast_create_stmt_node((StmtAstNode){.type = WHILE_LOOP, .while_loop = {__VA_ARGS__}})
 
 #define consume(t) Parser_consume_token(parser, t)
 #define peek(t) Parser_peek_token(parser)
@@ -26,6 +28,7 @@
 
 static StmtAstNode* expression_statement(Parser* parser);
 static StmtAstNode* compound_statement(Parser* parser);
+static StmtAstNode* iteration_statement(Parser* parser);
 
 _Bool is_decl(TokenType tok) {
   switch (tok) {
@@ -56,6 +59,10 @@ StmtAstNode* Parser_statement(Parser* parser) {  // @TODO
   if (peek()->type == LEFT_BRACE) {
     // Compound statement.
     return compound_statement(parser);
+  }
+  if (peek()->type == WHILE) {
+    // While statement.
+    return iteration_statement(parser);
   }
   return expression_statement(parser);
 }
@@ -122,11 +129,19 @@ ExprAstNode* Parser_selection_statement(Parser* parser) {  // @TODO
 
   return NULL;
 }
-ExprAstNode* Parser_iteration_statement(Parser* parser) {  // @TODO
+StmtAstNode* iteration_statement(Parser* parser) {  // @TODO
   /*
    * WHILE '(' expression ')' statement
    * DO statement WHILE '(' expression ')' '
    */
+  if(match(WHILE)) {
+    consume(LEFT_PAREN);
+    ExprAstNode* expr = Parser_expression(parser);
+    consume(RIGHT_PAREN);
+    StmtAstNode* block = Parser_statement(parser);
+    
+    return STMT_WHILE(.expr=expr, .block=block);
+  }
 
   return NULL;
 }

@@ -28,6 +28,7 @@ static void expression_statement(void** state) {
 
 static void block_statement(void** state) {
   AstTestFixture tests[] = {
+      {"{}", "{B }"},
       {"{int y;}", "{B {D (D [signed int], y)}}"},
       {"{char p;p=1;}", "{B {D (D [unsigned char], p), {E (A (P p), (P 1))}}}"},
       {"{a=1; {a-1;}}",
@@ -38,9 +39,20 @@ static void block_statement(void** state) {
   assert_expected_ast_stmt(tests);
 }
 
+static void loops(void** state) {
+  AstTestFixture tests[] = {
+      {"while(x<1){}", "{W (B (P x), <, (P 1)), {B }}"},
+      {"while(x)g++;", "{W (P x), {E (A (P g), (B (P g), +, (P 1)))}}"},
+      {"while(1){int a=1;}", "{W (P 1), {B {D (D [signed int], a, (P 1))}}}"},
+  
+      {NULL, NULL}};
+  assert_expected_ast_stmt(tests);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {cmocka_unit_test(expression_statement),
-                                     cmocka_unit_test(block_statement)};
+                                     cmocka_unit_test(block_statement),
+                                     cmocka_unit_test(loops)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

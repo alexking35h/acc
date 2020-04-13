@@ -167,6 +167,7 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
 }
 
 static void pp_stmt(StmtAstNode* node, StringBuffer* buf) {
+  if(!node) return;
   pp_printf(buf, "{");
 
   switch (node->type) {
@@ -182,6 +183,11 @@ static void pp_stmt(StmtAstNode* node, StringBuffer* buf) {
       pp_printf(buf, "B ");
       pp_stmt(node->block.head, buf);
       break;
+    case WHILE_LOOP:
+      pp_printf(buf, "W ");
+      pp_expr(node->while_loop.expr, buf);
+      pp_printf(buf, ", ");
+      pp_stmt(node->while_loop.block, buf);
   }
   if (node->next) {
     pp_printf(buf, ", ");
