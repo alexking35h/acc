@@ -11,12 +11,38 @@
 
 #include "ast.h"
 #include "parser.h"
+#include "token.h"
 
-#define STMT_EXPR(...) Ast_create_stmt_node((StmtAstNode){__VA_ARGS__})
+#define STMT_EXPR(...) \
+  Ast_create_stmt_node((StmtAstNode){.type = EXPR, .expr = {__VA_ARGS__}})
+#define STMT_DECL(...) \
+  Ast_create_stmt_node((StmtAstNode){.type = DECL, .decl = {__VA_ARGS__}})
+#define STMT_BLOCK(...) \
+  Ast_create_stmt_node((StmtAstNode){.type = BLOCK, .block = {__VA_ARGS__}})
 
 #define consume(t) Parser_consume_token(parser, t)
+#define peek(t) Parser_peek_token(parser)
+#define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 
 static StmtAstNode* expression_statement(Parser* parser);
+static StmtAstNode* compound_statement(Parser* parser);
+
+_Bool is_decl(TokenType tok) {
+  switch (tok) {
+    case VOID:
+    case CHAR:
+    case SHORT:
+    case INT:
+    case LONG:
+    case FLOAT:
+    case DOUBLE:
+    case SIGNED:
+    case UNSIGNED:
+      return true;
+    default:
+      return false;
+  }
+}
 
 StmtAstNode* Parser_statement(Parser* parser) {  // @TODO
   /*
@@ -27,6 +53,10 @@ StmtAstNode* Parser_statement(Parser* parser) {  // @TODO
    * iteration_statement
    * jump_statement
    */
+  if (peek()->type == LEFT_BRACE) {
+    // Compound statement.
+    return compound_statement(parser);
+  }
   return expression_statement(parser);
 }
 ExprAstNode* Parser_labeled_statement(Parser* parser) {  // @TODO
@@ -38,13 +68,26 @@ ExprAstNode* Parser_labeled_statement(Parser* parser) {  // @TODO
 
   return NULL;
 }
-ExprAstNode* Parser_compound_statement(Parser* parser) {  // @TODO
+StmtAstNode* compound_statement(Parser* parser) {  // @TODO
   /*
    * '{' '}'
    * '{'  block_item_list '}'
    */
+  StmtAstNode *stmt, *head = NULL, **curr = &stmt;
 
-  return NULL;
+  consume(LEFT_BRACE);
+  while (!match(RIGHT_BRACE)) {
+    if (is_decl(peek()->type)) {
+      // Declaration.
+      *curr = STMT_DECL(.decl = Parser_declaration(parser));
+    } else {
+      // Statement.
+      *curr = Parser_statement(parser);
+    }
+    if (!head) head = *curr;
+    curr = &((*curr)->next);
+  }
+  return STMT_BLOCK(.head = head);
 }
 ExprAstNode* Parser_block_item_list(Parser* parser) {  // @TODO
   /*
@@ -66,7 +109,7 @@ static StmtAstNode* expression_statement(Parser* parser) {
   /*
    * expression ';'
    */
-  StmtAstNode* stmt = STMT_EXPR(.expr=Parser_expression(parser));
+  StmtAstNode* stmt = STMT_EXPR(.expr = Parser_expression(parser));
   consume(SEMICOLON);
   return stmt;
 }

@@ -4,10 +4,11 @@
  * AST nodes types are separated into two categories:
  * - expression - ExprAstNode
  * - declaration - DeclAstNode
+ * - statement - StmtAstNode
  *
- * There are no places in the parser where DeclAstNode and ExprAstNode
- * are interchangeable. Having separate struct types will give
- * a compiler error if a mistake is made.
+ * There are no places in the parser where these are interchangeable.
+ * Having separate struct types will give a compiler error if a mistake is
+ * made.
  */
 
 #ifndef __AST__
@@ -101,7 +102,29 @@ typedef struct DeclAstNode {
 } DeclAstNode;
 
 typedef struct StmtAstNode {
-  ExprAstNode* expr;
+  // Type of this statement node.
+  enum { DECL, EXPR, BLOCK } type;
+
+  union {
+    // Declaration
+    struct {
+      DeclAstNode* decl;
+    } decl;
+
+    // Expression
+    struct {
+      ExprAstNode* expr;
+    } expr;
+
+    // Block statement
+    struct {
+      struct StmtAstNode* head;
+    } block;
+  };
+
+  // s
+  struct StmtAstNode* next;
+
 } StmtAstNode;
 
 /*

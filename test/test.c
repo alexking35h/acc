@@ -131,7 +131,7 @@ void assert_expected_ast_decl(AstTestFixture* fixture) {
 }
 
 void assert_expected_ast_stmt(AstTestFixture* fixture) {
-  for(; fixture->source; fixture++) {
+  for (; fixture->source; fixture++) {
     assert_true(test_ast_compare_stmt(fixture->source, fixture->expected));
   }
 }

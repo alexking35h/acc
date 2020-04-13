@@ -26,11 +26,21 @@ static void expression_statement(void** state) {
   assert_expected_ast_stmt(tests);
 }
 
+static void block_statement(void** state) {
+  AstTestFixture tests[] = {
+      {"{int y;}", "{B {D (D [signed int], y)}}"},
+      {"{char p;p=1;}", "{B {D (D [unsigned char], p), {E (A (P p), (P 1))}}}"},
+      {"{a=1; {a-1;}}",
+       "{B {E (A (P a), (P 1)), {B {E (B (P a), -, (P 1))}}}}"},
+      {"{{{a;}}}", "{B {B {B {E (P a)}}}}"},
 
+      {NULL, NULL}};
+  assert_expected_ast_stmt(tests);
+}
 
 int main(void) {
-  const struct CMUnitTest tests[] = {
-      cmocka_unit_test(expression_statement)};
+  const struct CMUnitTest tests[] = {cmocka_unit_test(expression_statement),
+                                     cmocka_unit_test(block_statement)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

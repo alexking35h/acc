@@ -50,7 +50,7 @@ int pretty_print_decl(DeclAstNode* node, char* buf, int len) {
  * Generate a string for the given StmtAstNode.
  */
 int pretty_print_stmt(StmtAstNode* node, char* buf, int len) {
-  StringBuffer str_buf = {buf, buf+len};
+  StringBuffer str_buf = {buf, buf + len};
   pp_stmt(node, &str_buf);
   return str_buf.end - str_buf.start;
 }
@@ -167,8 +167,27 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
 }
 
 static void pp_stmt(StmtAstNode* node, StringBuffer* buf) {
-  pp_printf(buf, "{E ");
-  pp_expr(node->expr, buf);
+  pp_printf(buf, "{");
+
+  switch (node->type) {
+    case EXPR:
+      pp_printf(buf, "E ");
+      pp_expr(node->expr.expr, buf);
+      break;
+    case DECL:
+      pp_printf(buf, "D ");
+      pp_decl(node->decl.decl, buf);
+      break;
+    case BLOCK:
+      pp_printf(buf, "B ");
+      pp_stmt(node->block.head, buf);
+      break;
+  }
+  if (node->next) {
+    pp_printf(buf, ", ");
+    pp_stmt(node->next, buf);
+  }
+
   pp_printf(buf, "}");
 }
 

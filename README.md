@@ -37,3 +37,14 @@ this means it's missing some (many) features of the C11 grammar, which really ma
 
  * `_Alignof`, `_Generic`, `_Static_assert`, and `__func__` are not implemented. (All were added in C11.)
 
+### Parser
+
+ * `struct` or `union` are not implemented in the parser. These will definitely be added in later.
+ 
+ * No support for `typedef`. 
+
+ * No support for variable length arrays (e.g., `int arr[x]`, where the size of `arr` is unknown at compile-time) 
+   - this was added in C99. In _acc_, the array-size declatation syntax is restricted to a scalar constant.
+   By conrast, C89 at least permits any scalar constant expression.
+
+    
