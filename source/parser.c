@@ -57,8 +57,13 @@ Token *Parser_peek_token(Parser *parser) {
  */
 void Parser_consume_token(Parser *parser, TokenType token_type) {
   if (NULL == Parser_match_token(parser, (TokenType[]){token_type, NAT})) {
-    Error_report_error(parser->error, PARSER,
-                       Parser_peek_token(parser)->line_number, "No consume");
+    Token *tok = Parser_peek_token(parser);
+
+    char err_msg[80];
+    snprintf(err_msg, 80, "Expecting '%s', got '%s'", Token_str(token_type),
+             Token_str(tok->type));
+
+    Error_report_error(parser->error, PARSER, tok->line_number, err_msg);
   }
 }
 

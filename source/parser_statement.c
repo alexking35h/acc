@@ -20,7 +20,8 @@
 #define STMT_BLOCK(...) \
   Ast_create_stmt_node((StmtAstNode){.type = BLOCK, .block = {__VA_ARGS__}})
 #define STMT_WHILE(...) \
-  Ast_create_stmt_node((StmtAstNode){.type = WHILE_LOOP, .while_loop = {__VA_ARGS__}})
+  Ast_create_stmt_node( \
+      (StmtAstNode){.type = WHILE_LOOP, .while_loop = {__VA_ARGS__}})
 
 #define consume(t) Parser_consume_token(parser, t)
 #define peek(t) Parser_peek_token(parser)
@@ -135,13 +136,13 @@ StmtAstNode* iteration_statement(Parser* parser) {  // @TODO
    * WHILE '(' expression ')' statement
    * DO statement WHILE '(' expression ')' '
    */
-  if(match(WHILE)) {
+  if (match(WHILE)) {
     consume(LEFT_PAREN);
     ExprAstNode* expr = Parser_expression(parser);
     consume(RIGHT_PAREN);
     StmtAstNode* block = statement(parser);
-    
-    return STMT_WHILE(.expr=expr, .block=block);
+
+    return STMT_WHILE(.expr = expr, .block = block);
   }
 
   return NULL;

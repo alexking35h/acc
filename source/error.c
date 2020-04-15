@@ -27,7 +27,7 @@ void Error_report_error(Error *error, ErrorType error_type, int line_number,
   printf("Error occurred ");
 
   // Error occurred. Print out error information.
-  switch(error_type) {
+  switch (error_type) {
     case SCANNER:
       printf("in Scanner:\n");
       break;
@@ -40,6 +40,7 @@ void Error_report_error(Error *error, ErrorType error_type, int line_number,
   }
 
   printf(" > Line (%d): %s\n\n", line_number, msg);
+  exit(1);
 }
 
 /*

@@ -161,7 +161,7 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
   if (node->type->type == TYPE_FUNCTION && node->body) {
     pp_printf(buf, ", ");
     pp_stmt(node->body, buf);
-  } else if(node->initializer) {
+  } else if (node->initializer) {
     pp_printf(buf, ", ");
     pp_expr(node->initializer, buf);
   }
@@ -170,7 +170,7 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
 }
 
 static void pp_stmt(StmtAstNode* node, StringBuffer* buf) {
-  if(!node) return;
+  if (!node) return;
   pp_printf(buf, "{");
 
   switch (node->type) {

@@ -126,4 +126,6 @@ typedef struct Token_t {
   } literal;
 } Token;
 
+const char* Token_str(TokenType);
+
 #endif

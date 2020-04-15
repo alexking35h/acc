@@ -1,11 +1,11 @@
-#include "scanner.h"
 #include "parser.h"
 #include "pretty_print.h"
+#include "scanner.h"
 
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <stdbool.h>
 
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0
@@ -22,10 +22,10 @@
 #endif
 
 struct CommandLineArgs_t {
-  const char * source_file;
+  const char* source_file;
 };
 
-void print_help(){
+void print_help() {
   printf("ACC Version %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
   printf("\nUsage: acc [OPTIONS] [FILE]\n\n");
   printf("Options:\n");
@@ -42,7 +42,7 @@ void print_version() {
 
 /*
  * Parse command line options/arguments.
- * 
+ *
  * Usage: acc [options] [source file]
  *
  * options:
@@ -52,11 +52,11 @@ void print_version() {
  * Returns true if the program should continue.
  * Quit otherwise.
  */
-_Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t * args) {
+_Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* args) {
   int c = 0;
 
-  while((c = getopt(argc, argv, "vh")) != -1) {
-    switch(c) {
+  while ((c = getopt(argc, argv, "vh")) != -1) {
+    switch (c) {
       case 'h':
         print_help();
         return false;
@@ -66,14 +66,14 @@ _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t * args) {
     }
   }
 
-  if(optind == (argc-1)) {
+  if (optind == (argc - 1)) {
     args->source_file = argv[optind];
     return true;
   }
   return false;
 }
 
-const char * read_file(const char * file_path) {
+const char* read_file(const char* file_path) {
   char* file_contents = malloc(256 * sizeof(char));
   FILE* f = fopen(file_path, "r");
 
@@ -83,22 +83,19 @@ const char * read_file(const char * file_path) {
 
 int main(int argc, char** argv) {
   struct CommandLineArgs_t q = {};
-  if(!parse_cmd_args(argc, argv, &q))
-    return 1;
+  if (!parse_cmd_args(argc, argv, &q)) return 1;
 
   // Let's get compiling!
-  const char * file = read_file(q.source_file);
+  const char* file = read_file(q.source_file);
 
-  Scanner * scanner = Scanner_init(file, NULL);
-  Parser * parser = Parser_init(scanner, NULL);
+  Scanner* scanner = Scanner_init(file, NULL);
+  Parser* parser = Parser_init(scanner, NULL);
 
   // Generate the AST for the file.
-  DeclAstNode * decl = Parser_declaration(parser);
+  DeclAstNode* decl = Parser_declaration(parser);
 
   char pretty_print[1024];
   pretty_print_decl(decl, pretty_print, 1024);
 
   printf("%s\n", pretty_print);
 }
- 
-  

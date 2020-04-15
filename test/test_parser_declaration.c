@@ -118,10 +118,9 @@ static void abstract_declarators(void** state) {
 }
 
 static void function_type_definitions(void** state) {
-  AstTestFixture tests[] = {
-      {"void p(){}", "(D [f() [void]], p, {B })"},
+  AstTestFixture tests[] = {{"void p(){}", "(D [f() [void]], p, {B })"},
 
-      {NULL, NULL}};
+                            {NULL, NULL}};
   assert_expected_ast_decl(tests);
 }
 
