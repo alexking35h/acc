@@ -117,6 +117,14 @@ static void abstract_declarators(void** state) {
   assert_expected_ast_decl(tests);
 }
 
+static void function_type_definitions(void** state) {
+  AstTestFixture tests[] = {
+      {"void p(){}", "(D [f() [void]], p, {B })"},
+
+      {NULL, NULL}};
+  assert_expected_ast_decl(tests);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(primitive_declaration),
@@ -125,7 +133,8 @@ int main(void) {
       cmocka_unit_test(grouped_type_declaration),
       cmocka_unit_test(function_type_declaration),
       cmocka_unit_test(declaration_initializer),
-      cmocka_unit_test(abstract_declarators)};
+      cmocka_unit_test(abstract_declarators),
+      cmocka_unit_test(function_type_definitions)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

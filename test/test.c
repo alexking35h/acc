@@ -86,7 +86,7 @@ bool test_ast_compare_stmt(const char* source, const char* expected) {
   Parser* parser = Parser_init(scanner, NULL);
 
   // Generate the AST
-  StmtAstNode* ast_node = Parser_statement(parser);
+  StmtAstNode* ast_node = Parser_compound_statement(parser);
 
   char generated_ast[256] = "";
   pretty_print_stmt(ast_node, generated_ast, sizeof(generated_ast));

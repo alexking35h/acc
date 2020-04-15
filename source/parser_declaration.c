@@ -74,7 +74,14 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
   if (match(SEMICOLON)) return DECL(.type = type);
 
   DeclAstNode* decl = init_declarator_list(parser, type);
-  consume(SEMICOLON);
+  
+  // If the ctype is a function, check for a compound statement
+  // after
+  if(decl->type->type == TYPE_FUNCTION && peek()->type == LEFT_BRACE) {
+    decl->body = Parser_compound_statement(parser);
+  } else {
+    consume(SEMICOLON);
+  }
 
   return decl;
 }

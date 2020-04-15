@@ -16,11 +16,11 @@
 
 static void expression_statement(void** state) {
   AstTestFixture tests[] = {
-      {"x;", "{E (P x)}"},
-      {"a=1;", "{E (A (P a), (P 1))}"},
-      {"a++;", "{E (A (P a), (B (P a), +, (P 1)))}"},
-      {"(unsigned int)a+1;", "{E (B (C [unsigned int], (P a)), +, (P 1))}"},
-      {"a[0];", "{E (PF (P a), (P 0))}"},
+      {"{x;}", "{B {E (P x)}}"},
+      {"{a=1;}", "{B {E (A (P a), (P 1))}}"},
+      {"{a++;}", "{B {E (A (P a), (B (P a), +, (P 1)))}}"},
+      {"{(unsigned int)a+1;}", "{B {E (B (C [unsigned int], (P a)), +, (P 1))}}"},
+      {"{a[0];}", "{B {E (PF (P a), (P 0))}}"},
 
       {NULL, NULL}};
   assert_expected_ast_stmt(tests);
@@ -41,9 +41,9 @@ static void block_statement(void** state) {
 
 static void loops(void** state) {
   AstTestFixture tests[] = {
-      {"while(x<1){}", "{W (B (P x), <, (P 1)), {B }}"},
-      {"while(x)g++;", "{W (P x), {E (A (P g), (B (P g), +, (P 1)))}}"},
-      {"while(1){int a=1;}", "{W (P 1), {B {D (D [signed int], a, (P 1))}}}"},
+      {"{while(x<1){}}", "{B {W (B (P x), <, (P 1)), {B }}}"},
+      {"{while(x)g++;}", "{B {W (P x), {E (A (P g), (B (P g), +, (P 1)))}}}"},
+      {"{while(1){int a=1;}}", "{B {W (P 1), {B {D (D [signed int], a, (P 1))}}}}"},
   
       {NULL, NULL}};
   assert_expected_ast_stmt(tests);

@@ -17,6 +17,10 @@
 #include "ctype.h"
 #include "token.h"
 
+struct ExprAstNode_t;
+struct DeclAstNode_t;
+struct StmtAstNode_t;
+
 typedef struct ExprAstNode_t {
   // Type of this AST node.
   enum {
@@ -80,7 +84,7 @@ typedef struct ExprAstNode_t {
 
 } ExprAstNode;
 
-typedef struct DeclAstNode {
+typedef struct DeclAstNode_t {
   // Declarators are typically 'concrete', meaning tied to an identifier
   // (e.g. `int a;`). However we can also have 'abstract declarators'
   // in cast expressions and parameter lists (e.g., `void (int*, char, void*)`.
@@ -93,42 +97,45 @@ typedef struct DeclAstNode {
   Token* identifier;
 
   // Initial value expression
-  ExprAstNode* initializer;
+  union {
+    struct ExprAstNode_t* initializer;
+    struct StmtAstNode_t* body;
+  };
 
   // Declarations can be concatenated with ',', such as `int a=1, *b;`. The C11
   // grammar in this case is left-recursive; *next points to the nested
   // declaration.
-  struct DeclAstNode* next;
+  struct DeclAstNode_t* next;
 } DeclAstNode;
 
-typedef struct StmtAstNode {
+typedef struct StmtAstNode_t {
   // Type of this statement node.
   enum { DECL, EXPR, BLOCK, WHILE_LOOP} type;
 
   union {
     // Declaration
     struct {
-      DeclAstNode* decl;
+      struct DeclAstNode_t* decl;
     } decl;
 
     // Expression
     struct {
-      ExprAstNode* expr;
+      struct ExprAstNode_t* expr;
     } expr;
 
     // Block statement
     struct {
-      struct StmtAstNode* head;
+      struct StmtAstNode_t* head;
     } block;
 
     // While statement
     struct {
-      ExprAstNode* expr;
-      struct StmtAstNode* block;
+      struct ExprAstNode_t* expr;
+      struct StmtAstNode_t* block;
     } while_loop;
   };
 
-  struct StmtAstNode* next;
+  struct StmtAstNode_t* next;
 } StmtAstNode;
 
 /*

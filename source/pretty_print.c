@@ -158,7 +158,10 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
     pp_printf(buf, ", %s", node->identifier->lexeme);
   }
 
-  if (node->initializer) {
+  if (node->type->type == TYPE_FUNCTION && node->body) {
+    pp_printf(buf, ", ");
+    pp_stmt(node->body, buf);
+  } else if(node->initializer) {
     pp_printf(buf, ", ");
     pp_expr(node->initializer, buf);
   }

@@ -26,8 +26,9 @@
 #define peek(t) Parser_peek_token(parser)
 #define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 
+#define static
+
 static StmtAstNode* expression_statement(Parser* parser);
-static StmtAstNode* compound_statement(Parser* parser);
 static StmtAstNode* iteration_statement(Parser* parser);
 
 _Bool is_decl(TokenType tok) {
@@ -47,7 +48,7 @@ _Bool is_decl(TokenType tok) {
   }
 }
 
-StmtAstNode* Parser_statement(Parser* parser) {  // @TODO
+static StmtAstNode* statement(Parser* parser) {  // @TODO
   /*
    * labeled_statement
    * compound_statement
@@ -58,7 +59,7 @@ StmtAstNode* Parser_statement(Parser* parser) {  // @TODO
    */
   if (peek()->type == LEFT_BRACE) {
     // Compound statement.
-    return compound_statement(parser);
+    return Parser_compound_statement(parser);
   }
   if (peek()->type == WHILE) {
     // While statement.
@@ -66,7 +67,7 @@ StmtAstNode* Parser_statement(Parser* parser) {  // @TODO
   }
   return expression_statement(parser);
 }
-ExprAstNode* Parser_labeled_statement(Parser* parser) {  // @TODO
+static ExprAstNode* labeled_statement(Parser* parser) {  // @TODO
   /*
    * IDENTIFIER ':' statement
    * CASE constant_expression ':' statement
@@ -75,7 +76,7 @@ ExprAstNode* Parser_labeled_statement(Parser* parser) {  // @TODO
 
   return NULL;
 }
-StmtAstNode* compound_statement(Parser* parser) {  // @TODO
+StmtAstNode* Parser_compound_statement(Parser* parser) {  // @TODO
   /*
    * '{' '}'
    * '{'  block_item_list '}'
@@ -89,7 +90,7 @@ StmtAstNode* compound_statement(Parser* parser) {  // @TODO
       *curr = STMT_DECL(.decl = Parser_declaration(parser));
     } else {
       // Statement.
-      *curr = Parser_statement(parser);
+      *curr = statement(parser);
     }
     if (!head) head = *curr;
     curr = &((*curr)->next);
@@ -138,7 +139,7 @@ StmtAstNode* iteration_statement(Parser* parser) {  // @TODO
     consume(LEFT_PAREN);
     ExprAstNode* expr = Parser_expression(parser);
     consume(RIGHT_PAREN);
-    StmtAstNode* block = Parser_statement(parser);
+    StmtAstNode* block = statement(parser);
     
     return STMT_WHILE(.expr=expr, .block=block);
   }
