@@ -35,7 +35,8 @@ this means it's missing some (many) features of the C11 grammar, which really ma
  * `_Thread_local`, `_Noreturn`, `_Alignas`, `_Atomic`, `_Bool`, `_Complex`, `_Imaginary` type-specifiers are not implemented.
    The first four were both new additions in C11, the others were added in C99.
 
- * `_Alignof`, `_Generic`, `_Static_assert`, and `__func__` are not implemented. (All were added in C11.)
+ * `_Alignof`, `_Generic`, and `_Static_assert` are not implemented (all were added in C11). The pre-defined identifier `__func__`
+   is not implemented (added in C99).
 
 ### Parser
 
