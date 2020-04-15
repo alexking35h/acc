@@ -1,7 +1,7 @@
 #include "error.h"
 #include <stdbool.h>
 #include <stddef.h>
-
+#include <stdio.h>
 /*
  * Initialize Error.
  *
@@ -24,7 +24,22 @@ Error *Error_init(void) { return NULL; }
  */
 void Error_report_error(Error *error, ErrorType error_type, int line_number,
                         const char *msg) {
-  *((int *)0) = 0;
+  printf("Error occurred ");
+
+  // Error occurred. Print out error information.
+  switch(error_type) {
+    case SCANNER:
+      printf("in Scanner:\n");
+      break;
+    case PARSER:
+      printf("in Parser:\n");
+      break;
+    default:
+      printf(":\n");
+      break;
+  }
+
+  printf(" > Line (%d): %s\n\n", line_number, msg);
 }
 
 /*

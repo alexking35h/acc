@@ -1,6 +1,9 @@
 
+GIT_COMMIT=$(shell git describe --always)
+GIT_REPO=$(shell git remote get-url origin)
+
 # Compiler flags
-CFLAGS=-Wall -Iinclude $(shell pkg-config --libs --cflags cmocka) -g
+CFLAGS=-Wall -Iinclude $(shell pkg-config --libs --cflags cmocka) -g -DGIT_COMMIT=\"$(GIT_COMMIT)\" -DGIT_REPO=\"$(GIT_REPO)\"
 LDFLAGS=
 CC=gcc
 
@@ -21,6 +24,7 @@ OBJECTS = $(ACC_OBJECTS) $(TEST_OBJECTS)
 
 .PHONY: test
 .PHONY: format
+.PHONY: build
 
 test: build build/test_scanner build/test_parser_expression build/test_parser_declaration build/test_parser_statement
 	-build/test_scanner
@@ -40,16 +44,19 @@ build/test_parser_declaration: $(ACC_OBJECTS) build/test_parser_declaration.o bu
 build/test_parser_statement: $(ACC_OBJECTS) build/test_parser_statement.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS) 
 
+build/acc: $(ACC_OBJECTS)
+	$(CC) $^ -o $@ $(CFLAGS)
+
 docker_build:
 	docker build --tag acc:v1 .
 
 docker_run:
 	docker run -it --rm -v$(PWD):/home/ acc:v1 bash
 
-$(ACC_OBJECTS): build/%.o: source/%.c
+$(ACC_OBJECTS): build/%.o: source/%.c build
 	$(CC) -c $< -o $@ $(CFLAGS)
 
-$(TEST_OBJECTS): build/%.o: test/%.c
+$(TEST_OBJECTS): build/%.o: test/%.c build
 	$(CC) -c $< -o $@ $(CFLAGS)
 
 format:

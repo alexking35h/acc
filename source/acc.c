@@ -1,4 +1,8 @@
-//#include "parser.h"
+#include "scanner.h"
+#include "parser.h"
+#include "pretty_print.h"
+
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -21,7 +25,13 @@ struct CommandLineArgs_t {
   const char * source_file;
 };
 
-void print_help(){}
+void print_help(){
+  printf("ACC Version %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+  printf("\nUsage: acc [OPTIONS] [FILE]\n\n");
+  printf("Options:\n");
+  printf(" -v print version\n");
+  printf(" -h print help\n");
+}
 
 void print_version() {
   printf("ACC Version %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
@@ -60,21 +70,35 @@ _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t * args) {
     args->source_file = argv[optind];
     return true;
   }
-
-  printf("ploop\n");
   return false;
+}
+
+const char * read_file(const char * file_path) {
+  char* file_contents = malloc(256 * sizeof(char));
+  FILE* f = fopen(file_path, "r");
+
+  fread(file_contents, sizeof(char), 253, f);
+  return file_contents;
 }
 
 int main(int argc, char** argv) {
   struct CommandLineArgs_t q = {};
-  parse_cmd_args(argc, argv, &q);
-  printf("%s\n", q.source_file);
+  if(!parse_cmd_args(argc, argv, &q))
+    return 1;
+
+  // Let's get compiling!
+  const char * file = read_file(q.source_file);
+
+  Scanner * scanner = Scanner_init(file, NULL);
+  Parser * parser = Parser_init(scanner, NULL);
+
+  // Generate the AST for the file.
+  DeclAstNode * decl = Parser_declaration(parser);
+
+  char pretty_print[1024];
+  pretty_print_decl(decl, pretty_print, 1024);
+
+  printf("%s\n", pretty_print);
 }
-  
-
-  
-
-  
-
-  
+ 
   
