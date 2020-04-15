@@ -21,6 +21,8 @@
 #define GIT_REPO ""
 #endif
 
+int main(int, char**) __attribute__((weak));
+
 struct CommandLineArgs_t {
   const char* source_file;
 };
