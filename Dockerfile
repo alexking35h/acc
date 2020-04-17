@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:19.10
 
 WORKDIR /home/
 
@@ -10,6 +10,7 @@ RUN apt-get -y install vim
 RUN apt-get -y install pkg-config
 RUN apt-get -y install clang-format
 RUN apt-get -y install gdb
+RUN apt-get -y install git
 
 # Download & install cmocka
 RUN apt-get -y install curl cmake

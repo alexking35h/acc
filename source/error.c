@@ -40,7 +40,6 @@ void Error_report_error(Error *error, ErrorType error_type, int line_number,
   }
 
   printf(" > Line (%d): %s\n\n", line_number, msg);
-  exit(1);
 }
 
 /*

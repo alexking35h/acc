@@ -25,6 +25,7 @@ int main(int, char**) __attribute__((weak));
 
 struct CommandLineArgs_t {
   const char* source_file;
+  _Bool interactive;
 };
 
 void print_help() {
@@ -33,6 +34,9 @@ void print_help() {
   printf("Options:\n");
   printf(" -v print version\n");
   printf(" -h print help\n");
+  printf("\n");
+  printf("If [FILE] is omitted, acc runs in interactive mode, generating the AST\n");
+  printf("for C source code passed to the command line\n");
 }
 
 void print_version() {
@@ -68,11 +72,24 @@ _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* args) {
     }
   }
 
-  if (optind == (argc - 1)) {
-    args->source_file = argv[optind];
-    return true;
+  if ((optind) == argc) {
+    // Running in interactive mode if no arguments are provided.
+    args->interactive = true;
   }
-  return false;
+  else {
+    // Read from file.
+    args->interactive = false;
+    args->source_file = argv[optind];
+  }
+  return true;
+}
+
+DeclAstNode* get_ast(const char * source) {
+  Scanner* scanner = Scanner_init(source, NULL);
+  Parser* parser = Parser_init(scanner, NULL);
+
+  // Generate the AST for the file.
+  return Parser_declaration(parser);
 }
 
 const char* read_file(const char* file_path) {
@@ -84,20 +101,29 @@ const char* read_file(const char* file_path) {
 }
 
 int main(int argc, char** argv) {
-  struct CommandLineArgs_t q = {};
-  if (!parse_cmd_args(argc, argv, &q)) return 1;
+  struct CommandLineArgs_t args = {};
+  if (!parse_cmd_args(argc, argv, &args)) return 1;
 
-  // Let's get compiling!
-  const char* file = read_file(q.source_file);
+  if(args.interactive) {
+    printf("Running acc in interactive mode.\n");
 
-  Scanner* scanner = Scanner_init(file, NULL);
-  Parser* parser = Parser_init(scanner, NULL);
+    while (1) {
+      char src[100], ast[300];
 
-  // Generate the AST for the file.
-  DeclAstNode* decl = Parser_declaration(parser);
+      printf("\n>> ");
+      fgets(src, 99, stdin);
 
-  char pretty_print[1024];
-  pretty_print_decl(decl, pretty_print, 1024);
+      DeclAstNode* decl = get_ast(src);
+      pretty_print_decl(decl, ast, 300);
+      printf("%s\n", ast);
+    }
+  }
+  else {
+    const char* file = read_file(args.source_file);
+    char ast[1000];
 
-  printf("%s\n", pretty_print);
+    DeclAstNode* decl = get_ast(file);
+    pretty_print_decl(decl, ast, 1000);
+    printf("%s\n", ast);
+  }
 }

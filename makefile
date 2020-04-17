@@ -20,8 +20,6 @@ TEST_SOURCES=$(wildcard $(TEST_DIR)/*.c)
 ACC_OBJECTS=$(patsubst $(SOURCE_DIR)/%.c, $(BUILD_DIR)/%.o, $(ACC_SOURCES))
 TEST_OBJECTS=$(patsubst $(TEST_DIR)/%.c, $(BUILD_DIR)/%.o, $(TEST_SOURCES))
 
-OBJECTS = $(ACC_OBJECTS) $(TEST_OBJECTS)
-
 .PHONY: test
 .PHONY: format
 .PHONY: build
@@ -47,12 +45,6 @@ build/test_parser_statement: $(ACC_OBJECTS) build/test_parser_statement.o build/
 build/acc: $(ACC_OBJECTS)
 	$(CC) $^ -o $@ $(CFLAGS)
 
-docker_build:
-	docker build --tag acc:v1 .
-
-docker_run:
-	docker run -it --rm -v$(PWD):/home/ acc:v1 bash
-
 $(ACC_OBJECTS): build/%.o: source/%.c build
 	$(CC) -c $< -o $@ $(CFLAGS)
 
@@ -62,9 +54,20 @@ $(TEST_OBJECTS): build/%.o: test/%.c build
 format:
 	clang-format --style=Google -i include/*.h source/*.c test/*.c
 
-build:
+$(BUILD_DIR):
 	mkdir -p build
 
 clean:
 	rm -rf build
-	
+
+docker_build:
+	docker build --tag acc:v1 .
+
+docker_sh:
+	docker run -it --rm -v$(PWD):/home/ acc:v1 bash
+
+docker_test:
+	docker run --rm -v$(PWD):/home/ acc:v1 make test
+
+docker_acc:
+	docker run --rm -it -v$(PWD):/home/ acc:v1 bash -c "make build/acc; build/acc"

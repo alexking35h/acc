@@ -1,0 +1,25 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Launch docker Build & Test",
+			"command": "/usr/bin/make",
+			"args": ["docker_test"],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			}
+		},
+		{
+			"type": "shell",
+			"label": "Launch docker and run ACC interactive",
+			"command": "/usr/bin/make",
+			"args": ["docker_acc"],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}
