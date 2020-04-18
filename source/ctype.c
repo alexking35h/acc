@@ -1,5 +1,8 @@
 
+#include <stdio.h>
+
 #include "ctype.h"
+#include "token.h"
 
 #define TYPE_SIGNEDNESS (TYPE_SIGNED | TYPE_UNSIGNED)
 #define TYPE_SPECIFIERS (TYPE_VOID | TYPE_CHAR | TYPE_INT)
@@ -65,22 +68,25 @@ err:
   return;
 }
 
-void ctype_set_primitive_finalise(CType *type) {
+_Bool ctype_set_primitive_finalise(CType *type) {
   TypeSpecifier *specifier = &type->primitive.type_specifier;
+
+  // Report an error if no specifier/qualifiers were used.
+  if(*specifier == 0) return false;
 
   // Set the default type to 'int', if not specified.
   if (!(*specifier & TYPE_SPECIFIERS)) *specifier |= TYPE_INT;
 
   // Check void types don't have signed or size specifiers
   if (*specifier & TYPE_VOID) {
-    if (*specifier & TYPE_SIGNEDNESS) goto err;
-    if (*specifier & TYPE_SIZE) goto err;
+    if (*specifier & TYPE_SIGNEDNESS) return true;
+    if (*specifier & TYPE_SIZE) return false;
   }
 
   // Char types - should not have size specifiers, and
   // are unsigned by default.
   if (*specifier & TYPE_CHAR) {
-    if (*specifier & TYPE_SIZE) goto err;
+    if (*specifier & TYPE_SIZE) return false;
 
     if (!(*specifier & TYPE_SIGNEDNESS)) *specifier |= TYPE_UNSIGNED;
   }
@@ -89,8 +95,7 @@ void ctype_set_primitive_finalise(CType *type) {
   if (*specifier & TYPE_INT) {
     if (!(*specifier & TYPE_SIGNEDNESS)) *specifier |= TYPE_SIGNED;
   }
-err:
-  return;
+  return true;
 }
 
 void ctype_set_derived(CType *parent, CType *child) {

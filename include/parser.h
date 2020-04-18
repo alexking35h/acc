@@ -6,6 +6,7 @@
 #include "ast.h"
 #include "scanner.h"
 #include "token.h"
+#include "ctype.h"
 
 typedef struct Parser_t {
   // Scanner and error instances.

@@ -54,15 +54,56 @@ static void panic_mode_declaration(void** state) {
   assert_true(test_ast_compare_decl(src, ""));
 
   // Test nested error-handling behaviour across code blocks.
-  src = "void p() {} int a";
-  ast = "(D [f() [void]], p, {B })";
+  src = "char b; void p() {} int a";
+  ast = "(D [unsigned char], b, (D [f() [void]], p, {B }))";
   expect_report_error(1, "Expecting ';', got 'End of File'");
+  assert_true(test_ast_compare_decl(src, ast));
+
+  // Parsing error in the initializer expression of a declaration.
+  src = "int a = 3 + / 3;int b;";
+  ast = "(D [signed int], b)";
+  expect_report_error(1, "Expected expression, got '/'");
+  assert_true(test_ast_compare_decl(src, ast));
+}
+
+static void panic_mode_parameter_list(void** state) {
+  // Test panic-mode behaviour in parameter declaration lists. In this
+  // case, the parser should synchronise on ',' or ')'
+  const char* src = "void p(int, plinth, char);";
+  const char* ast = "(D [f([signed int]:,[unsigned char]:) [void]], p)";
+  expect_report_error(1, "Invalid type");
+  assert_true(test_ast_compare_decl(src, ast));
+
+  src = "void w(int a,);";
+  ast = "(D [f([signed int]:a) [void]], w)";
+  expect_report_error(1, "Invalid type");
+  assert_true(test_ast_compare_decl(src, ast));
+}
+
+static void panic_mode_compound_statement(void** state) {
+  // Test panic-mode behaviour in compound statement. In this
+  // case, the parser should synchronise on ';' or '}'.
+  const char* src = "void p(){\na=1;b=2 a=3;\n}";
+  const char* ast = "(D [f() [void]], p, {B {E (A (P a), (P 1))}})";
+  expect_report_error(2, "Expecting ';', got 'identifier'");
+  assert_true(test_ast_compare_decl(src, ast));
+
+  src = "void p(){a= = 2;}";
+  ast = "(D [f() [void]], p, {B })";
+  expect_report_error(1, "Expected expression, got '='");
+  assert_true(test_ast_compare_decl(src, ast));
+
+  src = "void p(){\n  a=1\n}";
+  ast = "(D [f() [void]], p, {B })";
+  expect_report_error(3, "Expecting ';', got '}'");
   assert_true(test_ast_compare_decl(src, ast));
 }
 
 int main(void) {
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(panic_mode_declaration)};
+      cmocka_unit_test(panic_mode_declaration),
+      cmocka_unit_test(panic_mode_parameter_list),
+      cmocka_unit_test(panic_mode_compound_statement)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

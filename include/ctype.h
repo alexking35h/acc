@@ -43,10 +43,12 @@
 #ifndef __CTYPE__
 #define __CTYPE__
 
-#include "token.h"
-
 struct CType;
 struct ParameterListItem;
+
+#include <stdbool.h>
+
+#include "token.h"
 
 typedef enum {
   TYPE_PRIMITIVE,
@@ -134,8 +136,10 @@ void ctype_set_primitive_storage_specifier(CType* type, TypeStorageSpecifier);
  * Validate the C type (e.g., void is not long/short), and set default values
  * (e.g. char -> unsigned char). This functiokn should be called once all
  * type specifiers/qualifiers/storage-specifiers have been parsed.
+ * 
+ * This function returns true if the ctype definition is valid, false otherwise.
  */
-void ctype_set_primitive_finalise(CType* type);
+_Bool ctype_set_primitive_finalise(CType* type);
 
 /*
  * Set `parent` to derive from `child`. (`parent` must not be a primitive type.)

@@ -89,7 +89,7 @@ DeclAstNode* get_ast(const char * source) {
   Parser* parser = Parser_init(scanner, NULL);
 
   // Generate the AST for the file.
-  return Parser_declaration(parser);
+  return Parser_translation_unit(parser);
 }
 
 const char* read_file(const char* file_path) {
@@ -114,6 +114,8 @@ int main(int argc, char** argv) {
       fgets(src, 99, stdin);
 
       DeclAstNode* decl = get_ast(src);
+      if(!decl) continue;
+
       pretty_print_decl(decl, ast, 300);
       printf("%s\n", ast);
     }

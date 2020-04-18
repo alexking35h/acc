@@ -165,7 +165,11 @@ static CType* declaration_specifiers(Parser* parser) {  // @TODO
   }
 
 end:
-  ctype_set_primitive_finalise(type);
+  if(!ctype_set_primitive_finalise(type)) {
+    Error_report_error(parser->error, PARSER, peek()->line_number, "Invalid type");
+
+    THROW_ERROR(parser);
+  }
   return type;
 }
 static DeclAstNode* init_declarator_list(Parser* parser,
@@ -432,6 +436,12 @@ static ParameterListItem* parameter_list(Parser* parser) {  // @TODO
    * parameter_declaration
    * parameter_list ',' parameter_declaration
    */
+  if(CATCH_ERROR(parser)) {
+    // Error occurred parsing 'parameter_declaration'
+    synchronise(COMMA, RIGHT_PAREN, END_OF_FILE);
+
+    return match(COMMA) ? parameter_list(parser) : NULL;
+  }
   ParameterListItem* param = parameter_declaration(parser);
 
   if (match(COMMA)) {
@@ -439,7 +449,6 @@ static ParameterListItem* parameter_list(Parser* parser) {  // @TODO
   } else {
     param->next = NULL;
   }
-
   return param;
 }
 static ParameterListItem* parameter_declaration(Parser* parser) {  // @TODO
