@@ -2,6 +2,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+
+void Error_report_error(Error*, ErrorType, int, const char*)  __attribute__((weak));
+
 /*
  * Initialize Error.
  *
@@ -22,6 +25,7 @@ Error *Error_init(void) { return NULL; }
  *  line_number
  *  message (this can be NULL)
  */
+
 void Error_report_error(Error *error, ErrorType error_type, int line_number,
                         const char *msg) {
   printf("Error occurred ");

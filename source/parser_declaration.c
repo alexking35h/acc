@@ -22,6 +22,7 @@
 #define consume(t) Parser_consume_token(parser, t)
 #define peek() Parser_peek_token(parser)
 #define advance() Parser_advance_token(parser)
+#define synchronise(...) Parser_synchronise_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 
 #define static
 
@@ -73,25 +74,6 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
    * declaration_specifiers ';'
    * declaration_specifiers init_declarator_list ';'
    */
-  if(CATCH_ERROR(parser)) {
-    // Panic stations!
-    // Skip over everything until you see a ';'
-    // Call Parser_declaration recursively to parse the subsequent declaration.
-    printf("Panic stations lads!\n");
-    while (1) {
-      printf("%s\n", Token_str(peek()->type));
-      if(peek()->type == SEMICOLON)
-        break;
-      if(peek()->type == END_OF_FILE)
-        return NULL;
-      
-      advance();
-    }
-    advance();
-
-    return Parser_declaration(parser);
-  }
-
   CType* type = declaration_specifiers(parser);
 
   if (match(SEMICOLON)) return DECL(.type = type);
@@ -550,8 +532,18 @@ static DeclAstNode* Parser_translation_unit(Parser* parser) {  // @TODO
    * external_declaration
    * translation_unit external_declaration
    */
-  DeclAstNode *head, **curr = &head;
+  DeclAstNode *head = NULL, **curr = &head;
   while((peek())->type != END_OF_FILE) {
+
+    if(CATCH_ERROR(parser)) {
+      // Error occurred parsing the following declaration.
+      // synchronise on the next semi-colon.
+      synchronise(SEMICOLON, END_OF_FILE);
+
+      if (peek()->type == SEMICOLON) advance();
+      continue;
+    }
+
     *curr = Parser_declaration(parser);
     curr = &((*curr)->next);
   }
