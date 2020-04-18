@@ -24,8 +24,8 @@ translation_unit: (function_declaration | declaration)*
 ```
 
 `function_declarations` subsequently derive `compound_statements`, which include:
-* `expression_statements`, including assignments and function-calls.
-* `declarations` - although not function-declarations of course.
+* `expression_statement`, including assignments and function-calls.
+* `declaration` - although not function-declarations of course.
 * `iteration_statement` - including `while` and `for`.
 
 For some rules - provided the semantics and set of derivations are unchanged,
@@ -36,8 +36,18 @@ changes are discussed in the sections below.
 
 ## Declarations
 
-In `parser_declaration.c`, the `Parser_declaration()` function handles `function_declaration` and `declaration`
-rules.
+Declarations includes variables and functions. The grammar treats both seperately,
+which makes it easier to bake function-specific type rules (`inline` and `noreturn`), and 
+limitations on where function definitions can be placed into the grammar. Since the two
+_FIRST_ sets are not disjoint, `parser_declaration.c` handles both cases in the `Parser_declaration()`
+function:
+```c
+  if (decl->type->type == TYPE_FUNCTION && peek()->type == LEFT_BRACE) {
+    decl->body = Parser_compound_statement(parser);
+  } else {
+    consume(SEMICOLON);
+  }
+```
 
 ## Statements
 
