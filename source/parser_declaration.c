@@ -9,6 +9,8 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <setjmp.h>
+#include <stdio.h>
 
 #include "ast.h"
 #include "ctype.h"
@@ -64,11 +66,32 @@ static DeclAstNode* external_declaration(Parser* parser);             // @TODO
 static DeclAstNode* function_definition(Parser* parser);              // @TODO
 static DeclAstNode* declaration_list(Parser* parser);                 // @TODO
 
+static jmp_buf panic_station;
+
 DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
   /*
    * declaration_specifiers ';'
    * declaration_specifiers init_declarator_list ';'
    */
+  if(CATCH_ERROR(parser)) {
+    // Panic stations!
+    // Skip over everything until you see a ';'
+    // Call Parser_declaration recursively to parse the subsequent declaration.
+    printf("Panic stations lads!\n");
+    while (1) {
+      printf("%s\n", Token_str(peek()->type));
+      if(peek()->type == SEMICOLON)
+        break;
+      if(peek()->type == END_OF_FILE)
+        return NULL;
+      
+      advance();
+    }
+    advance();
+
+    return Parser_declaration(parser);
+  }
+
   CType* type = declaration_specifiers(parser);
 
   if (match(SEMICOLON)) return DECL(.type = type);
@@ -169,14 +192,15 @@ static DeclAstNode* init_declarator_list(Parser* parser,
    * init_declarator
    * init_declarator_list ',' init_declarator
    */
-  DeclAstNode* node = init_declarator(parser, type);
+  DeclAstNode *head = init_declarator(parser, type);
+  DeclAstNode **curr = &(head->next);
 
-  while (match(COMMA)) {
-    DeclAstNode* decl_node = init_declarator(parser, type);
-    decl_node->next = node;
-    node = decl_node;
+  while(match(COMMA)) {
+    *curr = init_declarator(parser, type);
+    curr = &((*curr)->next);
   }
-  return node;
+
+  return head;
 }
 static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
   /*
@@ -521,20 +545,23 @@ static DeclAstNode* static_assert_declaration(Parser* parser) {  // @TODO
 
   return NULL;
 }
-static DeclAstNode* translation_unit(Parser* parser) {  // @TODO
+static DeclAstNode* Parser_translation_unit(Parser* parser) {  // @TODO
   /*
    * external_declaration
    * translation_unit external_declaration
    */
-
-  return NULL;
+  DeclAstNode *head, **curr = &head;
+  while((peek())->type != END_OF_FILE) {
+    *curr = Parser_declaration(parser);
+    curr = &((*curr)->next);
+  }
+  return head;
 }
 static DeclAstNode* external_declaration(Parser* parser) {  // @TODO
   /*
    * function_definition
    * declaration
    */
-
   return NULL;
 }
 static DeclAstNode* function_definition(Parser* parser) {  // @TODO

@@ -40,7 +40,7 @@ static void primitive_declaration(void** state) {
       {"register void a;", "(D [register void], a)"},
 
       // Declarator lists.
-      {"char a, b;", "(D (D [unsigned char], a), [unsigned char], b)"},
+      {"char a, b;", "(D [unsigned char], a, (D [unsigned char], b))"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
@@ -52,7 +52,7 @@ static void pointer_declaration(void** state) {
       {"char * c;", "(D [* [unsigned char]], c)"},
       {"short * p;", "(D [* [signed short int]], p)"},
       {"void ** q;", "(D [* [* [void]]], q)"},
-      {"int a, *b;", "(D (D [signed int], a), [* [signed int]], b)"},
+      {"int a, *b;", "(D [signed int], a, (D [* [signed int]], b))"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
@@ -64,7 +64,7 @@ static void array_declaration(void** state) {
       {"char rahc[4];", "(D [[4] [unsigned char]], rahc)"},
       {"int * bc[2];", "(D [[2] [* [signed int]]], bc)"},
       {"int q[1][2];", "(D [[1] [[2] [signed int]]], q)"},
-      {"void q, w[1];", "(D (D [void], q), [[1] [void]], w)"},
+      {"void q, w[1];", "(D [void], q, (D [[1] [void]], w))"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);
@@ -101,7 +101,7 @@ static void declaration_initializer(void** state) {
       {"int a = 2*3;", "(D [signed int], a, (B (P 2), *, (P 3)))"},
       {"char* s = \"hw\";", "(D [* [unsigned char]], s, (P \"hw\"))"},
       {"int a=2, b=3;",
-       "(D (D [signed int], a, (P 2)), [signed int], b, (P 3))"},
+       "(D [signed int], a, (P 2), (D [signed int], b, (P 3)))"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);

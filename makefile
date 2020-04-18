@@ -24,11 +24,12 @@ TEST_OBJECTS=$(patsubst $(TEST_DIR)/%.c, $(BUILD_DIR)/%.o, $(TEST_SOURCES))
 .PHONY: format
 .PHONY: build
 
-test: build build/test_scanner build/test_parser_expression build/test_parser_declaration build/test_parser_statement
+test: build build/test_scanner build/test_parser_expression build/test_parser_declaration build/test_parser_statement build/test_parser_error
 	-build/test_scanner
 	-build/test_parser_expression
 	-build/test_parser_declaration
 	-build/test_parser_statement
+	-build/test_parser_error
 
 build/test_scanner: $(ACC_OBJECTS) build/test_scanner.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=Error_report_error -Wl,--wrap=Error_report_warning
@@ -41,6 +42,9 @@ build/test_parser_declaration: $(ACC_OBJECTS) build/test_parser_declaration.o bu
 
 build/test_parser_statement: $(ACC_OBJECTS) build/test_parser_statement.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS) 
+
+build/test_parser_error: $(ACC_OBJECTS) build/test_parser_error.o build/test.o
+	$(CC) $^ -o $@ $(CFLAGS)
 
 build/acc: $(ACC_OBJECTS)
 	$(CC) $^ -o $@ $(CFLAGS)

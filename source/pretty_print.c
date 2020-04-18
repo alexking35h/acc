@@ -41,9 +41,13 @@ int pretty_print_expr(ExprAstNode* node, char* buf, int len) {
  * Generate a string for the given DeclAstNode.
  */
 int pretty_print_decl(DeclAstNode* node, char* buf, int len) {
-  StringBuffer str_buf = {buf, buf + len};
-  pp_decl(node, &str_buf);
-  return str_buf.end - str_buf.start;
+  if(node) {
+    StringBuffer str_buf = {buf, buf + len};
+    pp_decl(node, &str_buf);
+    return str_buf.end - str_buf.start;
+  } else {
+    return 0;
+  }
 }
 
 /*
@@ -148,11 +152,6 @@ static void pp_assign(ExprAstNode* node, StringBuffer* buf) {
 static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
   pp_printf(buf, "(D ");
 
-  if (node->next) {
-    pp_decl(node->next, buf);
-    pp_printf(buf, ", ");
-  }
-
   pp_type(node->type, buf);
   if (node->identifier) {
     pp_printf(buf, ", %s", node->identifier->lexeme);
@@ -164,6 +163,11 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
   } else if (node->initializer) {
     pp_printf(buf, ", ");
     pp_expr(node->initializer, buf);
+  }
+
+ if (node->next) {
+    pp_printf(buf, ", ");
+    pp_decl(node->next, buf);
   }
 
   pp_printf(buf, ")");

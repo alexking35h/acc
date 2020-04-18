@@ -1,6 +1,8 @@
 #ifndef __PARSER__
 #define __PARSER__
 
+#include <setjmp.h>
+
 #include "ast.h"
 #include "scanner.h"
 #include "token.h"
@@ -12,6 +14,8 @@ typedef struct Parser_t {
 
   // Next unread token.
   Token *next_token;
+
+  jmp_buf panic_jmp;
 
 } Parser;
 
@@ -54,13 +58,17 @@ void Parser_advance_token(Parser *);
  */
 Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme);
 
+#define CATCH_ERROR(parser) (setjmp(parser->panic_jmp) != 0)
+#define THROW_ERROR(parser) longjmp(parser->panic_jmp, 1)
+
 /*
  * Recursive descent parser function definitions.
  */
 ExprAstNode *Parser_expression(Parser *parser);
 ExprAstNode *Parser_assignment_expression(Parser *parser);
 
-DeclAstNode *Parser_declaration(Parser *parser);
+DeclAstNode* Parser_declaration(Parser *parser);
+DeclAstNode *Parser_translation_unit(Parser *parser);
 
 StmtAstNode *Parser_compound_statement(Parser *parser);
 

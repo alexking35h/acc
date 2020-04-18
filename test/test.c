@@ -57,7 +57,7 @@ bool test_ast_compare_decl(const char* source, const char* expected) {
   Parser* parser = Parser_init(scanner, NULL);
 
   // Generate the AST
-  DeclAstNode* ast_node = Parser_declaration(parser);
+  DeclAstNode* ast_node = Parser_translation_unit(parser);
 
   char generated_ast[256] = "";
   pretty_print_decl(ast_node, generated_ast, sizeof(generated_ast));

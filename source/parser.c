@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <setjmp.h>
 
 #include "ast.h"
 #include "parser.h"
@@ -14,6 +15,7 @@ Parser *Parser_init(Scanner *scanner, Error *error) {
   Parser *parser = calloc(1, sizeof(Parser));
   parser->scanner = scanner;
   parser->error = error;
+  parser->next_token = Scanner_get_next(parser->scanner);
 
   return parser;
 }
@@ -29,14 +31,11 @@ void Parser_destroy(Parser *parser) { free(parser); }
  * array of TokenType.
  */
 Token *Parser_match_token(Parser *parser, TokenType *token_types) {
-  if (parser->next_token == NULL)
-    parser->next_token = Scanner_get_next(parser->scanner);
-
   for (; *token_types != NAT; token_types++) {
     if (parser->next_token->type != *token_types) continue;
 
     Token *return_token = parser->next_token;
-    parser->next_token = NULL;
+    Parser_advance_token(parser);
     return return_token;
   }
   return NULL;
@@ -46,9 +45,6 @@ Token *Parser_match_token(Parser *parser, TokenType *token_types) {
  * Check out the next token.
  */
 Token *Parser_peek_token(Parser *parser) {
-  if (parser->next_token == NULL)
-    parser->next_token = Scanner_get_next(parser->scanner);
-
   return parser->next_token;
 }
 
@@ -64,13 +60,17 @@ void Parser_consume_token(Parser *parser, TokenType token_type) {
              Token_str(tok->type));
 
     Error_report_error(parser->error, PARSER, tok->line_number, err_msg);
+
+    THROW_ERROR(parser);
   }
 }
 
 /*
  * Advance the token input.
  */
-void Parser_advance_token(Parser *parser) { parser->next_token = NULL; }
+void Parser_advance_token(Parser *parser) {
+  parser->next_token = Scanner_get_next(parser->scanner);
+}
 
 /*
  * Create a new token, for the purposes of desugauring syntax.
