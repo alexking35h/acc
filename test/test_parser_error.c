@@ -1,21 +1,19 @@
 #include <setjmp.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
-#include <cmocka.h>
-
-#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <cmocka.h>
 
 #include "ast.h"
 #include "parser.h"
 #include "scanner.h"
 #include "test.h"
 
-void Error_report_error(Error* error, ErrorType error_type,
-                               int line_number, const char* error_string) {
+void Error_report_error(Error* error, ErrorType error_type, int line_number,
+                        const char* error_string) {
   function_called();
   check_expected(error);
   check_expected(error_type);
@@ -23,9 +21,7 @@ void Error_report_error(Error* error, ErrorType error_type,
   check_expected(error_string);
 }
 
-static void expect_report_error(
-                             int expect_line,
-                             char* expect_err_str) {
+static void expect_report_error(int expect_line, char* expect_err_str) {
   expect_function_call(Error_report_error);
   expect_value(Error_report_error, error, 0x1234);
   expect_value(Error_report_error, error_type, PARSER);
@@ -37,8 +33,8 @@ static void panic_mode_declaration(void** state) {
   // Test panic mode behaviour at the top-level of a translation unit.
   // Should synchronise on the next semicolon:
   // void *q; int a a = 1; char b = 2 => void q*; char b = 2;
-  const char * src = "void * q;int a a = 1; char b = 2;";
-  const char *ast = "(D [* [void]], q, (D [unsigned char], b, (P 2)))";
+  const char* src = "void * q;int a a = 1; char b = 2;";
+  const char* ast = "(D [* [void]], q, (D [unsigned char], b, (P 2)))";
   expect_report_error(1, "Expecting ';', got 'identifier'");
   assert_true(test_ast_compare_decl(src, ast));
 
@@ -64,6 +60,9 @@ static void panic_mode_declaration(void** state) {
   ast = "(D [signed int], b)";
   expect_report_error(1, "Expected expression, got '/'");
   assert_true(test_ast_compare_decl(src, ast));
+
+  expect_report_error(1, "Expecting 'constant', got 'identifier'");
+  assert_true(test_ast_compare_decl("int a[b];", ""));
 }
 
 static void panic_mode_parameter_list(void** state) {
@@ -99,11 +98,37 @@ static void panic_mode_compound_statement(void** state) {
   assert_true(test_ast_compare_decl(src, ast));
 }
 
+static void type_error(void** state) {
+  // Test error-handling behaviour in type declarations.
+
+  // Multiple storage-class specifiers.
+  expect_report_error(
+      1, "Types cannot have more than one storage-class specifier");
+  assert_true(test_ast_compare_decl("static extern int a;", ""));
+
+  // Invalid primitive type.
+  expect_report_error(1, "Invalid type specifier");
+  expect_report_error(1, "Invalid type specifier");
+  assert_true(test_ast_compare_decl("short long int p;", ""));
+  assert_true(test_ast_compare_decl("signed unsigned a;", ""));
+  expect_report_error(1, "Invalid type");
+  assert_true(test_ast_compare_decl("long char p;", ""));
+
+  // Invalid type - functions cannot return functions.
+  // 6.7.6.3: A function declarator shall not specify a return type that is a
+  // function type  or  an  arraytype.
+  expect_report_error(1, "Functions cannot return functions (try Python?)");
+  assert_true(test_ast_compare_decl("int a()();", ""));
+  expect_report_error(1, "Functions cannot return arrays (try Python?)");
+  assert_true(test_ast_compare_decl("int a()[1];", ""));
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(panic_mode_declaration),
       cmocka_unit_test(panic_mode_parameter_list),
-      cmocka_unit_test(panic_mode_compound_statement)};
+      cmocka_unit_test(panic_mode_compound_statement),
+      cmocka_unit_test(type_error)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

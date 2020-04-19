@@ -1,10 +1,11 @@
+#include "scanner.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "error.h"
-#include "scanner.h"
 #include "token.h"
 
 #define TOKEN_BUFFER_SIZE 32

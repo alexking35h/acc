@@ -1,7 +1,7 @@
+#include "ast.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-#include "ast.h"
 
 /* Create new AST nodes
  *

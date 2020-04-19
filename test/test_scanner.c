@@ -1,13 +1,12 @@
 #include <setjmp.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
-#include <cmocka.h>
-
-#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <cmocka.h>
+
 
 #include "error.h"
 #include "scanner.h"

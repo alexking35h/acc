@@ -1,9 +1,10 @@
+#include "pretty_print.h"
+
 #include <stdio.h>
 #include <string.h>
 
 #include "ast.h"
 #include "ctype.h"
-#include "pretty_print.h"
 
 #define pp_printf(buf, ...) \
   buf->start += snprintf(buf->start, buf->end - buf->start, __VA_ARGS__);
@@ -41,7 +42,7 @@ int pretty_print_expr(ExprAstNode* node, char* buf, int len) {
  * Generate a string for the given DeclAstNode.
  */
 int pretty_print_decl(DeclAstNode* node, char* buf, int len) {
-  if(node) {
+  if (node) {
     StringBuffer str_buf = {buf, buf + len};
     pp_decl(node, &str_buf);
     return str_buf.end - str_buf.start;
@@ -165,7 +166,7 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf) {
     pp_expr(node->initializer, buf);
   }
 
- if (node->next) {
+  if (node->next) {
     pp_printf(buf, ", ");
     pp_decl(node->next, buf);
   }

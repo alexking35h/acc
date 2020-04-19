@@ -27,7 +27,8 @@
 #define peek(t) Parser_peek_token(parser)
 #define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 #define advance(...) Parser_advance_token(parser)
-#define synchronise(...) Parser_synchronise_token(parser, (TokenType[]){__VA_ARGS__, NAT})
+#define synchronise(...) \
+  Parser_synchronise_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 
 #define static
 
@@ -88,14 +89,13 @@ StmtAstNode* Parser_compound_statement(Parser* parser) {  // @TODO
 
   consume(LEFT_BRACE);
   while (!match(RIGHT_BRACE)) {
-
-    if(CATCH_ERROR(parser)) {
+    if (CATCH_ERROR(parser)) {
       // Error occurred parsing the following declaration.
       // synchronise on the next semi-colon, or until we reach the RIGHT brace.
       synchronise(SEMICOLON, RIGHT_BRACE, END_OF_FILE);
 
-      if(peek()->type == SEMICOLON) advance();
-      if(peek()->type == END_OF_FILE) return NULL;
+      if (peek()->type == SEMICOLON) advance();
+      if (peek()->type == END_OF_FILE) return NULL;
       continue;
     }
 

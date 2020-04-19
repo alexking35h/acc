@@ -1,10 +1,11 @@
+#include "parser.h"
+
+#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <setjmp.h>
 
 #include "ast.h"
-#include "parser.h"
 #include "scanner.h"
 #include "token.h"
 
@@ -44,15 +45,14 @@ Token *Parser_match_token(Parser *parser, TokenType *token_types) {
 /*
  * Check out the next token.
  */
-Token *Parser_peek_token(Parser *parser) {
-  return parser->next_token;
-}
+Token *Parser_peek_token(Parser *parser) { return parser->next_token; }
 
 /*
  * If the next token does not match, report an error and return false.
  */
-void Parser_consume_token(Parser *parser, TokenType token_type) {
-  if (NULL == Parser_match_token(parser, (TokenType[]){token_type, NAT})) {
+Token *Parser_consume_token(Parser *parser, TokenType token_type) {
+  Token *tok = Parser_match_token(parser, (TokenType[]){token_type, NAT});
+  if (!tok) {
     Token *tok = Parser_peek_token(parser);
 
     char err_msg[80];
@@ -60,9 +60,9 @@ void Parser_consume_token(Parser *parser, TokenType token_type) {
              Token_str(tok->type));
 
     Error_report_error(parser->error, PARSER, tok->line_number, err_msg);
-
     THROW_ERROR(parser);
   }
+  return tok;
 }
 
 /*
@@ -91,9 +91,8 @@ Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme) {
 
 void Parser_synchronise_token(Parser *parser, TokenType types[]) {
   while (1) {
-    for(TokenType *t = &types[0];*t != NAT;t++) {
-      if(Parser_peek_token(parser)->type == *t)
-        return;
+    for (TokenType *t = &types[0]; *t != NAT; t++) {
+      if (Parser_peek_token(parser)->type == *t) return;
     }
     Parser_advance_token(parser);
   }

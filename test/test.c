@@ -1,23 +1,26 @@
+#include "test.h"
+
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+
 
 #include <cmocka.h>
 
-#include <stdio.h>
-#include <string.h>
 
 #include "parser.h"
 #include "pretty_print.h"
 #include "scanner.h"
-#include "test.h"
 
 /*
  * Check if the string representation for an expression source input matches
  * the expected AST. (Assuming no errors occur.)
  */
-bool test_ast_compare_expr(const char* source, const char* expected) {
+_Bool test_ast_compare_expr(const char* source, const char* expected) {
   // Generate Scanner and Parser objects.
   Scanner* scanner = Scanner_init(source, (Error*)0x1234);
   Parser* parser = Parser_init(scanner, (Error*)0x1234);
@@ -28,7 +31,7 @@ bool test_ast_compare_expr(const char* source, const char* expected) {
   char generated_ast[256] = "";
   pretty_print_expr(ast_node, generated_ast, sizeof(generated_ast));
 
-  bool matches = (strlen(generated_ast) == strlen(expected) &&
+  _Bool matches = (strlen(generated_ast) == strlen(expected) &&
                   strcmp(generated_ast, expected) == 0);
 
   if (!matches) {
@@ -51,7 +54,7 @@ bool test_ast_compare_expr(const char* source, const char* expected) {
  * Check if the string representation for a declaration source input matches
  * the expected AST. (Assuming no errors occur.)
  */
-bool test_ast_compare_decl(const char* source, const char* expected) {
+_Bool test_ast_compare_decl(const char* source, const char* expected) {
   // Generate Scanner and Parser objects.
   Scanner* scanner = Scanner_init(source, (Error*)0x1234);
   Parser* parser = Parser_init(scanner, (Error*)0x1234);
@@ -62,7 +65,7 @@ bool test_ast_compare_decl(const char* source, const char* expected) {
   char generated_ast[256] = "";
   pretty_print_decl(ast_node, generated_ast, sizeof(generated_ast));
 
-  bool matches = (strlen(generated_ast) == strlen(expected) &&
+  _Bool matches = (strlen(generated_ast) == strlen(expected) &&
                   strcmp(generated_ast, expected) == 0);
 
   if (!matches) {
@@ -80,7 +83,7 @@ bool test_ast_compare_decl(const char* source, const char* expected) {
  * Check if the string representation for an expression source input matches
  * the expected AST. (Assuming no errors occur.)
  */
-bool test_ast_compare_stmt(const char* source, const char* expected) {
+_Bool test_ast_compare_stmt(const char* source, const char* expected) {
   // Generate Scanner and Parser objects.
   Scanner* scanner = Scanner_init(source, (Error*)0x1234);
   Parser* parser = Parser_init(scanner, (Error*)0x1234);
@@ -91,7 +94,7 @@ bool test_ast_compare_stmt(const char* source, const char* expected) {
   char generated_ast[256] = "";
   pretty_print_stmt(ast_node, generated_ast, sizeof(generated_ast));
 
-  bool matches = (strlen(generated_ast) == strlen(expected) &&
+  _Bool matches = (strlen(generated_ast) == strlen(expected) &&
                   strcmp(generated_ast, expected) == 0);
 
   if (!matches) {

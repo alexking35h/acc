@@ -4,9 +4,9 @@
 #include <setjmp.h>
 
 #include "ast.h"
+#include "ctype.h"
 #include "scanner.h"
 #include "token.h"
-#include "ctype.h"
 
 typedef struct Parser_t {
   // Scanner and error instances.
@@ -44,7 +44,7 @@ Token *Parser_peek_token(Parser *);
 /*
  * If the next token does not match, report an error and return false.
  */
-void Parser_consume_token(Parser *, TokenType);
+Token *Parser_consume_token(Parser *, TokenType);
 
 /*
  * Advance the parser to the next token
@@ -64,14 +64,13 @@ Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme);
 
 void Parser_synchronise_token(Parser *, TokenType[]);
 
-
 /*
  * Recursive descent parser function definitions.
  */
 ExprAstNode *Parser_expression(Parser *parser);
 ExprAstNode *Parser_assignment_expression(Parser *parser);
 
-DeclAstNode* Parser_declaration(Parser *parser);
+DeclAstNode *Parser_declaration(Parser *parser);
 DeclAstNode *Parser_translation_unit(Parser *parser);
 
 StmtAstNode *Parser_compound_statement(Parser *parser);

@@ -1,11 +1,11 @@
-#include "parser.h"
-#include "pretty_print.h"
-#include "scanner.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#include "parser.h"
+#include "pretty_print.h"
+#include "scanner.h"
 
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0
@@ -35,7 +35,9 @@ void print_help() {
   printf(" -v print version\n");
   printf(" -h print help\n");
   printf("\n");
-  printf("If [FILE] is omitted, acc runs in interactive mode, generating the AST\n");
+  printf(
+      "If [FILE] is omitted, acc runs in interactive mode, generating the "
+      "AST\n");
   printf("for C source code passed to the command line\n");
 }
 
@@ -75,8 +77,7 @@ _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* args) {
   if ((optind) == argc) {
     // Running in interactive mode if no arguments are provided.
     args->interactive = true;
-  }
-  else {
+  } else {
     // Read from file.
     args->interactive = false;
     args->source_file = argv[optind];
@@ -84,7 +85,7 @@ _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* args) {
   return true;
 }
 
-DeclAstNode* get_ast(const char * source) {
+DeclAstNode* get_ast(const char* source) {
   Scanner* scanner = Scanner_init(source, NULL);
   Parser* parser = Parser_init(scanner, NULL);
 
@@ -104,7 +105,7 @@ int main(int argc, char** argv) {
   struct CommandLineArgs_t args = {};
   if (!parse_cmd_args(argc, argv, &args)) return 1;
 
-  if(args.interactive) {
+  if (args.interactive) {
     printf("Running acc in interactive mode.\n");
 
     while (1) {
@@ -114,13 +115,12 @@ int main(int argc, char** argv) {
       fgets(src, 99, stdin);
 
       DeclAstNode* decl = get_ast(src);
-      if(!decl) continue;
+      if (!decl) continue;
 
       pretty_print_decl(decl, ast, 300);
       printf("%s\n", ast);
     }
-  }
-  else {
+  } else {
     const char* file = read_file(args.source_file);
     char ast[1000];
 

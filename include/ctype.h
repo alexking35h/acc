@@ -37,7 +37,7 @@
  * > Ctype *prim, *pointer, *ppointer;
  * > ...
  * > ctype_set_derived(pointer, prim);
- * > ctype_set_derived(ppoointer, pointer);
+ * > ctype_set_derived(poointer, pointer);
  */
 
 #ifndef __CTYPE__
@@ -122,24 +122,27 @@ typedef struct CType {
 } CType;
 
 /* Set the type specifier for a type */
-void ctype_set_primitive_specifier(CType* type, TypeSpecifier);
+void ctype_set_primitive_specifier(CType* type, TypeSpecifier, char**);
 
 /* Set the type qualifier for a type */
-void ctype_set_primitive_qualifier(CType* type, TypeQualifier);
+void ctype_set_primitive_qualifier(CType* type, TypeQualifier, char**);
 
 /* Set the storage-class specifier for a type */
-void ctype_set_primitive_storage_specifier(CType* type, TypeStorageSpecifier);
+void ctype_set_primitive_storage_specifier(CType* type, TypeStorageSpecifier,
+                                           char**);
 
 /*
- * Finalise Primitive C type
+ * Finalise C Type
  *
- * Validate the C type (e.g., void is not long/short), and set default values
- * (e.g. char -> unsigned char). This functiokn should be called once all
- * type specifiers/qualifiers/storage-specifiers have been parsed.
- * 
- * This function returns true if the ctype definition is valid, false otherwise.
+ *  Validate the C type (e.g., void is not long/short), set default values
+ * (e.g., char -> unsigned char), and check derived types (e.g., functions
+ * do not derive from functions). This function should be called once all
+ * type specifiers/qualifiers and declarators have been parsed.
+ *
+ * This function sets the err char pointer if an error occurs, otherwise the
+ * type is valid.
  */
-_Bool ctype_set_primitive_finalise(CType* type);
+void ctype_finalise(CType*, char**);
 
 /*
  * Set `parent` to derive from `child`. (`parent` must not be a primitive type.)

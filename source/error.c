@@ -1,9 +1,11 @@
 #include "error.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 
-void Error_report_error(Error*, ErrorType, int, const char*)  __attribute__((weak));
+void Error_report_error(Error *, ErrorType, int, const char *)
+    __attribute__((weak));
 
 /*
  * Initialize Error.
