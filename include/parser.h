@@ -62,7 +62,7 @@ Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme);
 #define CATCH_ERROR(parser) (setjmp(parser->panic_jmp) != 0)
 #define THROW_ERROR(parser) longjmp(parser->panic_jmp, 1)
 
-void Parser_synchronise_token(Parser *, TokenType[]);
+void Parser_sync_token(Parser *, TokenType[]);
 
 /*
  * Recursive descent parser function definitions.

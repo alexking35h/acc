@@ -78,9 +78,9 @@ typedef enum { TYPE_CONST = 1, TYPE_VOLATILE } TypeQualifier;
 
 typedef enum {
   TYPE_EXTERN = 1,
-  TYPE_STATIC,
-  TYPE_AUTO,
-  TYPE_REGISTER
+  TYPE_STATIC = 2,
+  TYPE_AUTO = 4,
+  TYPE_REGISTER = 8
 } TypeStorageSpecifier;
 
 typedef struct ParameterListItem {
@@ -112,24 +112,23 @@ typedef struct CType {
     // Derived types
     struct {
       struct CType* type;
-      struct CType* parent_type;
-
       int array_size;
       struct ParameterListItem* params;
     } derived;
   };
 
+  struct CType* parent_type;
+
 } CType;
 
 /* Set the type specifier for a type */
-void ctype_set_primitive_specifier(CType* type, TypeSpecifier, char**);
+void ctype_set_primitive_specifier(CType* type, TypeSpecifier);
 
 /* Set the type qualifier for a type */
-void ctype_set_primitive_qualifier(CType* type, TypeQualifier, char**);
+void ctype_set_primitive_qualifier(CType* type, TypeQualifier);
 
 /* Set the storage-class specifier for a type */
-void ctype_set_primitive_storage_specifier(CType* type, TypeStorageSpecifier,
-                                           char**);
+void ctype_set_primitive_storage_specifier(CType* type, TypeStorageSpecifier);
 
 /*
  * Finalise C Type

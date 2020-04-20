@@ -89,7 +89,7 @@ Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme) {
   return token;
 }
 
-void Parser_synchronise_token(Parser *parser, TokenType types[]) {
+void Parser_sync_token(Parser *parser, TokenType types[]) {
   while (1) {
     for (TokenType *t = &types[0]; *t != NAT; t++) {
       if (Parser_peek_token(parser)->type == *t) return;

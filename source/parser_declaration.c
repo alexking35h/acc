@@ -22,8 +22,7 @@
 #define consume(t) Parser_consume_token(parser, t)
 #define peek() Parser_peek_token(parser)
 #define advance() Parser_advance_token(parser)
-#define synchronise(...) \
-  Parser_synchronise_token(parser, (TokenType[]){__VA_ARGS__, NAT})
+#define sync(...) Parser_sync_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 
 #define static
 
@@ -81,14 +80,12 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
 
   DeclAstNode* decl = init_declarator_list(parser, type);
 
-  // If the ctype is a function, check for a compound statement
-  // after
+  // If the ctype is a function, check for a compound statement after
   if (decl->type->type == TYPE_FUNCTION && peek()->type == LEFT_BRACE) {
     decl->body = Parser_compound_statement(parser);
   } else {
     consume(SEMICOLON);
   }
-
   return decl;
 }
 static CType* declaration_specifiers(Parser* parser) {  // @TODO
@@ -105,8 +102,8 @@ static CType* declaration_specifiers(Parser* parser) {  // @TODO
    * alignment_specifier
    */
   CType* type = calloc(1, sizeof(CType));
-  char* err = NULL;
 
+  char* err = NULL;
   while (true) {
     TokenType token_type = peek()->type;
 
@@ -114,61 +111,57 @@ static CType* declaration_specifiers(Parser* parser) {  // @TODO
       // Type specifiers
       // int, char, void, short, long, signed, unsigned
       case INT:
-        ctype_set_primitive_specifier(type, TYPE_INT, &err);
+        ctype_set_primitive_specifier(type, TYPE_INT);
         break;
       case CHAR:
-        ctype_set_primitive_specifier(type, TYPE_CHAR, &err);
+        ctype_set_primitive_specifier(type, TYPE_CHAR);
         break;
       case VOID:
-        ctype_set_primitive_specifier(type, TYPE_VOID, &err);
+        ctype_set_primitive_specifier(type, TYPE_VOID);
         break;
 
       case SHORT:
-        ctype_set_primitive_specifier(type, TYPE_SHORT, &err);
+        ctype_set_primitive_specifier(type, TYPE_SHORT);
         break;
       case LONG:
-        ctype_set_primitive_specifier(type, TYPE_LONG, &err);
+        ctype_set_primitive_specifier(type, TYPE_LONG);
         break;
 
       case SIGNED:
-        ctype_set_primitive_specifier(type, TYPE_SIGNED, &err);
+        ctype_set_primitive_specifier(type, TYPE_SIGNED);
         break;
       case UNSIGNED:
-        ctype_set_primitive_specifier(type, TYPE_UNSIGNED, &err);
+        ctype_set_primitive_specifier(type, TYPE_UNSIGNED);
         break;
 
       // Type qualifiers
       // const, volatile
       case CONST:
-        ctype_set_primitive_qualifier(type, TYPE_CONST, &err);
+        ctype_set_primitive_qualifier(type, TYPE_CONST);
         break;
       case VOLATILE:
-        ctype_set_primitive_qualifier(type, TYPE_VOLATILE, &err);
+        ctype_set_primitive_qualifier(type, TYPE_VOLATILE);
         break;
 
       // Storage-specifiers
       // extern, auto, static, register
       case EXTERN:
-        ctype_set_primitive_storage_specifier(type, TYPE_EXTERN, &err);
+        ctype_set_primitive_storage_specifier(type, TYPE_EXTERN);
         break;
       case AUTO:
-        ctype_set_primitive_storage_specifier(type, TYPE_AUTO, &err);
+        ctype_set_primitive_storage_specifier(type, TYPE_AUTO);
         break;
       case STATIC:
-        ctype_set_primitive_storage_specifier(type, TYPE_STATIC, &err);
+        ctype_set_primitive_storage_specifier(type, TYPE_STATIC);
         break;
       case REGISTER:
-        ctype_set_primitive_storage_specifier(type, TYPE_REGISTER, &err);
+        ctype_set_primitive_storage_specifier(type, TYPE_REGISTER);
         break;
 
       default:
         goto end;
     }
-
-    if (err) {
-      Error_report_error(parser->error, PARSER, peek()->line_number, err);
-      THROW_ERROR(parser);
-    }
+    
     advance();
   }
 end:
@@ -353,7 +346,7 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
     decl_node = declarator(parser, &tmp_type);
     consume(RIGHT_PAREN);
 
-    CType* parent_type = tmp_type.derived.parent_type;
+    CType* parent_type = tmp_type.parent_type;
     CType* child_type = direct_declarator_end(parser, ctype);
 
     ctype_set_derived(parent_type, child_type);
@@ -452,7 +445,7 @@ static ParameterListItem* parameter_list(Parser* parser) {  // @TODO
    */
   if (CATCH_ERROR(parser)) {
     // Error occurred parsing 'parameter_declaration'
-    synchronise(COMMA, RIGHT_PAREN, END_OF_FILE);
+    sync(COMMA, RIGHT_PAREN, END_OF_FILE);
 
     return match(COMMA) ? parameter_list(parser) : NULL;
   }
@@ -560,7 +553,7 @@ static DeclAstNode* Parser_translation_unit(Parser* parser) {  // @TODO
     if (CATCH_ERROR(parser)) {
       // Error occurred parsing the following declaration.
       // synchronise on the next semi-colon.
-      synchronise(SEMICOLON, END_OF_FILE);
+      sync(SEMICOLON, END_OF_FILE);
 
       if (peek()->type == SEMICOLON) advance();
       continue;

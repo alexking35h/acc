@@ -11,64 +11,40 @@
 
 static void ctype_set_primitive_finalise(CType *type, char **err);
 
-void ctype_set_primitive_specifier(CType *type, TypeSpecifier type_specifier,
-                                   char **error) {
-  TypeSpecifier *specifier = &type->primitive.type_specifier;
-
-  // Signed-ness
-  if (type_specifier & TYPE_SIGNEDNESS) {
-    // Check that the signed-ness has not already been specified.
-    if (*specifier & TYPE_SIGNEDNESS) goto err;
-
-    *specifier |= (TYPE_SIGNEDNESS & type_specifier);
-  }
-
-  // Type
-  if (type_specifier & TYPE_SPECIFIERS) {
-    // Check that the type has not already been specified
-    if (*specifier & TYPE_SPECIFIERS) goto err;
-
-    *specifier |= (TYPE_SPECIFIERS & type_specifier);
-  }
-
-  // Size (short/long)
-  if (type_specifier & TYPE_SIZE) {
-    // Check that the size has not already been specified
-    if (*specifier & TYPE_SIZE) goto err;
-
-    *specifier |= (TYPE_SIZE & type_specifier);
-  }
-  return;
-err:
-  *error = "Invalid type specifier";
+void ctype_set_primitive_specifier(CType *type, TypeSpecifier type_specifier) {
+  type->primitive.type_specifier |= type_specifier;
 }
 
-void ctype_set_primitive_qualifier(CType *type, TypeQualifier type_qualifier,
-                                   char **error) {
-  TypeQualifier *qualifier = &type->primitive.type_qualifier;
-  *qualifier |= type_qualifier;
+void ctype_set_primitive_qualifier(CType *type, TypeQualifier type_qualifier) {
+  type->primitive.type_qualifier |= type_qualifier;
 }
 
-void ctype_set_primitive_storage_specifier(
-    CType *type, TypeStorageSpecifier storage_specifier, char **err) {
-  TypeStorageSpecifier *storage = &type->primitive.storage_class_specifier;
-
-  // Storage class specifiers
-  if (storage_specifier != 0) {
-    // Check that a storage class specifier has not already been set
-    if (*storage != 0) {
-      *err = "Types cannot have more than one storage-class specifier";
-      return;
-    }
-    *storage = storage_specifier;
-  }
+void ctype_set_primitive_storage_specifier(CType *type, TypeStorageSpecifier storage_specifier) {
+  type->primitive.storage_class_specifier |= storage_specifier;
 }
 
 static void ctype_set_primitive_finalise(CType *type, char **error) {
   TypeSpecifier *specifier = &type->primitive.type_specifier;
+  TypeStorageSpecifier *storage = &type->primitive.storage_class_specifier;
 
   // Report an error if no specifier/qualifiers were used.
   if (*specifier == 0) goto err;
+
+  // Check for at most one type-specifier (int/char/void)
+  if(((*specifier & TYPE_SPECIFIERS)-1) & (*specifier & TYPE_SPECIFIERS)) 
+    goto err;
+
+  // Check for at most one signedness specifier (signed/unsigned)
+  if(((*specifier & TYPE_SIGNEDNESS) - 1) & (*specifier & TYPE_SIGNEDNESS))
+    goto err;
+
+  // Check for at most one size specifier (short/long)
+  if(((*specifier & TYPE_SIZE) - 1) & (*specifier & TYPE_SIZE))
+    goto err;
+
+  // Check that at most one storage-class specifier (extern/static) is provided.
+  if((*storage - 1) & *storage)
+    goto err;
 
   // Set the default type to 'int', if not specified.
   if (!(*specifier & TYPE_SPECIFIERS)) *specifier |= TYPE_INT;
@@ -120,5 +96,5 @@ void ctype_finalise(CType *ctype, char **err) {
 
 void ctype_set_derived(CType *parent, CType *child) {
   parent->derived.type = child;
-  child->derived.parent_type = parent;
+  child->parent_type = parent;
 }

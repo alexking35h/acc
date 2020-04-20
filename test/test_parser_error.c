@@ -102,13 +102,12 @@ static void type_error(void** state) {
   // Test error-handling behaviour in type declarations.
 
   // Multiple storage-class specifiers.
-  expect_report_error(
-      1, "Types cannot have more than one storage-class specifier");
+  expect_report_error(1, "Invalid type");
   assert_true(test_ast_compare_decl("static extern int a;", ""));
 
   // Invalid primitive type.
-  expect_report_error(1, "Invalid type specifier");
-  expect_report_error(1, "Invalid type specifier");
+  expect_report_error(1, "Invalid type");
+  expect_report_error(1, "Invalid type");
   assert_true(test_ast_compare_decl("short long int p;", ""));
   assert_true(test_ast_compare_decl("signed unsigned a;", ""));
   expect_report_error(1, "Invalid type");
