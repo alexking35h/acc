@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "ast.h"
 #include "parser.h"
@@ -38,7 +39,7 @@
 
 static ExprAstNode* primary_expression(Parser*);
 static ExprAstNode* postfix_expression(Parser*);
-static ExprAstNode* argument_expression_list(Parser*);
+static ArgumentListItem* argument_expression_list(Parser*);
 static ExprAstNode* unary_expression(Parser*);
 static ExprAstNode* cast_expression(Parser*);
 static ExprAstNode* multiplicative_expression(Parser*);
@@ -163,18 +164,27 @@ static ExprAstNode* postfix_expression(Parser* parser) {
       ExprAstNode* constant_node = EXPR_PRIMARY(.constant = constant_token);
 
       return desugar_assign(parser, expr, MINUS, constant_node);
-    } else
+    } else if ((token = match(LEFT_PAREN))) {
+      // Function call.
+      expr = EXPR_POSTFIX(.left=expr, .args = argument_expression_list(parser));
+      consume(RIGHT_PAREN);
+    }
       break;
   }
   return expr;
 }
-static ExprAstNode* argument_expression_list(Parser* parser) {  // @TODO
+static ArgumentListItem* argument_expression_list(Parser* parser) {  // @TODO
   /*
    * Parser_assignment_expression
    * argument_expression_list ',' Parser_assignment_expression
    */
+  if(peek()->type == RIGHT_PAREN)
+    return NULL;
 
-  return NULL;
+  ArgumentListItem* arg = calloc(1, sizeof(ArgumentListItem));
+  arg->argument = Parser_assignment_expression(parser);
+  arg->next = match(COMMA) ? argument_expression_list(parser) : NULL;
+  return arg;
 }
 static ExprAstNode* unary_expression(Parser* parser) {  // @DONE
   /*
@@ -208,6 +218,12 @@ static ExprAstNode* cast_expression(Parser* parser) {  // @TODO
   // Distinquish between the two based on the FIRST set of
   // `type_name` (type-specifiers and -qualifiers). Cast expressions
   // cannot be nested (such as `((int))a`, so this should work.
+  //
+  // Hint: This is broken! cast-expression short-circuits 
+  // every expression with a higher precedence than cast, e.g.:
+  // `(a)()` should be parsed as (C (P a)).
+  //
+  // This will have to be implemented with an extra token lookahead.
   ExprAstNode* expr;
 
   switch (peek()->type) {

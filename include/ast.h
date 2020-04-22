@@ -21,6 +21,11 @@ struct ExprAstNode_t;
 struct DeclAstNode_t;
 struct StmtAstNode_t;
 
+typedef struct ArgumentListItem_t {
+  struct ExprAstNode_t * argument;
+  struct ArgumentListItem_t * next;
+} ArgumentListItem;
+
 typedef struct ExprAstNode_t {
   // Type of this AST node.
   enum {
@@ -60,6 +65,7 @@ typedef struct ExprAstNode_t {
       Token* op;
       struct ExprAstNode_t* index_expression;
       struct ExprAstNode_t* left;
+      struct ArgumentListItem_t* args;
     } postfix;
 
     // Cast

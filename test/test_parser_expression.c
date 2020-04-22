@@ -35,6 +35,9 @@ static void postfix_expressions(void** state) {
   AstTestFixture tests[] = {{"a[1]", "(PF (P a), (P 1))"},
                             {"a++", "(A (P a), (B (P a), +, (P 1)))"},
                             {"9--", "(A (P 9), (B (P 9), -, (P 1)))"},
+                            {"A()", "(C (P A))"},
+                            {"q(1,2,3)", "(C (P q), (P 1), (P 2), (P 3))"},
+                            {"(a+1)(b=1)", "(C (B (P a), +, (P 1)), (A (P b), (P 1)))"},
                             {NULL, NULL}};
 
   assert_expected_ast_expr(tests);
