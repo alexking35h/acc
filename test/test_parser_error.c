@@ -101,21 +101,29 @@ static void panic_mode_compound_statement(void** state) {
 static void type_error(void** state) {
   // Test error-handling behaviour in type declarations.
 
+  // Incalid type - missing type specifier
+  // 6.7.2.1: At least one type specifier shall be given in the declaration
+  // specifiers in each declaration.
+  expect_report_error(1, "Invalid type");
+  assert_true(test_ast_compare_decl("static volatile a;", ""));
+
   // Multiple storage-class specifiers.
+  // 6.7.1.2 At most, one storage class specifier may be given in the declaration
+  // specifiers in a declaration, except that _Thread_local may appear with static or extern
   expect_report_error(1, "Invalid type");
   assert_true(test_ast_compare_decl("static extern int a;", ""));
 
   // Invalid primitive type.
   expect_report_error(1, "Invalid type");
-  expect_report_error(1, "Invalid type");
   assert_true(test_ast_compare_decl("short long int p;", ""));
+  expect_report_error(1, "Invalid type");
   assert_true(test_ast_compare_decl("signed unsigned a;", ""));
   expect_report_error(1, "Invalid type");
   assert_true(test_ast_compare_decl("long char p;", ""));
 
   // Invalid type - functions cannot return functions.
   // 6.7.6.3: A function declarator shall not specify a return type that is a
-  // function type  or  an  arraytype.
+  // function type or an array type.
   expect_report_error(1, "Functions cannot return functions (try Python?)");
   assert_true(test_ast_compare_decl("int a()();", ""));
   expect_report_error(1, "Functions cannot return arrays (try Python?)");
