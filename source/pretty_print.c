@@ -196,6 +196,12 @@ static void pp_stmt(StmtAstNode* node, StringBuffer* buf) {
       pp_expr(node->while_loop.expr, buf);
       pp_printf(buf, ", ");
       pp_stmt(node->while_loop.block, buf);
+      break;
+    case RETURN_JUMP:
+      pp_printf(buf, "R ");
+      if(node->return_jump.value)
+        pp_expr(node->return_jump.value, buf);
+      break;
   }
   if (node->next) {
     pp_printf(buf, ", ");

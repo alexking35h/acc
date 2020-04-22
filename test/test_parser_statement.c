@@ -49,10 +49,21 @@ static void loops(void** state) {
   assert_expected_ast_stmt(tests);
 }
 
+static void return_statement(void** state) {
+  AstTestFixture tests[] = {
+      {"{return;}", "{B {R }}"},
+      {"{return 1;}", "{B {R (P 1)}}"},
+      {"{return a*2;}", "{B {R (B (P a), *, (P 2))}}"},
+
+      {NULL, NULL}};
+    assert_expected_ast_stmt(tests);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {cmocka_unit_test(expression_statement),
                                      cmocka_unit_test(block_statement),
-                                     cmocka_unit_test(loops)};
+                                     cmocka_unit_test(loops),
+                                     cmocka_unit_test(return_statement)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -22,6 +22,9 @@
 #define STMT_WHILE(...) \
   Ast_create_stmt_node( \
       (StmtAstNode){.type = WHILE_LOOP, .while_loop = {__VA_ARGS__}})
+#define STMT_RETURN(...) \
+  Ast_create_stmt_node( \
+      (StmtAstNode){.type = RETURN_JUMP, .return_jump = {__VA_ARGS__}})
 
 #define consume(t) Parser_consume_token(parser, t)
 #define peek(t) Parser_peek_token(parser)
@@ -33,6 +36,7 @@
 
 static StmtAstNode* expression_statement(Parser* parser);
 static StmtAstNode* iteration_statement(Parser* parser);
+static StmtAstNode* return_statement(Parser* parser);
 
 _Bool is_decl(TokenType tok) {
   switch (tok) {
@@ -67,6 +71,10 @@ static StmtAstNode* statement(Parser* parser) {  // @TODO
   if (peek()->type == WHILE) {
     // While statement.
     return iteration_statement(parser);
+  }
+  if (peek()->type == RETURN) {
+    // Return statement.
+    return return_statement(parser);
   }
   return expression_statement(parser);
 }
@@ -159,10 +167,20 @@ StmtAstNode* iteration_statement(Parser* parser) {  // @TODO
 
   return NULL;
 }
-ExprAstNode* Parser_jump_statement(Parser* parser) {  // @TODO
+StmtAstNode* return_statement(Parser* parser) {
   /*
-   * GOTO IDENTIFIER '
+   * RETURN ';'
+   * RETURN expression ';'
    */
+  StmtAstNode* stmt;
+  consume(RETURN);
 
-  return NULL;
+  if(match(SEMICOLON)) {
+    stmt = STMT_RETURN();
+  } else {
+    stmt = STMT_RETURN(.value=Parser_expression(parser));
+    consume(SEMICOLON);
+  }
+
+  return stmt;
 }
