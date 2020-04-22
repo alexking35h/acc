@@ -63,6 +63,10 @@ static void panic_mode_declaration(void** state) {
 
   expect_report_error(1, "Expecting 'constant', got 'identifier'");
   assert_true(test_ast_compare_decl("int a[b];", ""));
+
+  // Declarators must have an identifier (6.7.6)
+  expect_report_error(1, "Missing identifier in declaration");
+  assert_true(test_ast_compare_decl("int static long [23];", ""));
 }
 
 static void panic_mode_parameter_list(void** state) {
@@ -128,6 +132,11 @@ static void type_error(void** state) {
   assert_true(test_ast_compare_decl("int a()();", ""));
   expect_report_error(1, "Functions cannot return arrays (try Python?)");
   assert_true(test_ast_compare_decl("int a()[1];", ""));
+
+  // Type-names / abstract declarators are syntactically the same as normal
+  // declarations with the identifier omitted (6.7.7)
+  expect_report_error(1, "Type names must not have an identifier");
+  assert_true(test_ast_compare_decl("int a = (char p[12])3;", ""));
 }
 
 int main(void) {

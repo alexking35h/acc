@@ -110,6 +110,8 @@ static void abstract_declarators(void** state) {
       {"void x(int);", "(D [f([signed int]:) [void]], x)"},
       {"int f(char, void*);",
        "(D [f([unsigned char]:,[* [void]]:) [signed int]], f)"},
+      {"void x(int [23]);",
+       "(D [f([[23] [signed int]]:) [void]], x)"},
 
       {NULL, NULL}};
   assert_expected_ast_decl(tests);

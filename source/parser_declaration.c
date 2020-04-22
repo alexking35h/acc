@@ -86,6 +86,14 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
   } else {
     consume(SEMICOLON);
   }
+
+  // Check that the declarator is 'concrete', i.e., that an identifier
+  // has been provided.
+  if(!decl->identifier) {
+    Error_report_error(parser->error, PARSER, peek()->line_number, "Missing identifier in declaration");
+    THROW_ERROR(parser);
+  }
+
   return decl;
 }
 static CType* declaration_specifiers(Parser* parser) {  // @TODO
@@ -355,7 +363,7 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
   }
 
   // Abstract declarator!
-  return DECL(.decl_type = ABSTRACT, .type = ctype);
+  return DECL(.decl_type = ABSTRACT, .type = direct_declarator_end(parser, ctype));
 }
 
 static CType* direct_declarator_end(Parser* parser, CType* ctype) {
@@ -492,8 +500,15 @@ CType* Parser_type_name(Parser* parser) {  // @TODO
    * specifier_qualifier_list abstract_declarator
    * specifier_qualifier_list
    */
-  CType* type = declaration_specifiers(parser);
-  return declarator(parser, type)->type;
+  DeclAstNode* decl = declarator(parser, declaration_specifiers(parser));
+
+  // Check that it is an abstract declarator (identifier has
+  // been omitted)
+  if(decl->decl_type == CONCRETE) {
+    Error_report_error(parser->error, PARSER, peek()->line_number, "Type names must not have an identifier");
+    THROW_ERROR(parser);
+  }
+  return decl->type;
 }
 static ExprAstNode* initializer(Parser* parser) {  // @TODO
   /*
