@@ -16,7 +16,10 @@ Parser *Parser_init(Scanner *scanner, Error *error) {
   Parser *parser = calloc(1, sizeof(Parser));
   parser->scanner = scanner;
   parser->error = error;
-  parser->next_token = Scanner_get_next(parser->scanner);
+
+  parser->next_token[0] = Scanner_get_next(parser->scanner);
+  parser->next_token[1] = Scanner_get_next(parser->scanner);
+  parser->next_token_index = 0;
 
   return parser;
 }
@@ -33,11 +36,11 @@ void Parser_destroy(Parser *parser) { free(parser); }
  */
 Token *Parser_match_token(Parser *parser, TokenType *token_types) {
   for (; *token_types != NAT; token_types++) {
-    if (parser->next_token->type != *token_types) continue;
+    Token* t = Parser_peek_token(parser);
+    if(t->type != *token_types) continue;
 
-    Token *return_token = parser->next_token;
     Parser_advance_token(parser);
-    return return_token;
+    return t;
   }
   return NULL;
 }
@@ -45,7 +48,17 @@ Token *Parser_match_token(Parser *parser, TokenType *token_types) {
 /*
  * Check out the next token.
  */
-Token *Parser_peek_token(Parser *parser) { return parser->next_token; }
+Token *Parser_peek_token(Parser *parser) {
+  return parser->next_token[parser->next_token_index];
+}
+
+/*
+ * Check out the next+1 token.
+ */
+Token *Parser_peek_next_token(Parser *parser) {
+  int ind = (parser->next_token_index + 1) % 2;
+  return parser->next_token[ind];
+}
 
 /*
  * If the next token does not match, report an error and return false.
@@ -69,7 +82,8 @@ Token *Parser_consume_token(Parser *parser, TokenType token_type) {
  * Advance the token input.
  */
 void Parser_advance_token(Parser *parser) {
-  parser->next_token = Scanner_get_next(parser->scanner);
+  parser->next_token[parser->next_token_index] = Scanner_get_next(parser->scanner);
+  parser->next_token_index = (parser->next_token_index + 1) % 2;
 }
 
 /*

@@ -121,6 +121,12 @@ static ExprAstNode* primary_expression(Parser* parser) {  // @DONE
   if ((next = match(STRING_LITERAL)))
     return EXPR_PRIMARY(.string_literal = next);
 
+  if (match(LEFT_PAREN)) {
+    ExprAstNode* expr = Parser_expression(parser);
+    consume(RIGHT_PAREN);
+    return expr;
+  }
+
   char err_str[100];
   snprintf(err_str, 100, "Expected expression, got '%s'",
            Token_str(peek()->type));
@@ -210,23 +216,13 @@ static ExprAstNode* cast_expression(Parser* parser) {  // @TODO
    * unary_expression
    * '(' type_name ')' cast_expression
    */
-  if (!match(LEFT_PAREN)) return unary_expression(parser);
-  ;
+  if(peek()->type != LEFT_PAREN) return unary_expression(parser);
 
-  // We're either looking at a cast expression (e.g. `(int)a`),
-  // or a parenthesized primary expression (e.g. `(a + 2)`).
-  // Distinquish between the two based on the FIRST set of
-  // `type_name` (type-specifiers and -qualifiers). Cast expressions
-  // cannot be nested (such as `((int))a`, so this should work.
-  //
-  // Hint: This is broken! cast-expression short-circuits 
-  // every expression with a higher precedence than cast, e.g.:
-  // `(a)()` should be parsed as (C (P a)).
-  //
-  // This will have to be implemented with an extra token lookahead.
-  ExprAstNode* expr;
-
-  switch (peek()->type) {
+  // We may be looking at a cast expression, such as:
+  // (int)var;
+  // We can't know, without looking at the next+1 token, to see
+  // if it's a type-specifier/qualifier/storage-specifier.
+  switch(Parser_peek_next_token(parser)->type) {
     case VOID:
     case CHAR:
     case SHORT:
@@ -238,12 +234,11 @@ static ExprAstNode* cast_expression(Parser* parser) {  // @TODO
     case UNSIGNED:
       break;
     default:
-      expr = Parser_expression(parser);
-      consume(RIGHT_PAREN);
-      return expr;
+      return unary_expression(parser);
   }
 
   // Cast expression.
+  consume(LEFT_PAREN);
   CType* type = Parser_type_name(parser);
   consume(RIGHT_PAREN);
   return EXPR_CAST(.type = type, .right = cast_expression(parser));

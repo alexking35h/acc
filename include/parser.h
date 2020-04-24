@@ -14,7 +14,8 @@ typedef struct Parser_t {
   Error *error;
 
   // Next unread token.
-  Token *next_token;
+  Token *next_token[2];
+  int next_token_index;
 
   jmp_buf panic_jmp;
 
@@ -40,6 +41,11 @@ Token *Parser_match_token(Parser *, TokenType *);
  * Check out the next token.
  */
 Token *Parser_peek_token(Parser *);
+
+/*
+ * Check out the next+1 token.
+ */
+Token* Parser_peek_next_token(Parser* );
 
 /*
  * If the next token does not match, report an error and return false.
