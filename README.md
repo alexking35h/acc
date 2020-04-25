@@ -1,4 +1,4 @@
-[![](https://github.com/alexking35h/acc/workflows/Build%20and%20Test/badge.svg)](https://github.com/alexking35h/acc/actions?query=workflow%3A%22Build+and+Test%22)
+[![](https://github.com/alexking35h/acc/workflows/Build%20and%20Test/badge.svg)](https://github.com/alexking35h/acc/actions?query=workflow%3A%22Build+and+Test%22) [![](https://github.com/alexking35h/acc/workflows/Regression%20Test/badge.svg)](https://github.com/alexking35h/acc/actions?query=workflow%3A%22Regression+Test%22)
 
 # Alex's C Compiler
 
