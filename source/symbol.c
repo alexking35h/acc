@@ -60,5 +60,8 @@ Symbol* symbol_table_get(SymbolTable* tab, char* name, bool search_parent){
     if(strcmp(name, tab->symbols_list[i].name) == 0)
       return &tab->symbols_list[i];
   }
-  return NULL;
+  if(search_parent == false || tab->parent == NULL)
+    return NULL;
+  
+  return symbol_table_get(tab->parent, name, true);
 }
