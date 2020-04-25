@@ -19,7 +19,7 @@ typedef struct Scanner_t Scanner;
  * Returns:
  *  pointer to allocated Scanner instance, or NULL on error.
  */
-Scanner* Scanner_init(char const* source, Error* error);
+Scanner* Scanner_init(char const* source);
 
 /*
  * Allocate a new Token

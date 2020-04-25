@@ -15,8 +15,8 @@
 #define COUNT(x) ((sizeof(x)) / (sizeof(x[0])))
 
 static void initialize_parser(void** state) {
-  Scanner* scanner = Scanner_init("", NULL);
-  Parser_destroy(Parser_init(scanner, NULL));
+  Scanner* scanner = Scanner_init("");
+  Parser_destroy(Parser_init(scanner));
   Scanner_destroy(scanner);
 }
 

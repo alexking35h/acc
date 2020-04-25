@@ -16,22 +16,21 @@
 
 #define COUNT(s) (sizeof(s) / sizeof(s[0]))
 
-void __wrap_Error_report_error(Error* error, ErrorType error_type,
+void __wrap_Error_report_error(ErrorType error_type,
                                int line_number, const char* error_string) {
   function_called();
-  check_expected(error);
   check_expected(error_type);
   check_expected(line_number);
   check_expected(error_string);
 }
 
 static void initialize_scanner(void** state) {
-  Scanner* scanner = Scanner_init("", NULL);
+  Scanner* scanner = Scanner_init("");
   Scanner_destroy(scanner);
 }
 
 static void whitespace(void** state) {
-  Scanner* scanner = Scanner_init(" \t \v \n \f  ", NULL);
+  Scanner* scanner = Scanner_init(" \t \v \n \f  ");
 
   Token* eof_token = Scanner_get_next(scanner);
   assert_int_equal(eof_token->type, END_OF_FILE);
@@ -42,7 +41,7 @@ static void whitespace(void** state) {
 
 static void single_character(void** state) {
   char* source = ";{},:=()[].&!~-+*/%<>^|?";
-  Scanner* scanner = Scanner_init(source, NULL);
+  Scanner* scanner = Scanner_init(source);
 
   TokenType expected_tokens[] = {
       SEMICOLON,    LEFT_BRACE, RIGHT_BRACE, COMMA,       COLON,
@@ -61,7 +60,7 @@ static void single_character(void** state) {
 
 static void assignments(void** state) {
   char* source = "|= ^= &= %= /= *= -= += <<= >>= ";
-  Scanner* scanner = Scanner_init(source, NULL);
+  Scanner* scanner = Scanner_init(source);
 
   TokenType expected_tokens[] = {
       OR_ASSIGN,   XOR_ASSIGN,   AND_ASSIGN,  MOD_ASSIGN,
@@ -77,7 +76,7 @@ static void assignments(void** state) {
 }
 
 static void operators(void** state) {
-  Scanner* scanner = Scanner_init(">> << ++ -- -> && || <= >= == !=", NULL);
+  Scanner* scanner = Scanner_init(">> << ++ -- -> && || <= >= == !=");
 
   TokenType expected_tokens[] = {RIGHT_OP, LEFT_OP, INC_OP, DEC_OP,
                                  PTR_OP,   AND_OP,  OR_OP,  LE_OP,
@@ -91,7 +90,7 @@ static void operators(void** state) {
 
 static void comment(void** state) {
   char* source = ":   // jim\n;/* pam\n\n */\n!";
-  Scanner* scanner = Scanner_init(source, NULL);
+  Scanner* scanner = Scanner_init(source);
 
   Token* token = Scanner_get_next(scanner);
   assert_int_equal(token->type, COLON);
@@ -108,7 +107,7 @@ static void comment(void** state) {
 
 static void string_literal(void** state) {
   char* source = " \"qwertyuiop\" \"qwert\\\"yuiop\\\t\"";
-  Scanner* scanner = Scanner_init(source, NULL);
+  Scanner* scanner = Scanner_init(source);
 
   Token* string_token = Scanner_get_next(scanner);
   assert_int_equal(string_token->type, STRING_LITERAL);
@@ -124,7 +123,7 @@ static void string_literal(void** state) {
 static void hex_literal(void** state) {
   const char* source =
       "0x123abc  0X123abc  0x123abcU 0X123abcu 0x123abcl 0x123abcL";
-  Scanner* scanner = Scanner_init(source, NULL);
+  Scanner* scanner = Scanner_init(source);
 
   int expected_lexeme_length[] = {8, 8, 9, 9, 9, 9};
   for (int i = 0; i < COUNT(expected_lexeme_length); i++) {
@@ -151,7 +150,7 @@ static void keyword(void** state) {
       SIZEOF,   STATIC,   STRUCT,   SWITCH, TYPEDEF,    UNION,
       UNSIGNED, VOID,     VOLATILE, WHILE,  IDENTIFIER, END_OF_FILE};
 
-  Scanner* scanner = Scanner_init(source, NULL);
+  Scanner* scanner = Scanner_init(source);
   for (int i = 0; i < COUNT(keyword_tokens); i++) {
     Token* token = Scanner_get_next(scanner);
     if (token->type != keyword_tokens[i]) {
@@ -163,13 +162,12 @@ static void keyword(void** state) {
 
 static void invalid_character(void** state) {
   const char* source = " 432\n@ ";
-  Scanner* scanner = Scanner_init(source, (Error*)0x1234);
+  Scanner* scanner = Scanner_init(source);
 
   Token* token = Scanner_get_next(scanner);
   assert_int_equal(token->type, CONSTANT);
 
   expect_function_call(__wrap_Error_report_error);
-  expect_value(__wrap_Error_report_error, error, (Error*)0x1234);
   expect_value(__wrap_Error_report_error, error_type, SCANNER);
   expect_value(__wrap_Error_report_error, line_number, 2);
   expect_string(__wrap_Error_report_error, error_string,
@@ -181,7 +179,7 @@ static void invalid_character(void** state) {
 
 static void unterminated_string(void** state) {
   const char* source = " s = \"test;\nb = \"";
-  Scanner* scanner = Scanner_init(source, (Error*)0x1234);
+  Scanner* scanner = Scanner_init(source);
 
   Token* token = Scanner_get_next(scanner);
   assert_int_equal(token->type, IDENTIFIER);
@@ -190,7 +188,6 @@ static void unterminated_string(void** state) {
   assert_int_equal(token->type, EQUAL);
 
   expect_function_call(__wrap_Error_report_error);
-  expect_value(__wrap_Error_report_error, error, (Error*)0x1234);
   expect_value(__wrap_Error_report_error, error_type, SCANNER);
   expect_value(__wrap_Error_report_error, line_number, 1);
   expect_string(__wrap_Error_report_error, error_string,
@@ -202,7 +199,6 @@ static void unterminated_string(void** state) {
   assert_int_equal(token->type, EQUAL);
 
   expect_function_call(__wrap_Error_report_error);
-  expect_value(__wrap_Error_report_error, error, (Error*)0x1234);
   expect_value(__wrap_Error_report_error, error_type, SCANNER);
   expect_value(__wrap_Error_report_error, line_number, 2);
   expect_string(__wrap_Error_report_error, error_string,

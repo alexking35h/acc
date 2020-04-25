@@ -130,7 +130,7 @@ static ExprAstNode* primary_expression(Parser* parser) {  // @DONE
   char err_str[100];
   snprintf(err_str, 100, "Expected expression, got '%s'",
            Token_str(peek()->type));
-  Error_report_error(parser->error, PARSER, peek()->line_number, err_str);
+  Error_report_error(PARSER, peek()->line_number, err_str);
 
   THROW_ERROR(parser);
 

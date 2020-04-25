@@ -1,0 +1,16 @@
+name: Regression Test
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: build
+      uses: ./
+      id: build
+      with:
+        entrypoint: make
+        args: regression_test

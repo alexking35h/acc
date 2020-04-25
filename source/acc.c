@@ -6,6 +6,7 @@
 #include "parser.h"
 #include "pretty_print.h"
 #include "scanner.h"
+#include "error.h"
 
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0
@@ -22,13 +23,63 @@
 #endif
 
 int main(int, char**) __attribute__((weak));
+void Error_report_error(ErrorType, int, const char *) __attribute__((weak));
+
+static bool json_stdout;
 
 struct CommandLineArgs_t {
   const char* source_file;
   _Bool interactive;
+  _Bool json;
 };
 
-void print_help() {
+/* Print error message to stdout in human-readable form. */
+static void print_error_terminal(ErrorType type, int l, const char* msg) {
+  printf("Error occurred ");
+  switch (type) {
+    case SCANNER:
+      printf("in Scanner:\n");
+      break;
+    case PARSER:
+      printf("in Parser:\n");
+      break;
+    default:
+      printf(":\n");
+      break;
+  }
+  printf(" > Line (%d): %s\n\n", l, msg);
+}
+
+/* Print error message to stdout in json */
+static void print_error_json(ErrorType type, int l, const char* msg) {
+  static int first = 0;
+  if(first++) printf(",");
+  printf("\n    {\"error_type\":");
+  switch(type) {
+    case SCANNER:
+      printf("\"SCANNER\"");
+      break;
+    case PARSER:
+      printf("\"PARSER\"");
+      break;
+    default:
+      printf("null");
+      break;
+  }
+  printf(", \"line_number\": %d, ", l);
+  printf("\"message\": \"%s\"", msg);
+  printf("}");
+}
+
+void Error_report_error(ErrorType error_type, int line_number, const char *msg) {
+  if(json_stdout) {
+    print_error_json(error_type, line_number, msg);
+  } else {
+    print_error_terminal(error_type, line_number, msg);
+  }
+}
+
+static void print_help() {
   printf("ACC Version %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
   printf("\nUsage: acc [OPTIONS] [FILE]\n\n");
   printf("Options:\n");
@@ -41,7 +92,7 @@ void print_help() {
   printf("for C source code passed to the command line\n");
 }
 
-void print_version() {
+static void print_version() {
   printf("ACC Version %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
   printf("Compiled: %s %s\n", __DATE__, __TIME__);
   printf("Git repository: %s\n", GIT_REPO);
@@ -60,10 +111,10 @@ void print_version() {
  * Returns true if the program should continue.
  * Quit otherwise.
  */
-_Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* args) {
+static _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* args) {
   int c = 0;
 
-  while ((c = getopt(argc, argv, "vh")) != -1) {
+  while ((c = getopt(argc, argv, "vhj")) != -1) {
     switch (c) {
       case 'h':
         print_help();
@@ -71,6 +122,9 @@ _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* args) {
       case 'v':
         print_version();
         return false;
+      case 'j':
+        args->json = true;
+        break;
     }
   }
 
@@ -82,28 +136,36 @@ _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* args) {
     args->interactive = false;
     args->source_file = argv[optind];
   }
+
+  // JSON stdout can only be used in non-interactive mode.
+  if(args->interactive && args->json) {
+    printf("JSON stdout (-j) cannot be used in interactive mode (-i)\n");
+    return false;
+  }
   return true;
 }
 
-DeclAstNode* get_ast(const char* source) {
-  Scanner* scanner = Scanner_init(source, NULL);
-  Parser* parser = Parser_init(scanner, NULL);
+static DeclAstNode* get_ast(const char* source) {
+  Scanner* scanner = Scanner_init(source);
+  Parser* parser = Parser_init(scanner);
 
   // Generate the AST for the file.
   return Parser_translation_unit(parser);
 }
 
-const char* read_file(const char* file_path) {
-  char* file_contents = malloc(256 * sizeof(char));
+static const char* read_file(const char* file_path) {
+  char* file_contents = malloc(1024 * sizeof(char));
   FILE* f = fopen(file_path, "r");
 
-  fread(file_contents, sizeof(char), 253, f);
+  fread(file_contents, sizeof(char), 1023, f);
   return file_contents;
 }
 
 int main(int argc, char** argv) {
   struct CommandLineArgs_t args = {};
   if (!parse_cmd_args(argc, argv, &args)) return 1;
+
+  json_stdout = args.json;
 
   if (args.interactive) {
     printf("Running acc in interactive mode.\n");
@@ -122,9 +184,15 @@ int main(int argc, char** argv) {
     }
   } else {
     const char* file = read_file(args.source_file);
-    char ast[1000];
+    char ast[1000] = "";
+    if(args.json)
+      printf("{\n  \"errors\": [");
 
     DeclAstNode* decl = get_ast(file);
+
+    if(args.json)
+      printf("\n  ]\n}\n");
+
     pretty_print_decl(decl, ast, 1000);
     printf("%s\n", ast);
   }

@@ -22,8 +22,8 @@
  */
 _Bool test_ast_compare_expr(const char* source, const char* expected) {
   // Generate Scanner and Parser objects.
-  Scanner* scanner = Scanner_init(source, (Error*)0x1234);
-  Parser* parser = Parser_init(scanner, (Error*)0x1234);
+  Scanner* scanner = Scanner_init(source);
+  Parser* parser = Parser_init(scanner);
 
   // Generate the AST
   ExprAstNode* ast_node = Parser_expression(parser);
@@ -56,8 +56,8 @@ _Bool test_ast_compare_expr(const char* source, const char* expected) {
  */
 _Bool test_ast_compare_decl(const char* source, const char* expected) {
   // Generate Scanner and Parser objects.
-  Scanner* scanner = Scanner_init(source, (Error*)0x1234);
-  Parser* parser = Parser_init(scanner, (Error*)0x1234);
+  Scanner* scanner = Scanner_init(source);
+  Parser* parser = Parser_init(scanner);
 
   // Generate the AST
   DeclAstNode* ast_node = Parser_translation_unit(parser);
@@ -85,8 +85,8 @@ _Bool test_ast_compare_decl(const char* source, const char* expected) {
  */
 _Bool test_ast_compare_stmt(const char* source, const char* expected) {
   // Generate Scanner and Parser objects.
-  Scanner* scanner = Scanner_init(source, (Error*)0x1234);
-  Parser* parser = Parser_init(scanner, (Error*)0x1234);
+  Scanner* scanner = Scanner_init(source);
+  Parser* parser = Parser_init(scanner);
 
   // Generate the AST
   StmtAstNode* ast_node = Parser_compound_statement(parser);
