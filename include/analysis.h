@@ -5,4 +5,16 @@
  * context-sensitive analysis to look for errors; and get ready for 
  * code generation.
  */
+#ifndef __ANALYSIS__
+#define __ANALYSIS
 
+#include "ast.h"
+#include "symbol.h"
+#include "parser.h"
+
+/*
+ * Walk the AST.
+ */
+void analysis_ast_walk(DeclAstNode*, SymbolTable**);
+
+#endif
