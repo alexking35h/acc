@@ -13,8 +13,17 @@
 #include "parser.h"
 
 /*
- * Walk the AST.
+ * Walk the AST
  */
 void analysis_ast_walk(DeclAstNode*, SymbolTable**);
+
+/*
+ * Functions are declared globally for AST node
+ * subtypes to make testing easier. These functions should
+ * not be used outside of unit tests.
+ */
+void analysis_ast_walk_decl(DeclAstNode*, SymbolTable*);
+void analysis_ast_walk_expr(ExprAstNode*, SymbolTable*);
+void analysis_ast_walk_stmt(ExprAstNode*, SymbolTable*);
 
 #endif
