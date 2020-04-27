@@ -55,7 +55,7 @@ build/test_symbol_table: $(ACC_OBJECTS) build/test_symbol_table.o
 	$(CC) $^ -o $@ $(CFLAGS)
 
 build/test_analysis: $(ACC_OBJECTS) build/test_analysis.o
-	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=symbol_table_create -Wl,--wrap=symbol_table_put -Wl,--wrap=symbol_table_get
+	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=symbol_table_create -Wl,--wrap=symbol_table_put -Wl,--wrap=symbol_table_get -Wl,--wrap=Error_report_error
 
 build/acc: $(ACC_OBJECTS)
 	$(CC) $^ -o $@ $(CFLAGS)

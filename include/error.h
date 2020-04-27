@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-typedef enum ErrorType_t { SCANNER, PARSER } ErrorType;
+typedef enum ErrorType_t { SCANNER, PARSER, ANALYSIS } ErrorType;
 
 /*
  * Report an error, with a line number and message

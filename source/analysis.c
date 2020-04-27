@@ -3,6 +3,9 @@
 #include "token.h"
 #include "symbol.h"
 
+#include <string.h>
+#include <stdio.h>
+
 static void expr_primary(ExprAstNode*, SymbolTable*);
 static void expr_postfix(ExprAstNode*, SymbolTable*);
 static void expr_binary(ExprAstNode*, SymbolTable*);
@@ -64,6 +67,12 @@ void analysis_ast_walk_expr(ExprAstNode* node, SymbolTable* tab) {
 
 static void expr_primary(ExprAstNode* node, SymbolTable* tab) {
     Symbol* sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
+
+    if(sym == NULL) {
+        char err[50];
+        snprintf(err, 50, "Undeclared identifier '%s'", node->primary.identifier->lexeme);
+        Error_report_error(ANALYSIS, -1, err);
+    }
     node->primary.symbol = sym;
 }
 

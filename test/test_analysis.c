@@ -20,6 +20,7 @@
 #include "ast.h"
 #include "symbol.h"
 #include "analysis.h"
+#include "error.h"
 
 #include <setjmp.h>
 #include <stdarg.h>
@@ -50,6 +51,13 @@ Symbol* __wrap_symbol_table_get(SymbolTable* tab, char* name, bool search_parent
     check_expected(name);
     check_expected(search_parent);
     return (Symbol*)mock();
+}
+
+/* Mock error functions */
+void __wrap_Error_report_error(ErrorType type, int line, const char * msg) {
+    check_expected(type);
+    check_expected(line);
+    check_expected(msg);
 }
 
 /* Helper functions for checking mock function parameters and setting return values */
@@ -162,13 +170,24 @@ static void symbol_lookup_postfix(void** state) {
     analysis_ast_walk_expr(&fun, tab);
 }
 
+static void undeclared_symbol(void** state) {
+    ExprAstNode prim = EXPR_PRIMARY(m);
+    expect_get((SymbolTable*)1, "m", true, NULL);
+    expect_value(__wrap_Error_report_error, type, ANALYSIS);
+    expect_value(__wrap_Error_report_error, line, -1);
+    expect_string(__wrap_Error_report_error, msg, "Undeclared identifier 'm'");
+
+    analysis_ast_walk_expr(&prim, (SymbolTable*)1);
+}
+
 
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(global_scope),
       cmocka_unit_test(declarations),
       cmocka_unit_test(symbol_lookup_expr),
-      cmocka_unit_test(symbol_lookup_postfix)
+      cmocka_unit_test(symbol_lookup_postfix),
+      cmocka_unit_test(undeclared_symbol)
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);
