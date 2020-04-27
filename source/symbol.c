@@ -34,7 +34,7 @@ SymbolTable* symbol_table_create(SymbolTable* parent) {
 /*
  * Define a entry in a symbol table.
  */
-void symbol_table_put(SymbolTable* tab, char* name, CType* type) {
+Symbol* symbol_table_put(SymbolTable* tab, char* name, CType* type) {
     Symbol* sym = NULL;
     if(!tab->symbols_list) {
       tab->symbols_list = sym = malloc(sizeof(Symbol));
@@ -47,6 +47,7 @@ void symbol_table_put(SymbolTable* tab, char* name, CType* type) {
     tab->symbols_count++;
     sym->name = name;
     sym->type = type;
+    return sym;
 }
 
 /*

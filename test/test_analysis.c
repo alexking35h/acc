@@ -26,15 +26,24 @@
 #include <stddef.h>
 #include <cmocka.h>
 
+#define IDENT(p) &((Token){.type=IDENTIFIER, .lexeme=#p})
+#define EXPR(...) ((ExprAstNode){__VA_ARGS__})
+#define EXPR_PRIMARY(x) \
+    ((ExprAstNode){ \
+        PRIMARY,\
+        .primary.identifier=&((Token){.type=IDENTIFIER, .lexeme=#x}) \
+    })
+
 /* Mock symbol table functions */
 SymbolTable* __wrap_symbol_table_create(SymbolTable* parent){
     check_expected(parent);
     return (SymbolTable*)mock();
 }
-void __wrap_symbol_table_put(SymbolTable* tab, char* name, CType* type) {
+Symbol* __wrap_symbol_table_put(SymbolTable* tab, char* name, CType* type) {
     check_expected(tab);
     check_expected(name);
     check_expected(type);
+    return (Symbol*)mock();
 }
 Symbol* __wrap_symbol_table_get(SymbolTable* tab, char* name, bool search_parent) {
     check_expected(tab);
@@ -48,10 +57,11 @@ static void expect_create(SymbolTable* parent, SymbolTable* ret) {
     expect_value(__wrap_symbol_table_create, parent, parent);
     will_return(__wrap_symbol_table_create, ret);
 }
-static void expect_put(SymbolTable* tab, char* name, CType* type) {
+static void expect_put(SymbolTable* tab, char* name, CType* type, Symbol* ret) {
     expect_value(__wrap_symbol_table_put, tab, tab);
     expect_string(__wrap_symbol_table_put, name, name);
     expect_value(__wrap_symbol_table_put, type, type);
+    will_return(__wrap_symbol_table_put, ret);
 }
 static void expect_get(SymbolTable* tab, char* name, bool search_parent, Symbol* ret) {
     expect_value(__wrap_symbol_table_get, tab, tab);
@@ -61,9 +71,9 @@ static void expect_get(SymbolTable* tab, char* name, bool search_parent, Symbol*
 }
 
 static void global_scope(void** state) {
+    // A symbol table is created for 'global' scope,
     SymbolTable* global;
 
-    // A symbol table is created for 'global' scope,
     expect_create(NULL, (SymbolTable*)0x1234);
     analysis_ast_walk(NULL, &global);
     assert_true(global == (SymbolTable*)0x1234);
@@ -74,48 +84,91 @@ static void declarations(void** state) {
     // in the translation unit.
     DeclAstNode decl_2 = {
          .type = (CType*)0xabcd,
-            .identifier = &((Token){.lexeme="testing456"})
+        .identifier = IDENT(a1)
     };
     DeclAstNode decl_1 = {
         .type = (CType*)0x3333,
-        .identifier=&((Token){.lexeme="testing123"}),
+        .identifier=IDENT(b2),
         .next = &decl_2
     };
-    expect_get((SymbolTable*)0x1234, "testing123", false, NULL);
-    expect_put((SymbolTable*)0x1234, "testing123", (CType*)0x3333);
-    expect_get((SymbolTable*)0x1234, "testing456", false, NULL);
-    expect_put((SymbolTable*)0x1234, "testing456", (CType*)0xabcd);
+    expect_get((SymbolTable*)0x1234, "b2", false, NULL);
+    expect_put((SymbolTable*)0x1234, "b2", (CType*)0x3333, (Symbol*)0x1234);
+    expect_get((SymbolTable*)0x1234, "a1", false, NULL);
+    expect_put((SymbolTable*)0x1234, "a1", (CType*)0xabcd, (Symbol*)0x2345);
     analysis_ast_walk_decl(&decl_1, (SymbolTable*)0x1234);
-}
 
-static void symbol_lookup_primary(void** state) {
-    // A primary expression prompts a variable lookup within the current, and
-    // parent symbol table.
-    ExprAstNode primary = {
-        .type = PRIMARY,
-        .primary = {.identifier=&((Token){.lexeme="variable123"})}
-    };
-    expect_get((SymbolTable*)0x1234, "variable123", true, (Symbol*)0x9876);
-    analysis_ast_walk_expr(&primary, (SymbolTable*)0x1234);
-
-    // Unary expression prompts a variable lookup on the 'left'.
-    ExprAstNode unary = {
-        .type=UNARY,
-        .unary.right = &primary
-    };
-    expect_get((SymbolTable*)0x1234, "variable123", true, (Symbol*)0x999);
-    analysis_ast_walk_expr(&unary, (SymbolTable*)0x1234);
+    // Make sure that the declaration node has been anotated with the symbol returned
+    // from symbol_table_get
+    assert_true(decl_2.symbol == (Symbol*)0x2345);
+    assert_true(decl_1.symbol == (Symbol*)0x1234);
 }
 
 static void symbol_lookup_expr(void** state) {
+    // Each of the node in the expression tree should be visited in a post-order walk.
+    // This AST represents something like '(a+(int)b) ? -c : d = e'
+    ExprAstNode primary = EXPR_PRIMARY(a);
+    ExprAstNode cast = EXPR(CAST, .cast.right=&EXPR_PRIMARY(b));
+    ExprAstNode binary = EXPR(BINARY, .binary={.left=&primary, .right=&cast});
+    ExprAstNode unary = EXPR(UNARY, .unary.right=&EXPR_PRIMARY(c));
+    ExprAstNode assign = EXPR(ASSIGN, .assign={&EXPR_PRIMARY(d), &EXPR_PRIMARY(e)});
+    ExprAstNode tertiary = {
+        .type=TERTIARY,
+        .tertiary = {&binary, &unary, &assign}
+    };
+    SymbolTable* tab = (SymbolTable*)0x1234;
 
+    // Make sure that we called symbol_table_get for each symbol in post-order walk.
+    for(char **i = (char*[]){"a","b","c","d","e",NULL};NULL != *i;++i) {
+        expect_get(tab, *i, true, (Symbol*)(0x1000+(**i)));
+    }
+    analysis_ast_walk_expr(&tertiary, tab);
+
+    // Make sure that the primary nodes (leaf nodes in the AST) have been 
+    // annotated with the symbols returned from symbol_table_get
+    assert_true(primary.primary.symbol == (Symbol*)(0x1000+'a'));
+    assert_true(cast.cast.right->primary.symbol == (Symbol*)(0x1000+'b'));
+    assert_true(unary.unary.right->primary.symbol == (Symbol*)(0x1000+'c'));
+    assert_true(assign.assign.left->primary.symbol == (Symbol*)(0x1000+'d'));
+    assert_true(assign.assign.right->primary.symbol == (Symbol*)(0x1000+'e'));
 }
+
+static void symbol_lookup_postfix(void** state) {
+    // Every node in the postfix expression should be visited in the post-order
+    // walk. This expression looks like: a[b](i,j)
+    ExprAstNode array = EXPR(
+        POSTFIX,
+        .postfix={
+            .left=&EXPR_PRIMARY(a),
+            .index_expression=&EXPR_PRIMARY(b)
+        }
+    );
+    ArgumentListItem args = {
+        &EXPR_PRIMARY(i),
+        &((ArgumentListItem){&EXPR_PRIMARY(j)})
+    };
+    ExprAstNode fun = EXPR(
+        POSTFIX,
+        .postfix={
+            .left=&array,
+            .args=&args
+        }
+    );
+    SymbolTable* tab = (SymbolTable*)0x9999;
+
+    expect_get(tab, "a", true, (Symbol*)0x1000+'a');
+    expect_get(tab, "b", true, (Symbol*)0x1000+'b');
+    expect_get(tab, "i", true, (Symbol*)0x1000+'i');
+    expect_get(tab, "j", true, (Symbol*)0x1000+'j');
+    analysis_ast_walk_expr(&fun, tab);
+}
+
 
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(global_scope),
       cmocka_unit_test(declarations),
-      cmocka_unit_test(symbol_lookup_primary),
+      cmocka_unit_test(symbol_lookup_expr),
+      cmocka_unit_test(symbol_lookup_postfix)
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

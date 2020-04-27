@@ -16,6 +16,7 @@
 
 #include "ctype.h"
 #include "token.h"
+#include "symbol.h"
 
 struct ExprAstNode_t;
 struct DeclAstNode_t;
@@ -58,6 +59,7 @@ typedef struct ExprAstNode_t {
       Token* identifier;
       Token* constant;
       Token* string_literal;
+      Symbol* symbol;
     } primary;
 
     // Postfix
@@ -107,6 +109,8 @@ typedef struct DeclAstNode_t {
     struct ExprAstNode_t* initializer;
     struct StmtAstNode_t* body;
   };
+
+  Symbol* symbol;
 
   // Declarations can be concatenated with ',', such as `int a=1, *b;`. The C11
   // grammar in this case is left-recursive; *next points to the nested

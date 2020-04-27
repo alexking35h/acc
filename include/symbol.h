@@ -38,7 +38,7 @@ SymbolTable* symbol_table_create(SymbolTable* parent);
 /*
  * Define a entry in a symbol table.
  */
-void symbol_table_put(SymbolTable* table, char* name, CType* type);
+Symbol* symbol_table_put(SymbolTable* table, char* name, CType* type);
 
 /*
  * Retrieve a symbol table entry within this scope.
