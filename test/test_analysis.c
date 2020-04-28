@@ -2,7 +2,7 @@
  * Test the context-sensitive analysis components.
  * 
  * These tests verify the context-sensitive analysis implemented
- * in analysis.c/.h. This includes type-checking, and symbol table
+ * in analysis.c. This includes type-checking, and symbol table
  * generation.
  * 
  * Tests provide an AST as input, and mock the symbol table methods
@@ -10,11 +10,9 @@
  * 
  * Test:
  *  - symbol tables created for new scopes.
- *  - declarations for new symbols
- *  - symbol lookups within scope
+ *  - symbol look ups within statements, expressions, declarations
  *  - Error handling: undeclared symbol
  *  - Error handling: already declared symbol
- * 
  */
 
 #include "ast.h"
@@ -70,7 +68,6 @@ static void expect_create(SymbolTable* parent, SymbolTable* ret) {
     will_return(__wrap_symbol_table_create, ret);
 }
 static void expect_put(SymbolTable* tab, char* name, CType* type, Symbol* ret) {
-    if(strcmp(name, "ignoreme") == 0) return;
     expect_value(__wrap_symbol_table_put, tab, tab);
     expect_string(__wrap_symbol_table_put, name, name);
     expect_value(__wrap_symbol_table_put, type, type);
@@ -106,7 +103,6 @@ static void test_walk_stmt(StmtAstNode* node) {
     };
     test_walk_decl(&decl);
 }
-
 
 static void global_scope(void** state) {
     // A symbol table is created for 'global' scope,
