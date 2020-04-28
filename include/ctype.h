@@ -4,8 +4,7 @@
  * Types in C are divided into:
  *  - Primitive - char, integers, floating types. These are complete
  *    (known size at compile time).
- *  - Derived - arrays, structs, unions, functions,
- *    and pointers.
+ *  - Derived - arrays, structs, unions, functions, and pointers.
  *
  * Types are represented with the CType struct. Primitive types are composed
  * of:
@@ -37,7 +36,7 @@
  * > Ctype *prim, *pointer, *ppointer;
  * > ...
  * > ctype_set_derived(pointer, prim);
- * > ctype_set_derived(poointer, pointer);
+ * > ctype_set_derived(ppointer, pointer);
  */
 
 #ifndef __CTYPE__
@@ -93,19 +92,13 @@ typedef struct ParameterListItem {
 typedef struct CType {
   // C Types are either primitive types (arithmetic or pointer),
   // or derived types (pointer, array, function).
-
   CTypeType type;
 
   union {
-    // primitive arithmetic data types
+    // primitive types
     struct {
-      // Type specifier
       TypeSpecifier type_specifier;
-
-      // Type Qualifier
       TypeQualifier type_qualifier;
-
-      // Storage class specifier
       TypeStorageSpecifier storage_class_specifier;
     } primitive;
 
@@ -118,17 +111,12 @@ typedef struct CType {
   };
 
   struct CType* parent_type;
-
 } CType;
 
-/* Set the type specifier for a type */
-void ctype_set_primitive_specifier(CType* type, TypeSpecifier);
-
-/* Set the type qualifier for a type */
-void ctype_set_primitive_qualifier(CType* type, TypeQualifier);
-
-/* Set the storage-class specifier for a type */
-void ctype_set_primitive_storage_specifier(CType* type, TypeStorageSpecifier);
+/* Set the type specifier/qualifier/storage-class for a primitive type */
+void ctype_set_primitive_specifier(CType*, TypeSpecifier);
+void ctype_set_primitive_qualifier(CType*, TypeQualifier);
+void ctype_set_primitive_storage_specifier(CType*, TypeStorageSpecifier);
 
 /*
  * Finalise C Type
@@ -141,11 +129,9 @@ void ctype_set_primitive_storage_specifier(CType* type, TypeStorageSpecifier);
  * This function sets the err char pointer if an error occurs, otherwise the
  * type is valid.
  */
-void ctype_finalise(CType*, char**);
+void ctype_finalise(CType* type, char** error_str);
 
-/*
- * Set `parent` to derive from `child`. (`parent` must not be a primitive type.)
- */
+/* Set `parent` to derive from `child`. (`parent` must not be a primitive type.) */
 void ctype_set_derived(CType* parent, CType* child);
 
 #endif

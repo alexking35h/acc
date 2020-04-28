@@ -1,8 +1,18 @@
+/*
+ * ACC Tokens used during by the lexer/scanner
+ * 
+ * Tokens constitute the microsyntax of the language
+ * Tokens are the microsyntax of the langauge,
+ * 
+ * Tokens are the 'microsyntax' of the language, as defined
+ * by C's lexical grammar. The Scanner/Lexer generates a flat sequence
+ * of tokens from the input source, which the parser takes as input.
+ */
+
 #ifndef __TOKEN__
 #define __TOKEN__
 
-#define TOKEN_STORE_LEXEME(tok) (tok >= 100)
-
+/* The following C11 tokens have not been implemented: */
 // ALIGNAS
 // ALIGNOF
 // ATOMIC
@@ -104,7 +114,7 @@ typedef enum TokenType_t {
   BAR,           // '|'
   QUESTION,      // '?'
 
-  IDENTIFIER = 100,
+  IDENTIFIER,
   CONSTANT,
   STRING_LITERAL,
   END_OF_FILE

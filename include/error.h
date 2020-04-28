@@ -1,3 +1,12 @@
+/*
+ * Error-handling interface.
+ * 
+ * Errors are reported during scanning, parsing, and code-gen,
+ * by calling Error_report_error. This function is implemented
+ * in acc.c, and is responsible for making sure we displaying
+ * error messages, and making we only compile if the input is
+ * error-free.
+ */
 #ifndef __ERROR__
 #define __ERROR__
 

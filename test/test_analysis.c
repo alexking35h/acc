@@ -26,6 +26,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <cmocka.h>
+#include <string.h>
 
 #define IDENT(p) &((Token){.type=IDENTIFIER, .lexeme=#p})
 #define EXPR(...) ((ExprAstNode){__VA_ARGS__})
@@ -41,12 +42,14 @@ SymbolTable* __wrap_symbol_table_create(SymbolTable* parent){
     return (SymbolTable*)mock();
 }
 Symbol* __wrap_symbol_table_put(SymbolTable* tab, char* name, CType* type) {
+    if(!strcmp(name, "ignoreme")) return NULL;
     check_expected(tab);
     check_expected(name);
     check_expected(type);
     return (Symbol*)mock();
 }
 Symbol* __wrap_symbol_table_get(SymbolTable* tab, char* name, bool search_parent) {
+    if(!strcmp(name, "ignoreme")) return NULL;
     check_expected(tab);
     check_expected(name);
     check_expected(search_parent);
@@ -66,6 +69,7 @@ static void expect_create(SymbolTable* parent, SymbolTable* ret) {
     will_return(__wrap_symbol_table_create, ret);
 }
 static void expect_put(SymbolTable* tab, char* name, CType* type, Symbol* ret) {
+    if(strcmp(name, "ignoreme") == 0) return;
     expect_value(__wrap_symbol_table_put, tab, tab);
     expect_string(__wrap_symbol_table_put, name, name);
     expect_value(__wrap_symbol_table_put, type, type);
@@ -76,6 +80,17 @@ static void expect_get(SymbolTable* tab, char* name, bool search_parent, Symbol*
     expect_string(__wrap_symbol_table_get, name, name);
     expect_value(__wrap_symbol_table_get, search_parent, search_parent);
     will_return(__wrap_symbol_table_get, ret);
+}
+
+static void test_walk_expr(ExprAstNode* node) {
+    DeclAstNode decl1 = {
+        .type=(CType*)0xabcd,
+        .identifier=IDENT(ignoreme),
+        .initializer=node
+    };
+    SymbolTable *tmp;
+    expect_create(NULL, (SymbolTable*)0x1234);
+    analysis_ast_walk(&decl1, &tmp);
 }
 
 static void global_scope(void** state) {
@@ -89,18 +104,20 @@ static void global_scope(void** state) {
 
 static void declarations(void** state) {
     // A variable is added to global scope for each declaration
-    // in the translation unit.
+    // in the translation unit. This AST corresponds to: int b2 = v; int a1;
     DeclAstNode decl_2 = {
-         .type = (CType*)0xabcd,
+        .type = (CType*)0xabcd,
         .identifier = IDENT(a1)
     };
     DeclAstNode decl_1 = {
         .type = (CType*)0x3333,
         .identifier=IDENT(b2),
-        .next = &decl_2
+        .next = &decl_2,
+        .initializer=&EXPR_PRIMARY(v)
     };
     expect_get((SymbolTable*)0x1234, "b2", false, NULL);
     expect_put((SymbolTable*)0x1234, "b2", (CType*)0x3333, (Symbol*)0x1234);
+    expect_get((SymbolTable*)0x1234, "v", true, (Symbol*)1);
     expect_get((SymbolTable*)0x1234, "a1", false, NULL);
     expect_put((SymbolTable*)0x1234, "a1", (CType*)0xabcd, (Symbol*)0x2345);
     analysis_ast_walk_decl(&decl_1, (SymbolTable*)0x1234);
@@ -123,13 +140,13 @@ static void symbol_lookup_expr(void** state) {
         .type=TERTIARY,
         .tertiary = {&binary, &unary, &assign}
     };
-    SymbolTable* tab = (SymbolTable*)0x1234;
 
     // Make sure that we called symbol_table_get for each symbol in post-order walk.
     for(char **i = (char*[]){"a","b","c","d","e",NULL};NULL != *i;++i) {
-        expect_get(tab, *i, true, (Symbol*)(0x1000+(**i)));
+        expect_get((SymbolTable*)0x1234, *i, true, (Symbol*)(0x1000+(**i)));
     }
-    analysis_ast_walk_expr(&tertiary, tab);
+    test_walk_expr(&tertiary);
+    // analysis_ast_walk_exp(&tertiary, tab);
 
     // Make sure that the primary nodes (leaf nodes in the AST) have been 
     // annotated with the symbols returned from symbol_table_get
@@ -161,13 +178,11 @@ static void symbol_lookup_postfix(void** state) {
             .args=&args
         }
     );
-    SymbolTable* tab = (SymbolTable*)0x9999;
-
-    expect_get(tab, "a", true, (Symbol*)0x1000+'a');
-    expect_get(tab, "b", true, (Symbol*)0x1000+'b');
-    expect_get(tab, "i", true, (Symbol*)0x1000+'i');
-    expect_get(tab, "j", true, (Symbol*)0x1000+'j');
-    analysis_ast_walk_expr(&fun, tab);
+    expect_get((SymbolTable*)0x1234, "a", true, (Symbol*)0x1000+'a');
+    expect_get((SymbolTable*)0x1234, "b", true, (Symbol*)0x1000+'b');
+    expect_get((SymbolTable*)0x1234, "i", true, (Symbol*)0x1000+'i');
+    expect_get((SymbolTable*)0x1234, "j", true, (Symbol*)0x1000+'j');
+    test_walk_expr(&fun);
 }
 
 static void undeclared_symbol(void** state) {

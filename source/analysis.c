@@ -35,6 +35,10 @@ void analysis_ast_walk_decl(DeclAstNode* node, SymbolTable* tab) {
     Symbol* sym = symbol_table_put(tab, node->identifier->lexeme, node->type);
     node->symbol = sym;
 
+    if(node->initializer) {
+        analysis_ast_walk_expr(node->initializer, tab);
+    }
+
     if(node->next) {
         analysis_ast_walk_decl(node->next, tab);
     }

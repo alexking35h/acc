@@ -7,6 +7,8 @@
 #include "pretty_print.h"
 #include "scanner.h"
 #include "error.h"
+#include "analysis.h"
+#include "symbol.h"
 
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0
@@ -150,6 +152,11 @@ static DeclAstNode* get_ast(const char* source) {
   Parser* parser = Parser_init(scanner);
 
   // Generate the AST for the file.
+  DeclAstNode* ast = Parser_translation_unit(parser);
+
+  // Context-sensitive analysis (semantic analysis).
+  SymbolTable* global = NULL;
+  analysis_ast_walk(ast, &global);
   return Parser_translation_unit(parser);
 }
 

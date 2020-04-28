@@ -1,7 +1,7 @@
 /*
  * AST node definitions.
  *
- * AST nodes types are separated into two categories:
+ * AST nodes types are separated into three categories:
  * - expression - ExprAstNode
  * - declaration - DeclAstNode
  * - statement - StmtAstNode
@@ -96,6 +96,8 @@ typedef struct DeclAstNode_t {
   // Declarators are typically 'concrete', meaning tied to an identifier
   // (e.g. `int a;`). However we can also have 'abstract declarators'
   // in cast expressions and parameter lists (e.g., `void (int*, char, void*)`.
+  // Abstract declarators should not be included in the final AST, but are
+  // be used during parsing.
   enum { CONCRETE, ABSTRACT } decl_type;
 
   // C data type for this declaration.
@@ -110,11 +112,9 @@ typedef struct DeclAstNode_t {
     struct StmtAstNode_t* body;
   };
 
+  // Symbol table entry for this declaration (set during context-analysis).
   Symbol* symbol;
 
-  // Declarations can be concatenated with ',', such as `int a=1, *b;`. The C11
-  // grammar in this case is left-recursive; *next points to the nested
-  // declaration.
   struct DeclAstNode_t* next;
 } DeclAstNode;
 
@@ -162,8 +162,8 @@ typedef struct StmtAstNode_t {
  * E.g.:
  * > Ast_create_expr_node((ExprAstNode){.primary.identifier=...});
  */
-ExprAstNode* Ast_create_expr_node(ExprAstNode ast_node);
-DeclAstNode* Ast_create_decl_node(DeclAstNode ast_node);
-StmtAstNode* Ast_create_stmt_node(StmtAstNode ast_node);
+ExprAstNode* Ast_create_expr_node(ExprAstNode);
+DeclAstNode* Ast_create_decl_node(DeclAstNode);
+StmtAstNode* Ast_create_stmt_node(StmtAstNode);
 
 #endif

@@ -1,7 +1,7 @@
 /*
  * Symbol tables in acc map identifiers to type/location information
  * for variables and functions. During context-sensitive analysis,
- * symbol tables are generated for each block.
+ * symbol tables are generated for each scope.
  */
 #ifndef __SYMBOL__
 #define __SYMBOL__
@@ -16,14 +16,10 @@
  * This includes:
  * - type information
  * - variable/function name
- * - size
- * - offset
  */
 typedef struct Symbol_t {
   char* name;
   CType* type;
-  int size; // (in bytes)
-  int offset; // (in bytes)
 } Symbol;
 
 typedef struct SymbolTable_t SymbolTable;
@@ -32,11 +28,14 @@ typedef struct SymbolTable_t SymbolTable;
  * Create a new symbol table.
  * 
  * 'parent' is the parent scope. This is 'NULL' for global-scope.
+ * Returns a pointer to the new symbol table.
  */
 SymbolTable* symbol_table_create(SymbolTable* parent);
 
 /*
- * Define a entry in a symbol table.
+ * Define a entry in a symbol table. 
+ * 
+ * Returns a pointer to the new symbol, or NULL if it does not exist.
  */
 Symbol* symbol_table_put(SymbolTable* table, char* name, CType* type);
 
