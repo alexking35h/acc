@@ -73,7 +73,6 @@ void Parser_sync_token(Parser *, TokenType[]);
  * Recursive descent parser function definitions.
  */
 ExprAstNode *Parser_expression(Parser *parser);
-ExprAstNode *Parser_assignment_expression(Parser *parser);
 
 DeclAstNode *Parser_declaration(Parser *parser);
 DeclAstNode *Parser_translation_unit(Parser *parser);

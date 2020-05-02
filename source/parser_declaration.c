@@ -516,7 +516,7 @@ static ExprAstNode* initializer(Parser* parser) {  // @TODO
    * '{' initializer_list ',' '}'
    * assignment_expression
    */
-  return Parser_assignment_expression(parser);
+  return Parser_expression(parser);
 }
 static DeclAstNode* initializer_list(Parser* parser) {  // @TODO
   /*

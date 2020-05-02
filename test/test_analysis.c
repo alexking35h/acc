@@ -5,8 +5,8 @@
  * in analysis.c. This includes type-checking, and symbol table
  * generation.
  * 
- * Tests provide an AST as input, and mock the symbol table methods
- * create/get/put to verify correct behaviour.
+ * Tests provide source code as input, and mock the symbol table methods
+ * (create/put/get) to verify correct behaviour
  * 
  * Test:
  *  - symbol tables created for new scopes.

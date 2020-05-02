@@ -188,7 +188,7 @@ static ArgumentListItem* argument_expression_list(Parser* parser) {  // @TODO
     return NULL;
 
   ArgumentListItem* arg = calloc(1, sizeof(ArgumentListItem));
-  arg->argument = Parser_assignment_expression(parser);
+  arg->argument = Parser_expression(parser);
   arg->next = match(COMMA) ? argument_expression_list(parser) : NULL;
   return arg;
 }
