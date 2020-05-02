@@ -175,7 +175,9 @@ static ExprAstNode* postfix_expression(Parser* parser) {
       expr = EXPR_POSTFIX(.left=expr, .args = argument_expression_list(parser));
       consume(RIGHT_PAREN);
     }
+    else {
       break;
+    }
   }
   return expr;
 }
