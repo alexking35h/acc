@@ -11,21 +11,7 @@
 #include "parser.h"
 #include "scanner.h"
 #include "test.h"
-
-void Error_report_error(ErrorType error_type, int line_number,
-                        const char* error_string) {
-  function_called();
-  check_expected(error_type);
-  check_expected(line_number);
-  check_expected(error_string);
-}
-
-static void expect_report_error(int expect_line, char* expect_err_str) {
-  expect_function_call(Error_report_error);
-  expect_value(Error_report_error, error_type, PARSER);
-  expect_value(Error_report_error, line_number, expect_line);
-  expect_string(Error_report_error, error_string, expect_err_str);
-}
+#include "error.h"
 
 static void panic_mode_declaration(void** state) {
   // Test panic mode behaviour at the top-level of a translation unit.

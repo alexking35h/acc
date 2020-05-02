@@ -55,13 +55,6 @@ Symbol* __wrap_symbol_table_get(SymbolTable* tab, char* name, bool search_parent
     return (Symbol*)mock();
 }
 
-/* Mock error functions */
-void __wrap_Error_report_error(ErrorType type, int line, const char * msg) {
-    check_expected(type);
-    check_expected(line);
-    check_expected(msg);
-}
-
 /* Helper functions for checking mock function parameters and setting return values */
 static void expect_create(SymbolTable* parent, SymbolTable* ret) {
     expect_value(__wrap_symbol_table_create, parent, parent);
@@ -210,14 +203,14 @@ static void symbol_lookup_stmt(void** state) {
     test_walk_stmt(&ret);
 }
 
-static void undeclared_symbol(void** state) {
-    ExprAstNode prim = EXPR_PRIMARY(m);
-    expect_get((SymbolTable*)0x1234, "m", true, NULL);
-    expect_value(__wrap_Error_report_error, type, ANALYSIS);
-    expect_value(__wrap_Error_report_error, line, -1);
-    expect_string(__wrap_Error_report_error, msg, "Undeclared identifier 'm'");
-    test_walk_expr(&prim);
-}
+// static void undeclared_symbol(void** state) {
+//     ExprAstNode prim = EXPR_PRIMARY(m);
+//     expect_get((SymbolTable*)0x1234, "m", true, NULL);
+//     expect_value(__wrap_Error_report_error, type, ANALYSIS);
+//     expect_value(__wrap_Error_report_error, line, -1);
+//     expect_string(__wrap_Error_report_error, msg, "Undeclared identifier 'm'");
+//     test_walk_expr(&prim);
+// }
 
 int main(void) {
   const struct CMUnitTest tests[] = {
@@ -225,8 +218,8 @@ int main(void) {
       cmocka_unit_test(declarations),
       cmocka_unit_test(symbol_lookup_expr),
       cmocka_unit_test(symbol_lookup_postfix),
-      cmocka_unit_test(symbol_lookup_stmt),
-      cmocka_unit_test(undeclared_symbol)
+      cmocka_unit_test(symbol_lookup_stmt)
+    //   cmocka_unit_test(undeclared_symbol)
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

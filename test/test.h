@@ -42,4 +42,9 @@ void assert_expected_ast_decl(AstTestFixture* fixture);
  */
 void assert_expected_ast_stmt(AstTestFixture* fixture);
 
+/*
+ * Helper function for declaring expected errors.
+ */
+void expect_report_error(int expect_line, char* expect_err_str);
+
 #endif

@@ -16,6 +16,7 @@
 #include "pretty_print.h"
 #include "scanner.h"
 #include "token.h"
+#include "error.h"
 
 enum AstType_t {AST_EXPR, AST_DECL, AST_STMT};
 
@@ -110,4 +111,25 @@ void assert_expected_ast_stmt(AstTestFixture* fixture) {
   for (; fixture->source; fixture++) {
     assert_true(test_ast_compare_stmt(fixture->source, fixture->expected));
   }
+}
+
+/*
+ * Mock Error_report_error function
+ */
+void Error_report_error(ErrorType error_type, int line_number,
+                        const char* error_string) {
+  function_called();
+  check_expected(error_type);
+  check_expected(line_number);
+  check_expected(error_string);
+}
+
+/*
+ * Helper function for declaring expected errors.
+ */
+void expect_report_error(int expect_line, char* expect_err_str) {
+  expect_function_call(Error_report_error);
+  expect_value(Error_report_error, error_type, PARSER);
+  expect_value(Error_report_error, line_number, expect_line);
+  expect_string(Error_report_error, error_string, expect_err_str);
 }
