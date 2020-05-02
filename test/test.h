@@ -1,6 +1,8 @@
 #ifndef __TEST__
 #define __TEST__
 
+#include "error.h"
+
 typedef struct AstTestFixture_t {
   char* source;
   char* expected;
@@ -45,6 +47,6 @@ void assert_expected_ast_stmt(AstTestFixture* fixture);
 /*
  * Helper function for declaring expected errors.
  */
-void expect_report_error(int expect_line, char* expect_err_str);
+void expect_report_error(ErrorType error_type, int expect_line, char* expect_err_str);
 
 #endif

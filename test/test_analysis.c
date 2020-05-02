@@ -19,6 +19,7 @@
 #include "symbol.h"
 #include "analysis.h"
 #include "error.h"
+#include "test.h"
 
 #include <setjmp.h>
 #include <stdarg.h>
@@ -28,15 +29,6 @@
 
 #define FAKE_SYMBOL_TABLE ((SymbolTable*)0x1234)
 #define FAKE_SYMBOL ((Symbol*)0x5678)
-
-#define IDENT(p) &((Token){.type=IDENTIFIER, .lexeme=#p})
-#define EXPR(...) ((ExprAstNode){__VA_ARGS__})
-#define DECL(...) ((DeclAstNode){__VA_ARGS__})
-#define EXPR_PRIMARY(x) \
-    ((ExprAstNode){ \
-        PRIMARY,\
-        .primary.identifier=&((Token){.type=IDENTIFIER, .lexeme=#x}) \
-    })
 
 /* Mock symbol table functions */
 SymbolTable* __wrap_symbol_table_create(SymbolTable* parent){
@@ -108,7 +100,7 @@ static void declarations(void** state) {
     assert_true(ast->next->symbol == FAKE_SYMBOL+2);
 }
 
-static void symbol_lookup_expr(void** state) {
+static void symbol_lookup(void** state) {
     DeclAstNode *ast = parse("void ignoreme(){return (a+(int)b) ? -c : (d = e[f](g,h));}");
     char *identifiers[] = {"a", "b", "c", "d", "e", "f", "g", "h"};
     for(int i = 0;i < 8;i++) {
@@ -120,44 +112,20 @@ static void symbol_lookup_expr(void** state) {
     assert_true(expr->primary.symbol == FAKE_SYMBOL);
 }
 
-// static void symbol_lookup_stmt(void** state) {
-//     CType prim = {TYPE_PRIMITIVE};
-//     ExprAstNode expr = EXPR_PRIMARY(a);
-//     StmtAstNode expr_stmt = {EXPR, .expr.expr=&expr};
-//     StmtAstNode decl_stmt = {
-//         DECL,
-//         .decl.decl=&DECL(.type=&prim,.identifier=IDENT(b)),
-//         .next=&expr_stmt
-//     };
-//     StmtAstNode ret = {
-//         RETURN_JUMP,
-//         .return_jump.value=&EXPR_PRIMARY(c),
-//         .next = &decl_stmt
-//     };
-//     expect_get((SymbolTable*)0x1234, "c", true, (Symbol*)1);
-//     expect_get((SymbolTable*)0x1234, "b", false, NULL);
-//     expect_put((SymbolTable*)0x1234, "b", &prim, (Symbol*)1);
-//     expect_get((SymbolTable*)0x1234, "a", true, (Symbol*)1);
-//     test_walk_stmt(&ret);
-// }
+static void undeclared_symbol(void** state) {
+    DeclAstNode *ast = parse("void ignoreme(){return b;}");
+    expect_get(FAKE_SYMBOL_TABLE, "b", true, NULL);
+    expect_report_error(ANALYSIS, -1, "Undeclared identifier 'b'");
 
-// static void undeclared_symbol(void** state) {
-//     ExprAstNode prim = EXPR_PRIMARY(m);
-//     expect_get((SymbolTable*)0x1234, "m", true, NULL);
-//     expect_value(__wrap_Error_report_error, type, ANALYSIS);
-//     expect_value(__wrap_Error_report_error, line, -1);
-//     expect_string(__wrap_Error_report_error, msg, "Undeclared identifier 'm'");
-//     test_walk_expr(&prim);
-// }
+    test_analysis_ast_walk(ast);
+}
 
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(global_scope),
       cmocka_unit_test(declarations),
-      cmocka_unit_test(symbol_lookup_expr),
-    //   cmocka_unit_test(symbol_lookup_postfix),
-    //   cmocka_unit_test(symbol_lookup_stmt)
-    //   cmocka_unit_test(undeclared_symbol)
+      cmocka_unit_test(symbol_lookup),
+      cmocka_unit_test(undeclared_symbol)
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);
