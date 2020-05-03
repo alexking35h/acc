@@ -5,20 +5,66 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-static void walk_expr(ExprAstNode*, SymbolTable*);
+/*
+ * Walk Expression AST Nodes. Parsing expressions often requires getting type
+ * information from child nodes (e.g., a+b requires type information for 'a' and 'b').
+ * Therefore, all expressions that walk expression types return a pointer to a type.
+ */
+static CType *walk_expr(ExprAstNode*, SymbolTable*);
+
 static void walk_decl(DeclAstNode*, SymbolTable*);
 static void walk_stmt(StmtAstNode*, SymbolTable*);
 
-static void walk_expr_primary(ExprAstNode* node, SymbolTable* tab) {
+static ExprAstNode *integer_promote(ExprAstNode *node, CType *ctype) {
+    if (ctype == NULL || ctype->type != TYPE_PRIMITIVE) {
+        return node;
+    }
+
+    switch (ctype->primitive.type_specifier) {
+        case TYPE_UNSIGNED | TYPE_INT:
+        case TYPE_SIGNED | TYPE_INT:
+            return node;
+
+        case TYPE_LONG:
+        case TYPE_VOID:
+        case TYPE_FLOAT:
+        case TYPE_DOUBLE:
+        case TYPE_SIGNED:
+            return node;
+
+        case TYPE_CHAR:
+        case TYPE_SHORT:
+        case TYPE_INT:
+        case TYPE_UNSIGNED:
+            break;
+    }
+
+    CType *cast_type = calloc(1, sizeof(CType));
+    cast_type->type = TYPE_PRIMITIVE;
+    cast_type->primitive.type_specifier = TYPE_INT | TYPE_SIGNED;
+
+    ExprAstNode* cast_node = calloc(1, sizeof(ExprAstNode));
+    cast_node->type = CAST;
+    cast_node->cast.type = cast_type;
+    cast_node->cast.right = node;
+
+    return cast_node;
+}
+
+static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab) {
     Symbol* sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
 
     if(sym == NULL) {
         char err[50];
         snprintf(err, 50, "Undeclared identifier '%s'", node->primary.identifier->lexeme);
         Error_report_error(ANALYSIS, -1, err);
+
+        return NULL;
     }
     node->primary.symbol = sym;
+    return node->primary.symbol->type;
 }
 
 static void argument_list_item(ArgumentListItem* arg, SymbolTable* tab) {
@@ -28,41 +74,51 @@ static void argument_list_item(ArgumentListItem* arg, SymbolTable* tab) {
     argument_list_item(arg->next, tab);
 }
 
-static void walk_expr_postfix(ExprAstNode* node, SymbolTable* tab) {
+static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab) {
     walk_expr(node->postfix.left, tab);
     if(node->postfix.index_expression) {
         walk_expr(node->postfix.index_expression, tab);
     } else {
         argument_list_item(node->postfix.args, tab);
     }
+    return NULL;
 }
 
-static void walk_expr_binary(ExprAstNode* node, SymbolTable* tab) {
-    walk_expr(node->binary.left, tab);
-    walk_expr(node->binary.right, tab);
+static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab) {
+    node->binary.left = integer_promote(
+        node->binary.left, walk_expr(node->binary.left, tab)
+    );
+    node->binary.right = integer_promote(
+        node->binary.right, walk_expr(node->binary.right, tab)
+    );
+    return NULL;
 }
 
-static void walk_expr_unary(ExprAstNode* node, SymbolTable* tab) {
+static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab) {
     walk_expr(node->unary.right, tab);
+    return NULL;
 }
 
-static void walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab) {
+static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab) {
     walk_expr(node->tertiary.condition_expr, tab);
     walk_expr(node->tertiary.expr_true, tab);
     walk_expr(node->tertiary.expr_false, tab);
+    return NULL;
 }
 
-static void walk_expr_cast(ExprAstNode* node, SymbolTable* tab) {
+static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab) {
     walk_expr(node->cast.right, tab);
+    return NULL;
 }
 
-static void walk_expr_assign(ExprAstNode* node, SymbolTable* tab) {
+static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab) {
     walk_expr(node->assign.left, tab);
     walk_expr(node->assign.right, tab);
+    return NULL;
 }
 
 
-static void walk_expr(ExprAstNode* node, SymbolTable* tab) {
+static CType *walk_expr(ExprAstNode* node, SymbolTable* tab) {
    switch (node->type) {
      case PRIMARY:
          return walk_expr_primary(node, tab);
@@ -85,12 +141,19 @@ static void walk_expr(ExprAstNode* node, SymbolTable* tab) {
     case ASSIGN:
         return walk_expr_assign(node, tab);
    }
+   return NULL;
 }
 
 static void walk_decl(DeclAstNode* node, SymbolTable* tab) {
     // Check if there is already a symbol table entry for this
     // identifier within the current scope.
-    symbol_table_get(tab, node->identifier->lexeme, false);
+    if(symbol_table_get(tab, node->identifier->lexeme, false)) {
+        char err[128];
+        snprintf(err, sizeof(err), "Previously declared identifier '%s'", node->identifier->lexeme);
+        Error_report_error(ANALYSIS, -1, err);
+
+        return;
+    }
     Symbol* sym = symbol_table_put(tab, node->identifier->lexeme, node->type);
     node->symbol = sym;
 
@@ -146,9 +209,12 @@ static void walk_stmt(StmtAstNode* node, SymbolTable* tab) {
 /*
  * Walk the AST.
  */
-void analysis_ast_walk(DeclAstNode* root, SymbolTable** global) {
-    *global = symbol_table_create(NULL);
-
-    if(root != NULL)
-        walk_decl(root, *global);
+void analysis_ast_walk(DeclAstNode* decl, ExprAstNode* expr, StmtAstNode* stmt, SymbolTable* tab) {
+    if(decl) {
+        walk_decl(decl, tab);
+    } else if (expr) {
+        walk_expr(expr, tab);
+    } else if (stmt) {
+        walk_stmt(stmt, tab);
+    }
 }

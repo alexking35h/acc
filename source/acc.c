@@ -151,12 +151,12 @@ static DeclAstNode* get_ast(const char* source) {
   Scanner* scanner = Scanner_init(source);
   Parser* parser = Parser_init(scanner);
 
-  // Generate the AST for the file.
-  DeclAstNode* ast = Parser_translation_unit(parser);
+  // // Generate the AST for the file.
+  // DeclAstNode* ast = Parser_translation_unit(parser);
 
   // Context-sensitive analysis (semantic analysis).
-  SymbolTable* global = NULL;
-  analysis_ast_walk(ast, &global);
+  // SymbolTable* global = NULL;
+  // analysis_ast_walk(ast, &global);
   return Parser_translation_unit(parser);
 }
 
