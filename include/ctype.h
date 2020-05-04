@@ -70,7 +70,17 @@ typedef enum {
   TYPE_FLOAT = 32,
   TYPE_DOUBLE = 64,
   TYPE_SIGNED = 128,
-  TYPE_UNSIGNED = 256
+  TYPE_UNSIGNED = 256,
+
+  // Actual types?
+  TYPE_SIGNED_CHAR = TYPE_CHAR | TYPE_SIGNED,
+  TYPE_UNSIGNED_CHAR = TYPE_CHAR | TYPE_UNSIGNED,
+  TYPE_SIGNED_SHORT_INT = TYPE_SIGNED | TYPE_SHORT | TYPE_INT,
+  TYPE_UNSIGNED_SHORT_INT = TYPE_UNSIGNED | TYPE_SHORT | TYPE_INT,
+  TYPE_SIGNED_INT = TYPE_SIGNED | TYPE_INT,
+  TYPE_UNSIGNED_INT = TYPE_UNSIGNED | TYPE_INT,
+  TYPE_SIGNED_LONG_INT = TYPE_SIGNED | TYPE_LONG | TYPE_INT,
+  TYPE_UNSIGNED_LONG_INT = TYPE_UNSIGNED | TYPE_LONG | TYPE_INT
 } TypeSpecifier;
 
 typedef enum { TYPE_CONST = 1, TYPE_VOLATILE } TypeQualifier;
@@ -133,5 +143,9 @@ void ctype_finalise(CType* type, char** error_str);
 
 /* Set `parent` to derive from `child`. (`parent` must not be a primitive type.) */
 void ctype_set_derived(CType* parent, CType* child);
+
+typedef unsigned char CTypeRank;
+
+CTypeRank ctype_rank(CType *type);
 
 #endif

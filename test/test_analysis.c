@@ -163,7 +163,9 @@ static void arithmetic_conversions(void** state) {
     expect_get(FAKE_SYMBOL_TABLE, "a", true, &a);
     expect_get(FAKE_SYMBOL_TABLE, "b", true, &b);
 
-    char ast_str[256], expected_str[256] = "(B (P a), - (C [signed long int], (P b)))";
+    analysis_ast_walk_expr(ast, FAKE_SYMBOL_TABLE);
+
+    char ast_str[256], expected_str[256] = "(B (P a), -, (C [signed long int], (P b)))";
     pretty_print_expr(ast, ast_str, sizeof(ast_str));
 
     if(strlen(ast_str) != strlen(expected_str) || strcmp(ast_str, expected_str) != 0) {

@@ -17,27 +17,28 @@ static CType *walk_expr(ExprAstNode*, SymbolTable*);
 static void walk_decl(DeclAstNode*, SymbolTable*);
 static void walk_stmt(StmtAstNode*, SymbolTable*);
 
-static ExprAstNode *integer_promote(ExprAstNode *node, CType *ctype) {
+static CType *integer_promote(ExprAstNode **node, CType *ctype) {
     if (ctype == NULL || ctype->type != TYPE_PRIMITIVE) {
         return node;
     }
 
     switch (ctype->primitive.type_specifier) {
-        case TYPE_UNSIGNED | TYPE_INT:
-        case TYPE_SIGNED | TYPE_INT:
-            return node;
+        case TYPE_UNSIGNED_INT:
+        case TYPE_SIGNED_INT:
+            return ctype;
 
-        case TYPE_LONG:
-        case TYPE_VOID:
+        case TYPE_SIGNED_LONG_INT:
+        case TYPE_UNSIGNED_LONG_INT:
         case TYPE_FLOAT:
+        case TYPE_VOID:
         case TYPE_DOUBLE:
-        case TYPE_SIGNED:
-            return node;
-
-        case TYPE_CHAR:
-        case TYPE_SHORT:
-        case TYPE_INT:
-        case TYPE_UNSIGNED:
+            return ctype;
+        
+        case TYPE_SIGNED_CHAR:
+        case TYPE_UNSIGNED_CHAR:
+        case TYPE_SIGNED_SHORT_INT:
+        case TYPE_UNSIGNED_SHORT_INT:
+        default:
             break;
     }
 
@@ -48,9 +49,27 @@ static ExprAstNode *integer_promote(ExprAstNode *node, CType *ctype) {
     ExprAstNode* cast_node = calloc(1, sizeof(ExprAstNode));
     cast_node->type = CAST;
     cast_node->cast.type = cast_type;
-    cast_node->cast.right = node;
+    cast_node->cast.right = *node;
 
-    return cast_node;
+    *node = cast_node;
+    return cast_type;
+}
+
+static CType* type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode **node_b, CType *ctype_b){
+    if(ctype_a->primitive.type_specifier == ctype_b->primitive.type_specifier) {
+        return ctype_a;
+    }
+
+    ExprAstNode **cast_expr = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? node_a : node_b;
+    CType *cast_type = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? ctype_b : ctype_a;
+
+    ExprAstNode *cast_node = calloc(1, sizeof(CType));
+    cast_node->type = CAST;
+    cast_node->cast.type = cast_type;
+    cast_node->cast.right = *cast_expr;
+
+    *cast_expr = cast_node;
+    return cast_type;
 }
 
 static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab) {
@@ -85,13 +104,19 @@ static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab) {
 }
 
 static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab) {
-    node->binary.left = integer_promote(
-        node->binary.left, walk_expr(node->binary.left, tab)
-    );
-    node->binary.right = integer_promote(
-        node->binary.right, walk_expr(node->binary.right, tab)
+    CType *left = walk_expr(node->binary.left, tab);
+    CType *right = walk_expr(node->binary.right, tab);
+
+    left = integer_promote(&node->binary.left, left);
+    right = integer_promote(&node->binary.right, right);
+    type_conversion(
+        &node->binary.left, 
+        left,
+        &node->binary.right,
+        right
     );
     return NULL;
+    // return type_conversion(&node->binary.left, node->binary.left)
 }
 
 static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab) {
