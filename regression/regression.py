@@ -26,7 +26,7 @@ class AccError:
     
     def __init__(self, error_type, line_number, message):
         self.error_type = error_type
-        self.line = int(line_number)
+        self.line = line_number
         self.message = message
     
     def __str__(self):
@@ -55,14 +55,20 @@ class SourceFile:
         source_lines = list(enumerate(source_file.split("\n")))
         prev_non_error_line = None
         for line_no, line in reversed(source_lines):
-            if"!error" not in line:
+            if "?error" in line:
+                expected_error_line = -1
+
+            elif "!error" in line:
+                expected_error_line = prev_non_error_line+1
+            
+            else:
                 prev_non_error_line = line_no
                 continue
             
-            component, message = re.search("!error ([A-Z]+) \"(.*)\"", line).groups()
+            component, message = re.search("error ([A-Z]+) \"(.*)\"", line).groups()
             errors.add(AccError(
                 error_type=component,
-                line_number=prev_non_error_line+1,
+                line_number=expected_error_line,
                 message=message
             ))
         return errors

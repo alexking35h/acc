@@ -22,3 +22,8 @@ static register int a;
 
 // !error PARSER "Expected expression, got '/'"
 int a = /;
+
+void main() {
+    // ?error ANALYSIS "Undeclared identifier 'q'"
+    return q;
+}

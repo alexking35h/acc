@@ -152,6 +152,26 @@ static void integer_promotion(void** state) {
     }
 }
 
+static void arithmetic_conversions(void** state) {
+    Scanner *scanner = Scanner_init("a-b");
+    Parser *parser = Parser_init(scanner);
+    ExprAstNode *ast = Parser_expression(parser);
+
+    CType type_long_int = {TYPE_PRIMITIVE, .primitive.type_specifier=TYPE_INT | TYPE_SIGNED | TYPE_LONG};
+    CType type_int = {TYPE_PRIMITIVE, .primitive.type_specifier=TYPE_INT | TYPE_SIGNED};
+    Symbol a = {"", &type_long_int}, b = {"", &type_int};
+    expect_get(FAKE_SYMBOL_TABLE, "a", true, &a);
+    expect_get(FAKE_SYMBOL_TABLE, "b", true, &b);
+
+    char ast_str[256], expected_str[256] = "(B (P a), - (C [signed long int], (P b)))";
+    pretty_print_expr(ast, ast_str, sizeof(ast_str));
+
+    if(strlen(ast_str) != strlen(expected_str) || strcmp(ast_str, expected_str) != 0) {
+        printf("Expected '%s', got '%s'\n", expected_str, ast_str);
+        assert_true(false);
+    }
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(declarations),
@@ -159,6 +179,7 @@ int main(void) {
       cmocka_unit_test(undeclared_symbol),
       cmocka_unit_test(previously_declared_symbol),
       cmocka_unit_test(integer_promotion),
+      cmocka_unit_test(arithmetic_conversions),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

@@ -64,6 +64,9 @@ static void print_error_json(ErrorType type, int l, const char* msg) {
     case PARSER:
       printf("\"PARSER\"");
       break;
+    case ANALYSIS:
+      printf("\"ANALYSIS\"");
+      break;
     default:
       printf("null");
       break;
@@ -152,12 +155,13 @@ static DeclAstNode* get_ast(const char* source) {
   Parser* parser = Parser_init(scanner);
 
   // // Generate the AST for the file.
-  // DeclAstNode* ast = Parser_translation_unit(parser);
+  DeclAstNode* ast = Parser_translation_unit(parser);
 
   // Context-sensitive analysis (semantic analysis).
-  // SymbolTable* global = NULL;
-  // analysis_ast_walk(ast, &global);
-  return Parser_translation_unit(parser);
+  SymbolTable* global = symbol_table_create(NULL);
+  analysis_ast_walk_decl(ast, global);
+
+  return ast;
 }
 
 static const char* read_file(const char* file_path) {
@@ -200,7 +204,7 @@ int main(int argc, char** argv) {
     if(args.json)
       printf("\n  ]\n}\n");
 
-    pretty_print_decl(decl, ast, 1000);
-    printf("%s\n", ast);
+    // pretty_print_decl(decl, ast, 1000);
+    // printf("%s\n", ast);
   }
 }
