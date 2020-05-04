@@ -15,14 +15,25 @@ one platform - probably x86, and is not designed with extensibility/porting in m
 
 ## Design
 
-The compiler is split into the front-end and back-end, which focus on the reading the
-source language and generating the output code respectively. The components that make 
-up the compiler are listed below, including design & implementation notes.
+The compiler is split into separate modules which marshall the program from source, to 
+intermediate form, and code generation. 
 
-|Component                      |Notes|
-|-------------------------------|-----|
-|Scanner                        |Generate a flat sequence of tokens from the source input.|
-|[Parser](design/parser.md)     |Generate the Abstract Syntax Tree (AST) from the output of the Scanner. This includes parsing type declarations|
+| Component | Header File | Notes |
+|-----------|-------------|-------|
+| Scanner | [scanner.h](include/scanner.h) | Generate a flat sequence of tokens from source input. |
+| [Parsing](design/parser.md) | [parser.h](incude/parser.h) | Generate the Abstract Syntax Tree (AST) from the output of the scanner. |
+| Context-sensitive Analysis | [analysis.h](include/analysis.h) | Annotate the AST with type information, catch semantic errors such as undeclared variables, and handle type conversions |
+
+Seperately, various parts of the C language are implemented independently to support compilation.
+
+| Component | Header File | Notes |
+|-----------|-------------|-------|
+| Types | [ctype.h](include/ctype.h) | Handling type-declaration syntax and parsing type-information |
+| Symbols | [symbol.h](include/symbol.h) ||
+| Pretty-print | [pretty_print.h](include/pretty_print.h) | Generate concise text representations of ASTs for debugging/testing |
+
+## Testing
+Bit-about-testing
 
 ## Missing
 
@@ -50,3 +61,6 @@ this means it's missing some (many) features of the C11 grammar, which really ma
 
  * No support for expression lists, such as `int a = 3+2, 1` (since the _expression_ rule is left-recursive,
    `a` gets the rightmost value in the list: `1`). 
+
+ * No support for floating types (`float`/`double`). These are currently caught during the analysis, and a 
+   Not-implemented yet error is raised.
