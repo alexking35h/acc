@@ -24,7 +24,7 @@ TEST_OBJECTS=$(patsubst $(TEST_DIR)/%.c, $(BUILD_DIR)/%.o, $(TEST_SOURCES))
 .PHONY: format
 .PHONY: build
 
-test: build/test_analysis build/test_symbol_table build build/test_scanner build/test_parser_expression build/test_parser_declaration build/test_parser_statement build/test_parser_error
+test: build/test_analysis build/test_symbol_table build build/test_scanner build/test_parser_expression build/test_parser_declaration build/test_parser_statement build/test_parser_error build/test_conversions
 	build/test_scanner
 	build/test_parser_expression
 	build/test_parser_declaration
@@ -32,6 +32,7 @@ test: build/test_analysis build/test_symbol_table build build/test_scanner build
 	build/test_parser_error
 	build/test_symbol_table
 	build/test_analysis
+	build/test_conversions
 
 regression_test: build/acc
 	python3 regression/regression.py --acc $^ regression/*.c
@@ -55,6 +56,9 @@ build/test_symbol_table: $(ACC_OBJECTS) build/test_symbol_table.o
 	$(CC) $^ -o $@ $(CFLAGS)
 
 build/test_analysis: $(ACC_OBJECTS) build/test_analysis.o build/test.o
+	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=symbol_table_create -Wl,--wrap=symbol_table_put -Wl,--wrap=symbol_table_get
+
+build/test_conversions: $(ACC_OBJECTS) build/test_conversions.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=symbol_table_create -Wl,--wrap=symbol_table_put -Wl,--wrap=symbol_table_get
 
 build/acc: $(ACC_OBJECTS)

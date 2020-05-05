@@ -2,6 +2,7 @@
 #define __TEST__
 
 #include "error.h"
+#include "symbol.h"
 
 typedef struct AstTestFixture_t {
   char* source;
@@ -48,5 +49,12 @@ void assert_expected_ast_stmt(AstTestFixture* fixture);
  * Helper function for declaring expected errors.
  */
 void expect_report_error(ErrorType error_type, int expect_line, char* expect_err_str);
+
+/* 
+ * Helper functions for checking mock function parameters and setting return values
+ */
+void expect_symbol_create(SymbolTable* parent, SymbolTable* ret);
+void expect_symbol_put(SymbolTable* tab, char* name, Symbol* ret);
+void expect_symbol_get(SymbolTable* tab, char* name, bool search_parent, Symbol* ret);
 
 #endif

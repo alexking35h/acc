@@ -21,7 +21,7 @@ intermediate form, and code generation.
 | Component | Header File | Notes |
 |-----------|-------------|-------|
 | Scanner | [scanner.h](include/scanner.h) | Generate a flat sequence of tokens from source input. |
-| [Parsing](design/parser.md) | [parser.h](incude/parser.h) | Generate the Abstract Syntax Tree (AST) from the output of the scanner. |
+| [Parsing](design/parser.md) | [parser.h](incude/parser.h) | Generate the Abstract Syntax Tree (AST) from the output of the scanner. | 
 | Context-sensitive Analysis | [analysis.h](include/analysis.h) | Annotate the AST with type information, catch semantic errors such as undeclared variables, and handle type conversions |
 
 Seperately, various parts of the C language are implemented independently to support compilation.

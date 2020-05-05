@@ -133,3 +133,43 @@ void expect_report_error(ErrorType error_type, int expect_line, char* expect_err
   expect_value(Error_report_error, line_number, expect_line);
   expect_string(Error_report_error, error_string, expect_err_str);
 }
+
+/* 
+ * Mock symbol table functions
+ */
+SymbolTable* __wrap_symbol_table_create(SymbolTable* parent){
+    check_expected(parent);
+    return (SymbolTable*)mock();
+}
+Symbol* __wrap_symbol_table_put(SymbolTable* tab, char* name, CType* type) {
+    if(!strcmp(name, "ignoreme")) return NULL;
+    check_expected(tab);
+    check_expected(name);
+    return (Symbol*)mock();
+}
+Symbol* __wrap_symbol_table_get(SymbolTable* tab, char* name, bool search_parent) {
+    if(!strcmp(name, "ignoreme")) return NULL;
+    check_expected(tab);
+    check_expected(name);
+    check_expected(search_parent);
+    return (Symbol*)mock();
+}
+
+/* 
+ * Helper functions for checking mock function parameters and setting return values
+ */
+void expect_symbol_create(SymbolTable* parent, SymbolTable* ret) {
+    expect_value(__wrap_symbol_table_create, parent, parent);
+    will_return(__wrap_symbol_table_create, ret);
+}
+void expect_symbol_put(SymbolTable* tab, char* name, Symbol* ret) {
+    expect_value(__wrap_symbol_table_put, tab, tab);
+    expect_string(__wrap_symbol_table_put, name, name);
+    will_return(__wrap_symbol_table_put, ret);
+}
+void expect_symbol_get(SymbolTable* tab, char* name, bool search_parent, Symbol* ret) {
+    expect_value(__wrap_symbol_table_get, tab, tab);
+    expect_string(__wrap_symbol_table_get, name, name);
+    expect_value(__wrap_symbol_table_get, search_parent, search_parent);
+    will_return(__wrap_symbol_table_get, ret);
+}

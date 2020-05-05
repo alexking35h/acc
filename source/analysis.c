@@ -109,14 +109,12 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab) {
 
     left = integer_promote(&node->binary.left, left);
     right = integer_promote(&node->binary.right, right);
-    type_conversion(
+    return type_conversion(
         &node->binary.left, 
         left,
         &node->binary.right,
         right
     );
-    return NULL;
-    // return type_conversion(&node->binary.left, node->binary.left)
 }
 
 static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab) {
