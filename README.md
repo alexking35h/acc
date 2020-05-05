@@ -15,25 +15,34 @@ one platform - probably x86, and is not designed with extensibility/porting in m
 
 ## Design
 
-The compiler is split into separate modules which marshall the program from source, to 
-intermediate form, and code generation. 
+The compiler is split into separate components which marshall the program from source, to
+intermediate, to machine code. 
 
 | Component | Header File | Notes |
 |-----------|-------------|-------|
 | Scanner | [scanner.h](include/scanner.h) | Generate a flat sequence of tokens from source input. |
-| [Parsing](design/parser.md) | [parser.h](incude/parser.h) | Generate the Abstract Syntax Tree (AST) from the output of the scanner. | 
-| Context-sensitive Analysis | [analysis.h](include/analysis.h) | Annotate the AST with type information, catch semantic errors such as undeclared variables, and handle type conversions |
+| [Parsing](design/parser.md) | [parser.h](incude/parser.h) | Generate the AST from the output of the scanner. | 
+| Context-sensitive Analysis | [analysis.h](include/analysis.h) | Annotate the AST with type information, catch semantic errors, and handle type conversions |
 
-Seperately, various parts of the C language are implemented independently to support compilation.
+Seperately, parts of the C language are implemented independently to support compilation.
 
 | Component | Header File | Notes |
 |-----------|-------------|-------|
-| Types | [ctype.h](include/ctype.h) | Handling type-declaration syntax and parsing type-information |
-| Symbols | [symbol.h](include/symbol.h) ||
-| Pretty-print | [pretty_print.h](include/pretty_print.h) | Generate concise text representations of ASTs for debugging/testing |
+| Types | [ctype.h](include/ctype.h) | Handle type-declaration syntax, and dealing with C types |
+| Symbols | [symbol.h](include/symbol.h) | Handle symbol tables used for storing variable names and types |
+| Pretty-print | [pretty_print.h](include/pretty_print.h) | Generate concise textual representations of ASTs for debugging/testing |
 
 ## Testing
-Bit-about-testing
+
+ACC has unit tests - which test the components listed above individually, and regression tests - 
+which test the compiler end-to-end. Both are configured to run on-commit in GitHub.
+
+### Unit Tests
+
+Unit tests use [CMocka](http://https://cmocka.org/) - a C test framework with support for mocking function calls.
+The scanner, parser, and analysis tests take C source code as input, and verify expected behaviour, such as 
+checking the generated AST, or reported errors. Calling `make test` within the top-level directory runs the unit
+tests.
 
 ## Missing
 
