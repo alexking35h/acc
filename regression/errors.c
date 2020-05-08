@@ -23,7 +23,18 @@ static register int a;
 // !error PARSER "Expected expression, got '/'"
 int a = /;
 
-void main() {
+void undeclared_identifier() {
     // ?error ANALYSIS "Undeclared identifier 'q'"
     return q;
+}
+
+void invalid_lvalue() {
+    // ?error ANALYSIS "Invalid lvalue"
+    3 = 2;
+}
+
+void invalid_pointer_dereference() {
+    char *a;
+    // ?error ANALYSIS "Invalid Pointer dereference"
+    **a = 12;
 }
