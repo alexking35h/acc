@@ -95,16 +95,21 @@ static void previously_declared_symbol(void** state) {
 }
 
 static void invalid_pointer_dereference(void** state) {
-    ExprAstNode* ast = parse_expr("*2");
     expect_report_error(ANALYSIS, -1, "Invalid Pointer dereference");
     analysis_ast_walk_expr(parse_expr("*2"), FAKE_SYMBOL_TABLE);
 }
 
+static void valid_lvalue(void** state) {
+    Symbol fake_ptr_b = {"b", &((CType){TYPE_POINTER, .derived.type=&fake_type})};
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_symbol_a);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_ptr_b);
+    analysis_ast_walk_expr(parse_expr("a = *b = 1"), FAKE_SYMBOL_TABLE);
+}
+
 static void invalid_lvalue(void** state) {
-    ExprAstNode* ast = parse_expr("*a = b = 3 = 1");
-    Symbol fake_ptr_a = {"a", &((CType){TYPE_POINTER, .derived.type=&fake_type})};
-    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_ptr_a);
-    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_symbol_b);
+    ExprAstNode* ast = parse_expr("1 ? 1 : 1 = 2 + 1 = 3 = 1");
+    expect_report_error(ANALYSIS, -1, "Invalid lvalue");
+    expect_report_error(ANALYSIS, -1, "Invalid lvalue");
     expect_report_error(ANALYSIS, -1, "Invalid lvalue");
 
     analysis_ast_walk_expr(ast, FAKE_SYMBOL_TABLE);
@@ -117,6 +122,7 @@ int main(void) {
       cmocka_unit_test(undeclared_symbol),
       cmocka_unit_test(previously_declared_symbol),
       cmocka_unit_test(invalid_pointer_dereference),
+      cmocka_unit_test(valid_lvalue),
       cmocka_unit_test(invalid_lvalue)
   };
 

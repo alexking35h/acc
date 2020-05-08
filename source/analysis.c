@@ -124,6 +124,7 @@ static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab, _Bool need_
 }
 
 static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
     CType *left = walk_expr(node->binary.left, tab, false);
     CType *right = walk_expr(node->binary.right, tab, false);
 
