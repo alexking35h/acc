@@ -22,17 +22,17 @@ static void initialize_parser(void** state) {
 
 static void primary_expressions(void** state) {
   // Test simple primary expressions.
-  AstTestFixture tests[] = {{"1", "(P 1)"},
+  AstTestSet tests[] = {{"1", "(P 1)"},
                             {"q", "(P q)"},
                             {"((3))", "(P 3)"},
                             {"\"a\"", "(P \"a\")"},
                             {NULL, NULL}};
-  assert_expected_ast_expr(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
 }
 
 static void postfix_expressions(void** state) {
   // Test postfix expressions.
-  AstTestFixture tests[] = {{"a[1]", "(PF (P a), (P 1))"},
+  AstTestSet tests[] = {{"a[1]", "(PF (P a), (P 1))"},
                             {"a++", "(A (P a), (B (P a), +, (P 1)))"},
                             {"9--", "(A (P 9), (B (P 9), -, (P 1)))"},
                             {"A()", "(C (P A))"},
@@ -40,12 +40,12 @@ static void postfix_expressions(void** state) {
                             {"(a+1)(b=1)", "(C (B (P a), +, (P 1)), (A (P b), (P 1)))"},
                             {NULL, NULL}};
 
-  assert_expected_ast_expr(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
 }
 
 static void unary_expressions(void** state) {
   // Test unary expressions
-  AstTestFixture tests[] = {{"++a", "(U ++, (P a))"},
+  AstTestSet tests[] = {{"++a", "(U ++, (P a))"},
                             {"--b", "(U --, (P b))"},
                             {"&Q", "(U &, (P Q))"},
                             {"*a", "(U *, (P a))"},
@@ -55,41 +55,45 @@ static void unary_expressions(void** state) {
                             {"!1", "(U !, (P 1))"},
                             {"sizeof 1", "(U sizeof, (P 1))"},
                             {NULL, NULL}};
-  assert_expected_ast_expr(tests);
+
+  assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
 }
 
 static void binary_expressions(void** state) {
   // Test binary mathematical operations (+, -, /, *, <<, >>)
-  AstTestFixture tests[] = {{"1*2/3", "(B (B (P 1), *, (P 2)), /, (P 3))"},
+  AstTestSet tests[] = {{"1*2/3", "(B (B (P 1), *, (P 2)), /, (P 3))"},
                             {"1*2%3", "(B (B (P 1), *, (P 2)), %, (P 3))"},
                             {"a>>b<<c", "(B (B (P a), >>, (P b)), <<, (P c))"},
                             {"a+b-c", "(B (B (P a), +, (P b)), -, (P c))"},
                             {NULL, NULL}};
-  assert_expected_ast_expr(tests);
+
+  assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
 }
 
 static void comparison_expressions(void** state) {
-  AstTestFixture tests[] = {{"2==T!=P", "(B (B (P 2), ==, (P T)), !=, (P P))"},
+  AstTestSet tests[] = {{"2==T!=P", "(B (B (P 2), ==, (P T)), !=, (P P))"},
                             {"a<b>c", "(B (B (P a), <, (P b)), >, (P c))"},
                             {NULL, NULL}};
-  assert_expected_ast_expr(tests);
+ 
+  assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
 }
 
 static void logical_expressions(void** state) {
   // Test logical and bitwise expressions (&, ^, |, &&, ||) and tertiary
   // operator.
-  AstTestFixture tests[] = {{"1&2", "(B (P 1), &, (P 2))"},
+  AstTestSet tests[] = {{"1&2", "(B (P 1), &, (P 2))"},
                             {"a|b", "(B (P a), |, (P b))"},
                             {"a^b", "(B (P a), ^, (P b))"},
                             {"a&&b", "(B (P a), &&, (P b))"},
                             {"\"a\"||b", "(B (P \"a\"), ||, (P b))"},
                             {"a?1:3", "(T (P a), (P 1), (P 3))"},
                             {NULL, NULL}};
-  assert_expected_ast_expr(tests);
+
+  assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
 }
 
 static void assignment_expressions(void** state) {
-  AstTestFixture tests[] = {{"1*=2", "(A (P 1), (B (P 1), *, (P 2)))"},
+  AstTestSet tests[] = {{"1*=2", "(A (P 1), (B (P 1), *, (P 2)))"},
                             {"1/=2", "(A (P 1), (B (P 1), /, (P 2)))"},
                             {"1%=2", "(A (P 1), (B (P 1), %, (P 2)))"},
                             {"1+=2", "(A (P 1), (B (P 1), +, (P 2)))"},
@@ -102,15 +106,15 @@ static void assignment_expressions(void** state) {
                             {"1=2=3", "(A (P 1), (A (P 2), (P 3)))"},
                             {NULL, NULL}};
 
-  assert_expected_ast_expr(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
 }
 
 static void cast_expressions(void** state) {
-  AstTestFixture tests[] = {{"(char)1", "(C [unsigned char], (P 1))"},
+  AstTestSet tests[] = {{"(char)1", "(C [unsigned char], (P 1))"},
 
                             {NULL, NULL}};
 
-  assert_expected_ast_expr(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
 }
 
 int main(void) {

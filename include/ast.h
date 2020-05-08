@@ -28,7 +28,7 @@ typedef struct ArgumentListItem_t {
 } ArgumentListItem;
 
 typedef struct ExprAstNode_t {
-  // Type of this AST node.
+  
   enum {
     BINARY,
     UNARY,
@@ -97,16 +97,12 @@ typedef struct DeclAstNode_t {
   // (e.g. `int a;`). However we can also have 'abstract declarators'
   // in cast expressions and parameter lists (e.g., `void (int*, char, void*)`.
   // Abstract declarators should not be included in the final AST, but are
-  // be used during parsing.
+  // used during parsing.
   enum { CONCRETE, ABSTRACT } decl_type;
 
-  // C data type for this declaration.
   CType* type;
-
-  // Identifier token for this declaration.
   Token* identifier;
 
-  // Initial value expression
   union {
     struct ExprAstNode_t* initializer;
     struct StmtAstNode_t* body;

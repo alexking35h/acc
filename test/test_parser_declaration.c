@@ -13,7 +13,7 @@
 #include "test.h"
 
 static void primitive_declaration(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
 
       // Integer types (signed by default)
       {"int c;", "(D [signed int], c)"},
@@ -41,11 +41,11 @@ static void primitive_declaration(void** state) {
       {"char a, b;", "(D [unsigned char], a, (D [unsigned char], b))"},
 
       {NULL, NULL}};
-  assert_expected_ast_decl(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_DECL));
 }
 
 static void pointer_declaration(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
 
       {"char * c;", "(D [* [unsigned char]], c)"},
       {"short * p;", "(D [* [signed short int]], p)"},
@@ -53,11 +53,11 @@ static void pointer_declaration(void** state) {
       {"int a, *b;", "(D [signed int], a, (D [* [signed int]], b))"},
 
       {NULL, NULL}};
-  assert_expected_ast_decl(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_DECL));
 }
 
 static void array_declaration(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
 
       {"char rahc[4];", "(D [[4] [unsigned char]], rahc)"},
       {"int * bc[2];", "(D [[2] [* [signed int]]], bc)"},
@@ -65,11 +65,11 @@ static void array_declaration(void** state) {
       {"void q, w[1];", "(D [void], q, (D [[1] [void]], w))"},
 
       {NULL, NULL}};
-  assert_expected_ast_decl(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_DECL));
 }
 
 static void grouped_type_declaration(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
 
       {"char (* u);", "(D [* [unsigned char]], u)"},
       {"int (* u)[2];", "(D [* [[2] [signed int]]], u)"},
@@ -77,11 +77,11 @@ static void grouped_type_declaration(void** state) {
       {"void *(*Q);", "(D [* [* [void]]], Q)"},
 
       {NULL, NULL}};
-  assert_expected_ast_decl(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_DECL));
 }
 
 static void function_type_declaration(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
       {"char a();", "(D [f() [unsigned char]], a)"},
       {"int b(char a);", "(D [f([unsigned char]:a) [signed int]], b)"},
       {"void q(int b, char c);",
@@ -90,11 +90,11 @@ static void function_type_declaration(void** state) {
       {"void *(*p)(int a);", "(D [* [f([signed int]:a) [* [void]]]], p)"},
 
       {NULL, NULL}};
-  assert_expected_ast_decl(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_DECL));
 }
 
 static void declaration_initializer(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
       {"char a = 1;", "(D [unsigned char], a, (P 1))"},
       {"int a = 2*3;", "(D [signed int], a, (B (P 2), *, (P 3)))"},
       {"char* s = \"hw\";", "(D [* [unsigned char]], s, (P \"hw\"))"},
@@ -102,11 +102,11 @@ static void declaration_initializer(void** state) {
        "(D [signed int], a, (P 2), (D [signed int], b, (P 3)))"},
 
       {NULL, NULL}};
-  assert_expected_ast_decl(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_DECL));
 }
 
 static void abstract_declarators(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
       {"void x(int);", "(D [f([signed int]:) [void]], x)"},
       {"int f(char, void*);",
        "(D [f([unsigned char]:,[* [void]]:) [signed int]], f)"},
@@ -114,14 +114,14 @@ static void abstract_declarators(void** state) {
        "(D [f([[23] [signed int]]:) [void]], x)"},
 
       {NULL, NULL}};
-  assert_expected_ast_decl(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_DECL));
 }
 
 static void function_type_definitions(void** state) {
-  AstTestFixture tests[] = {{"void p(){}", "(D [f() [void]], p, {B })"},
+  AstTestSet tests[] = {{"void p(){}", "(D [f() [void]], p, {B })"},
 
                             {NULL, NULL}};
-  assert_expected_ast_decl(tests);
+  assert_true(test_parse_compare_ast_set(tests, TEST_DECL));
 }
 
 int main(void) {

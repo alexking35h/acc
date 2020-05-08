@@ -13,7 +13,7 @@
 #include "test.h"
 
 static void expression_statement(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
       {"{x;}", "{B {E (P x)}}"},
       {"{a=1;}", "{B {E (A (P a), (P 1))}}"},
       {"{a++;}", "{B {E (A (P a), (B (P a), +, (P 1)))}}"},
@@ -22,11 +22,12 @@ static void expression_statement(void** state) {
       {"{a[0];}", "{B {E (PF (P a), (P 0))}}"},
 
       {NULL, NULL}};
-  assert_expected_ast_stmt(tests);
+
+  assert_true(test_parse_compare_ast_set(tests, TEST_STMT));
 }
 
 static void block_statement(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
       {"{}", "{B }"},
       {"{int y;}", "{B {D (D [signed int], y)}}"},
       {"{char p;p=1;}", "{B {D (D [unsigned char], p), {E (A (P p), (P 1))}}}"},
@@ -35,28 +36,31 @@ static void block_statement(void** state) {
       {"{{{a;}}}", "{B {B {B {E (P a)}}}}"},
 
       {NULL, NULL}};
-  assert_expected_ast_stmt(tests);
+
+  assert_true(test_parse_compare_ast_set(tests, TEST_STMT));
 }
 
 static void loops(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
       {"{while(x<1){}}", "{B {W (B (P x), <, (P 1)), {B }}}"},
       {"{while(x)g++;}", "{B {W (P x), {E (A (P g), (B (P g), +, (P 1)))}}}"},
       {"{while(1){int a=1;}}",
        "{B {W (P 1), {B {D (D [signed int], a, (P 1))}}}}"},
 
       {NULL, NULL}};
-  assert_expected_ast_stmt(tests);
+
+  assert_true(test_parse_compare_ast_set(tests, TEST_STMT));
 }
 
 static void return_statement(void** state) {
-  AstTestFixture tests[] = {
+  AstTestSet tests[] = {
       {"{return;}", "{B {R }}"},
       {"{return 1;}", "{B {R (P 1)}}"},
       {"{return a*2;}", "{B {R (B (P a), *, (P 2))}}"},
 
       {NULL, NULL}};
-    assert_expected_ast_stmt(tests);
+ 
+  assert_true(test_parse_compare_ast_set(tests, TEST_STMT));
 }
 
 int main(void) {
