@@ -12,14 +12,14 @@
  * information from child nodes (e.g., a+b requires type information for 'a' and 'b').
  * Therefore, all expressions that walk expression types return a pointer to a type.
  */
-static CType *walk_expr(ExprAstNode*, SymbolTable*);
+static CType *walk_expr(ExprAstNode*, SymbolTable*, _Bool need_lvalue);
 
 static void walk_decl(DeclAstNode*, SymbolTable*);
 static void walk_stmt(StmtAstNode*, SymbolTable*);
 
 static CType *integer_promote(ExprAstNode **node, CType *ctype) {
     if (ctype == NULL || ctype->type != TYPE_PRIMITIVE) {
-        return node;
+        return ctype;
     }
 
     switch (ctype->primitive.type_specifier) {
@@ -72,14 +72,34 @@ static CType* type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode 
     return cast_type;
 }
 
-static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab) {
-    Symbol* sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
+static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    if(node->primary.constant) {
+        if(need_lvalue) {
+            Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+        }
+        CType *constant_ctype = calloc(1, sizeof(CType));
+        constant_ctype->type = TYPE_PRIMITIVE;
+        constant_ctype->primitive.type_specifier = TYPE_SIGNED_INT;
+        return constant_ctype;
+    } else if (node->primary.string_literal) {
+        if(need_lvalue) {
+            Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+        }
+        CType *char_ctype = calloc(1, sizeof(CType));
+        char_ctype->type = TYPE_PRIMITIVE;
+        char_ctype->primitive.storage_class_specifier = TYPE_UNSIGNED_CHAR;
 
+        CType *ptr_ctype = calloc(1, sizeof(CType));
+        ptr_ctype->type = TYPE_POINTER;
+        ptr_ctype->derived.type = char_ctype;
+        return ptr_ctype;
+    }
+
+    Symbol* sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
     if(sym == NULL) {
         char err[50];
         snprintf(err, 50, "Undeclared identifier '%s'", node->primary.identifier->lexeme);
         Error_report_error(ANALYSIS, -1, err);
-
         return NULL;
     }
     node->primary.symbol = sym;
@@ -89,23 +109,23 @@ static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab) {
 static void argument_list_item(ArgumentListItem* arg, SymbolTable* tab) {
     if(NULL == arg) return;
 
-    walk_expr(arg->argument, tab);
+    walk_expr(arg->argument, tab, false);
     argument_list_item(arg->next, tab);
 }
 
-static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab) {
-    walk_expr(node->postfix.left, tab);
+static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    walk_expr(node->postfix.left, tab, false);
     if(node->postfix.index_expression) {
-        walk_expr(node->postfix.index_expression, tab);
+        walk_expr(node->postfix.index_expression, tab, false);
     } else {
         argument_list_item(node->postfix.args, tab);
     }
     return NULL;
 }
 
-static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab) {
-    CType *left = walk_expr(node->binary.left, tab);
-    CType *right = walk_expr(node->binary.right, tab);
+static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    CType *left = walk_expr(node->binary.left, tab, false);
+    CType *right = walk_expr(node->binary.right, tab, false);
 
     left = integer_promote(&node->binary.left, left);
     right = integer_promote(&node->binary.right, right);
@@ -117,52 +137,63 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab) {
     );
 }
 
-static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab) {
-    walk_expr(node->unary.right, tab);
+static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    CType* ctype = walk_expr(node->unary.right, tab, false);
+    if(node->unary.op->type == STAR) {
+        // Pointer dereference.
+        if(ctype->type != TYPE_POINTER) {
+            Error_report_error(ANALYSIS, -1, "Invalid Pointer dereference");
+            return NULL;
+        }
+
+        // Return the CType we're dereferencing.
+        return ctype->derived.type;
+    }
     return NULL;
 }
 
-static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab) {
-    walk_expr(node->tertiary.condition_expr, tab);
-    walk_expr(node->tertiary.expr_true, tab);
-    walk_expr(node->tertiary.expr_false, tab);
+static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+    walk_expr(node->tertiary.condition_expr, tab, false);
+    walk_expr(node->tertiary.expr_true, tab, false);
+    walk_expr(node->tertiary.expr_false, tab, false);
     return NULL;
 }
 
-static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab) {
-    walk_expr(node->cast.right, tab);
+static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    return walk_expr(node->cast.right, tab, false);
+}
+
+static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+    walk_expr(node->assign.left, tab, true);
+    walk_expr(node->assign.right, tab, false);
     return NULL;
 }
 
-static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab) {
-    walk_expr(node->assign.left, tab);
-    walk_expr(node->assign.right, tab);
-    return NULL;
-}
 
-
-static CType *walk_expr(ExprAstNode* node, SymbolTable* tab) {
+static CType *walk_expr(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
    switch (node->type) {
      case PRIMARY:
-         return walk_expr_primary(node, tab);
+         return walk_expr_primary(node, tab, need_lvalue);
 
     case POSTFIX:
-        return walk_expr_postfix(node, tab);
+        return walk_expr_postfix(node, tab, need_lvalue);
 
     case BINARY:
-        return walk_expr_binary(node, tab);
+        return walk_expr_binary(node, tab, need_lvalue);
 
      case UNARY:
-         return walk_expr_unary(node, tab);
+         return walk_expr_unary(node, tab, need_lvalue);
 
     case TERTIARY:
-        return walk_expr_tertiary(node, tab);
+        return walk_expr_tertiary(node, tab, need_lvalue);
     
     case CAST:
-        return walk_expr_cast(node, tab);
+        return walk_expr_cast(node, tab, need_lvalue);
 
     case ASSIGN:
-        return walk_expr_assign(node, tab);
+        return walk_expr_assign(node, tab, need_lvalue);
    }
    return NULL;
 }
@@ -183,7 +214,7 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab) {
     if(node->type->type == TYPE_FUNCTION && node->body) {
         walk_stmt(node->body, tab);
     } else if (node->initializer) {
-        walk_expr(node->initializer, tab);
+        walk_expr(node->initializer, tab, false);
     }
 
     if(node->next)
@@ -199,11 +230,11 @@ static void walk_stmt_block(StmtAstNode* node, SymbolTable* tab) {
 }
 
 static void walk_stmt_expr(StmtAstNode* node, SymbolTable* tab) {
-    walk_expr(node->expr.expr, tab);
+    walk_expr(node->expr.expr, tab, false);
 }
 
 static void walk_stmt_ret(StmtAstNode* node, SymbolTable* tab) {
-    walk_expr(node->return_jump.value, tab);
+    walk_expr(node->return_jump.value, tab, false);
 }
 
 static void walk_stmt(StmtAstNode* node, SymbolTable* tab) {
@@ -236,7 +267,7 @@ void analysis_ast_walk(DeclAstNode* decl, ExprAstNode* expr, StmtAstNode* stmt, 
     if(decl) {
         walk_decl(decl, tab);
     } else if (expr) {
-        walk_expr(expr, tab);
+        walk_expr(expr, tab, false);
     } else if (stmt) {
         walk_stmt(stmt, tab);
     }
