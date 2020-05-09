@@ -20,22 +20,21 @@ TEST_SOURCES=$(wildcard $(TEST_DIR)/*.c)
 ACC_OBJECTS=$(patsubst $(SOURCE_DIR)/%.c, $(BUILD_DIR)/%.o, $(ACC_SOURCES))
 TEST_OBJECTS=$(patsubst $(TEST_DIR)/%.c, $(BUILD_DIR)/%.o, $(TEST_SOURCES))
 
+# Unit test executables
+TEST_EXE=$(patsubst $(TEST_DIR)/%.c, $(BUILD_DIR)/%, $(wildcard $(TEST_DIR)/test_*.c))
+ACC_EXE=$(BUILD_DIR)/acc
+
 .PHONY: test
 .PHONY: format
-.PHONY: build
+.PHONY: $(RUN_TESTS)
 
-test: build/test_analysis build/test_symbol_table build build/test_scanner build/test_parser_expression build/test_parser_declaration build/test_parser_statement build/test_parser_error build/test_conversions
-	build/test_scanner
-	build/test_parser_expression
-	build/test_parser_declaration
-	build/test_parser_statement
-	build/test_parser_error
-	build/test_symbol_table
-	build/test_analysis
-	build/test_conversions
+# Phony targets to run the unit tests
+RUN_TESTS=$(addprefix run_, $(TEST_EXE))
 
-regression_test: build/acc
-	python3 regression/regression.py --acc $^ regression/*.c
+test: $(RUN_TESTS)
+
+$(RUN_TESTS): run_%:%
+	./$<
 
 build/test_scanner: $(ACC_OBJECTS) build/test_scanner.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=Error_report_error
@@ -61,20 +60,23 @@ build/test_analysis: $(ACC_OBJECTS) build/test_analysis.o build/test.o
 build/test_conversions: $(ACC_OBJECTS) build/test_conversions.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=symbol_table_create -Wl,--wrap=symbol_table_put -Wl,--wrap=symbol_table_get
 
-build/acc: $(ACC_OBJECTS)
+regression_test: build/acc
+	python3 regression/regression.py --acc $^ regression/*.c
+
+build/acc: $(ACC_OBJECTS) | build
 	$(CC) $^ -o $@ $(CFLAGS)
 
-$(ACC_OBJECTS): build/%.o: source/%.c build
+$(ACC_OBJECTS): build/%.o: source/%.c | build
 	$(CC) -c $< -o $@ $(CFLAGS)
 
-$(TEST_OBJECTS): build/%.o: test/%.c build
+$(TEST_OBJECTS): build/%.o: test/%.c | build
 	$(CC) -c $< -o $@ $(CFLAGS)
-
-format:
-	clang-format --style=Google -i include/*.h source/*.c test/*.c
 
 $(BUILD_DIR):
 	mkdir -p build
+
+format:
+	clang-format --style=Google -i include/*.h source/*.c test/*.c
 
 clean:
 	rm -rf build
