@@ -32,7 +32,8 @@ static void primary_expressions(void** state) {
 
 static void postfix_expressions(void** state) {
   // Test postfix expressions.
-  AstTestSet tests[] = {{"a[1]", "(PF (P a), (P 1))"},
+  AstTestSet tests[] = {{"a[0]", "(U *, (B (P a), +, (P 0)))"},
+                            {"a[3]", "(U *, (B (P a), +, (P 3)))"},
                             {"a++", "(A (P a), (B (P a), +, (P 1)))"},
                             {"9--", "(A (P 9), (B (P 9), -, (P 1)))"},
                             {"A()", "(C (P A))"},

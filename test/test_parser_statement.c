@@ -19,7 +19,7 @@ static void expression_statement(void** state) {
       {"{a++;}", "{B {E (A (P a), (B (P a), +, (P 1)))}}"},
       {"{(unsigned int)a+1;}",
        "{B {E (B (C [unsigned int], (P a)), +, (P 1))}}"},
-      {"{a[0];}", "{B {E (PF (P a), (P 0))}}"},
+      {"{a[0];}", "{B {E (U *, (B (P a), +, (P 0)))}}"},
 
       {NULL, NULL}};
 

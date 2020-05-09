@@ -128,14 +128,21 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_l
     CType *left = walk_expr(node->binary.left, tab, false);
     CType *right = walk_expr(node->binary.right, tab, false);
 
-    left = integer_promote(&node->binary.left, left);
-    right = integer_promote(&node->binary.right, right);
-    return type_conversion(
-        &node->binary.left, 
-        left,
-        &node->binary.right,
-        right
-    );
+    if(left->type == TYPE_PRIMITIVE && right->type == TYPE_PRIMITIVE) {
+        left = integer_promote(&node->binary.left, left);
+        right = integer_promote(&node->binary.right, right);
+        return type_conversion(
+            &node->binary.left, 
+            left,
+            &node->binary.right,
+            right
+        );
+    } else if (left->type == TYPE_PRIMITIVE && right->type == TYPE_POINTER) {
+        return right;
+    } else if (left->type == TYPE_POINTER && right->type == TYPE_PRIMITIVE) {
+        return left;
+    }  
+    return NULL;
 }
 
 static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
@@ -162,6 +169,7 @@ static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab, _Bool need
 }
 
 static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
     return walk_expr(node->cast.right, tab, false);
 }
 

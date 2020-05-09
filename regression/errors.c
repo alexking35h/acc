@@ -5,7 +5,7 @@
  * 2. Parser errors
  * 3. Context-sensitive errors
  * 
- * This is ready by the regression test suite (see regression_test.py),
+ * This is read by the regression test suite (see regression_test.py),
  * and compared against the acc's output.
  */
 

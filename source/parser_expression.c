@@ -104,6 +104,14 @@ static ExprAstNode* desugar_assign(Parser* parser, ExprAstNode* expr,
   return EXPR_ASSIGN(.left = expr, .right = op_expr);
 }
 
+static ExprAstNode *desugar_array(Parser *parser, ExprAstNode* base, ExprAstNode* index) {
+  Token* op_plus = Parser_create_fake_token(parser, PLUS, "+");
+  Token* op_star = Parser_create_fake_token(parser, STAR, "*");
+  ExprAstNode* binary_op = EXPR_BINARY(.left=base, .op=op_plus, .right=index);
+  ExprAstNode* ptr_op = EXPR_UNARY(.op=op_star, .right=binary_op);
+  return ptr_op;
+}
+
 static ExprAstNode* primary_expression(Parser* parser) {  // @DONE
   /*
    * IDENTIFIER
@@ -157,7 +165,7 @@ static ExprAstNode* postfix_expression(Parser* parser) {
     if (match(LEFT_SQUARE)) {
       ExprAstNode* index = Parser_expression(parser);
       consume(RIGHT_SQUARE);
-      expr = EXPR_POSTFIX(.left = expr, .index_expression = index);
+      expr = desugar_array(parser, expr, index);
     } else if ((token = match(INC_OP))) {
       // INC_OP is desugaured into: a++ -> a=a+1
       Token* constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
