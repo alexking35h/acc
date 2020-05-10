@@ -106,21 +106,28 @@ static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_
     return node->primary.symbol->type;
 }
 
-static void argument_list_item(ArgumentListItem* arg, SymbolTable* tab) {
-    if(NULL == arg) return;
+static void walk_argument_list(ParameterListItem* params, ArgumentListItem* arguments, SymbolTable* tab) {
+    int param_count = 0, arg_count = 0;
+    for(;params;params = params->next) param_count++;
+    for(;arguments;arguments = arguments->next) {
+        arg_count++;
+        walk_expr(arguments->argument, tab, false);
+    }
 
-    walk_expr(arg->argument, tab, false);
-    argument_list_item(arg->next, tab);
+    if(param_count != arg_count) {
+        char *err = calloc(128, sizeof(char));
+        snprintf(err, 128, "Invalid number of arguments to function. Expected %d, got %d",
+            param_count, arg_count);
+        Error_report_error(ANALYSIS, -1, err);
+    }
 }
 
 static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    walk_expr(node->postfix.left, tab, false);
-    if(node->postfix.index_expression) {
-        walk_expr(node->postfix.index_expression, tab, false);
-    } else {
-        argument_list_item(node->postfix.args, tab);
+    CType *pf = walk_expr(node->postfix.left, tab, false);
+    if(pf->type == TYPE_FUNCTION) {
+        walk_argument_list(pf->derived.params, node->postfix.args, tab);
+        return pf->derived.type;
     }
-    return NULL;
 }
 
 static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
@@ -156,6 +163,21 @@ static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lv
 
         // Return the CType we're dereferencing.
         return ctype->derived.type;
+    } else if (node->unary.op->type == AMPERSAND) {
+        // Address-of operator.
+        CType* addr_of = calloc(1, sizeof(CType));
+        addr_of->type = TYPE_POINTER;
+        addr_of->derived.type = ctype;
+
+        return addr_of;
+    } else {
+        // '-', '+', '~', or '!' operators.
+        // Test that the operand is of type 'primitive' (section 6.5.3.1)
+        if(ctype->type != TYPE_PRIMITIVE) {
+            char *err = calloc(128, sizeof(char));
+            snprintf(err, 128, "Invalid operand to unary operator '%s'", node->unary.op->lexeme);
+            Error_report_error(ANALYSIS, -1, err);
+        }
     }
     return NULL;
 }

@@ -44,9 +44,15 @@ static CType fake_ptr_ptr_type = {
     .type = TYPE_POINTER,
     .derived.type = &fake_ptr_type
 };
+static CType fake_function_type = {
+    .type = TYPE_FUNCTION,
+    .derived.type = &fake_type,
+    .derived.params = &((ParameterListItem){NULL, &fake_type, NULL})
+};
 static Symbol fake_primitive = {"*", &fake_type};
 static Symbol fake_ptr = {"*", &fake_ptr_type};
 static Symbol fake_ptr_ptr = {"*", &fake_ptr_ptr_type};
+static Symbol fake_function = {"*", &fake_function_type};
 
 static DeclAstNode* parse_decl(const char *source) {
     Scanner *scanner = Scanner_init(source);
@@ -75,19 +81,18 @@ static void declarations(void** state) {
 }
 
 static void symbol_lookup(void** state) {
-    DeclAstNode *ast = parse_decl("void ignoreme(){return (a+(int)b) ? -c : (d = e[f](g,h));}");
-    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_primitive);
+    DeclAstNode *ast = parse_decl("void ignoreme(){return (a(b)+(int)c) ? -d : (e = f[g]);}");
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_function);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_primitive);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "c", true, &fake_primitive);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "d", true, &fake_primitive);
-    expect_symbol_get(FAKE_SYMBOL_TABLE, "e", true, &fake_ptr);
-    expect_symbol_get(FAKE_SYMBOL_TABLE, "f", true, &fake_primitive);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "e", true, &fake_primitive);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "f", true, &fake_ptr);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "g", true, &fake_primitive);
-    expect_symbol_get(FAKE_SYMBOL_TABLE, "h", true, &fake_primitive);
 
     analysis_ast_walk_decl(ast, FAKE_SYMBOL_TABLE);
     ExprAstNode *ret = ast->body->block.head->return_jump.value;
-    ExprAstNode *expr = ret->tertiary.condition_expr->binary.left;
+    ExprAstNode *expr = ret->tertiary.expr_true->unary.right;
     assert_true(expr->primary.symbol == &fake_primitive);
 }
 
@@ -108,17 +113,20 @@ static void previously_declared_symbol(void** state) {
 }
 
 static void valid_lvalue(void** state) {
-    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_primitive);
-    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_ptr);
-    analysis_ast_walk_expr(parse_expr("a = *b = 1"), FAKE_SYMBOL_TABLE);
 }
 
 static void invalid_lvalue(void** state) {
+}
+
+static void assignment_operators(void** state) {
+    // 6.5.16 (2) An assignment operator shall have a modifiable lvalue as its left operand
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_ptr);
+    analysis_ast_walk_expr(parse_expr("a = *b = 1"), FAKE_SYMBOL_TABLE);
+
     ExprAstNode* ast = parse_expr("1 ? 1 : 1 = 2 + 1 = 3 = 1");
     expect_report_error(ANALYSIS, -1, "Invalid lvalue");
     expect_report_error(ANALYSIS, -1, "Invalid lvalue");
     expect_report_error(ANALYSIS, -1, "Invalid lvalue");
-
     analysis_ast_walk_expr(ast, FAKE_SYMBOL_TABLE);
 }
 
@@ -152,7 +160,7 @@ static void postfix_operators(void** state) {
     expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &function_symbol);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_primitive);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "c", true, &fake_primitive);
-    expect_report_error(ANALYSIS, -1, "Incorrect number of arguments to function 'a'");
+    expect_report_error(ANALYSIS, -1, "Invalid number of arguments to function. Expected 1, got 2");
     analysis_ast_walk_decl(parse_decl("void ignoreme(){ return a(b,c); }"), FAKE_SYMBOL_TABLE);
 }
 
@@ -176,7 +184,7 @@ static void unary_operators(void** state) {
     // of the '~' operator, integer type; of the '!' operator, scalar type.
     expect_symbol_get(FAKE_SYMBOL_TABLE, "q", true, &fake_ptr);
     expect_report_error(ANALYSIS, -1, "Invalid operand to unary operator '!'");
-    analysis_ast_walk_expr(parse_expr("!a"), FAKE_SYMBOL_TABLE);
+    analysis_ast_walk_expr(parse_expr("!q"), FAKE_SYMBOL_TABLE);
 }
 
 int main(void) {
@@ -185,10 +193,9 @@ int main(void) {
       cmocka_unit_test(symbol_lookup),
       cmocka_unit_test(undeclared_symbol),
       cmocka_unit_test(previously_declared_symbol),
-      cmocka_unit_test(valid_lvalue),
-      cmocka_unit_test(invalid_lvalue),
       cmocka_unit_test(postfix_operators),
-      cmocka_unit_test(unary_operators)
+      cmocka_unit_test(unary_operators),
+      cmocka_unit_test(assignment_operators),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);
