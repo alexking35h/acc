@@ -107,14 +107,13 @@ static void pp_primary(ExprAstNode* node, StringBuffer* buf) {
 }
 
 static void pp_postfix(ExprAstNode* node, StringBuffer* buf) {
-  if(node->postfix.index_expression) {
+  if (node->postfix.op) {
     pp_printf(buf, "PF ");
 
     pp_expr(node->postfix.left, buf);
-    pp_printf(buf, ", ");
-    pp_expr(node->postfix.index_expression, buf);
+    pp_printf(buf, node->postfix.op->type == INC_OP ? ", ++" : ", --");
   } else {
-    pp_printf(buf, "C ");
+    pp_printf(buf, "F ");
     pp_expr(node->postfix.left, buf);
 
     for(ArgumentListItem* p = node->postfix.args; p; p = p->next) {

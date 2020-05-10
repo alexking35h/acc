@@ -34,11 +34,11 @@ static void postfix_expressions(void** state) {
   // Test postfix expressions.
   AstTestSet tests[] = {{"a[0]", "(U *, (B (P a), +, (P 0)))"},
                             {"a[3]", "(U *, (B (P a), +, (P 3)))"},
-                            {"a++", "(A (P a), (B (P a), +, (P 1)))"},
-                            {"9--", "(A (P 9), (B (P 9), -, (P 1)))"},
-                            {"A()", "(C (P A))"},
-                            {"q(1,2,3)", "(C (P q), (P 1), (P 2), (P 3))"},
-                            {"(a+1)(b=1)", "(C (B (P a), +, (P 1)), (A (P b), (P 1)))"},
+                            {"a++", "(PF (P a), ++)"},
+                            {"9--", "(PF (P 9), --)"},
+                            {"A()", "(F (P A))"},
+                            {"q(1,2,3)", "(F (P q), (P 1), (P 2), (P 3))"},
+                            {"(a+1)(b=1)", "(F (B (P a), +, (P 1)), (A (P b), (P 1)))"},
                             {NULL, NULL}};
 
   assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
@@ -46,8 +46,8 @@ static void postfix_expressions(void** state) {
 
 static void unary_expressions(void** state) {
   // Test unary expressions
-  AstTestSet tests[] = {{"++a", "(U ++, (P a))"},
-                            {"--b", "(U --, (P b))"},
+  AstTestSet tests[] = {{"++a", "(A (P a), (B (P a), +, (P 1)))"},
+                            {"--b", "(A (P b), (B (P b), -, (P 1)))"},
                             {"&Q", "(U &, (P Q))"},
                             {"*a", "(U *, (P a))"},
                             {"+1", "(U +, (P 1))"},

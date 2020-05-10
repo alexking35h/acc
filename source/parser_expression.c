@@ -58,7 +58,7 @@ static ExprAstNode* desugar_assign(Parser* parser, ExprAstNode* expr,
                                    TokenType op, ExprAstNode* operand) {
   /* A bunch of the C syntax is treated as syntactic sugar, to make the AST more
    * homogeneous and (hopefully) make it easier to implement later parts of the
-   * compiler. This includes ++ and -- postfix operators, and assignment
+   * compiler. This includes ++ and -- unary operators, and assignment
    * operators (+=, -=, /=, etc.)
    */
   char* op_tok_str;
@@ -166,18 +166,8 @@ static ExprAstNode* postfix_expression(Parser* parser) {
       ExprAstNode* index = Parser_expression(parser);
       consume(RIGHT_SQUARE);
       expr = desugar_array(parser, expr, index);
-    } else if ((token = match(INC_OP))) {
-      // INC_OP is desugaured into: a++ -> a=a+1
-      Token* constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
-      ExprAstNode* constant_node = EXPR_PRIMARY(.constant = constant_token);
-
-      return desugar_assign(parser, expr, PLUS, constant_node);
-    } else if ((token = match(DEC_OP))) {
-      // DEC_OP is desugaured into: a++ -> a=a-1
-      Token* constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
-      ExprAstNode* constant_node = EXPR_PRIMARY(.constant = constant_token);
-
-      return desugar_assign(parser, expr, MINUS, constant_node);
+    } else if ((token = match(INC_OP, DEC_OP))) {
+      expr = EXPR_POSTFIX(.op=token, .left=expr);
     } else if ((token = match(LEFT_PAREN))) {
       // Function call.
       expr = EXPR_POSTFIX(.left=expr, .args = argument_expression_list(parser));
@@ -214,9 +204,18 @@ static ExprAstNode* unary_expression(Parser* parser) {  // @DONE
    */
   Token* token;
 
-  if ((token = match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF, INC_OP,
-                     DEC_OP)))
+  if ((token = match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF))) {
     return EXPR_UNARY(.op = token, .right = unary_expression(parser));
+  } else if ((token = match(INC_OP, DEC_OP))) {
+    ExprAstNode* expr = unary_expression(parser);
+    Token* constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
+    ExprAstNode* constant_node = EXPR_PRIMARY(.constant = constant_token);
+
+    return desugar_assign(
+      parser, expr, 
+      token->type == INC_OP ? PLUS : MINUS,
+      constant_node);
+  }
 
   return postfix_expression(parser);
 }
