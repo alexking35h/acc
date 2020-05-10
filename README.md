@@ -73,3 +73,11 @@ this means it's missing some (many) features of the C11 grammar, which really ma
 
  * No support for floating types (`float`/`double`). These are currently caught during the analysis, and a 
    Not-implemented yet error is raised.
+
+ * Compound assignment operators (`+=`, `-=`, `%=`, `*=`, `/=`, `<<=`, `>>=`, `&=`, `^=`, and `|=`) are desugared
+   into simple-assignment syntax. E.g., `a += 2` becomes `a = a + 2`. While this simplifies the AST, this 
+   diverges from the standard (6.5.16.2): The lvalue must be evaluated only once.
+
+### Context-sensitive Analysis
+
+### Code generation
