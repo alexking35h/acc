@@ -112,24 +112,6 @@ static void previously_declared_symbol(void** state) {
     analysis_ast_walk_decl(ast, FAKE_SYMBOL_TABLE);
 }
 
-static void valid_lvalue(void** state) {
-}
-
-static void invalid_lvalue(void** state) {
-}
-
-static void assignment_operators(void** state) {
-    // 6.5.16 (2) An assignment operator shall have a modifiable lvalue as its left operand
-    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_ptr);
-    analysis_ast_walk_expr(parse_expr("a = *b = 1"), FAKE_SYMBOL_TABLE);
-
-    ExprAstNode* ast = parse_expr("1 ? 1 : 1 = 2 + 1 = 3 = 1");
-    expect_report_error(ANALYSIS, -1, "Invalid lvalue");
-    expect_report_error(ANALYSIS, -1, "Invalid lvalue");
-    expect_report_error(ANALYSIS, -1, "Invalid lvalue");
-    analysis_ast_walk_expr(ast, FAKE_SYMBOL_TABLE);
-}
-
 static void postfix_operators(void** state) {
     // Section 6.5.2:
     // - array subscripting
@@ -185,6 +167,19 @@ static void unary_operators(void** state) {
     expect_symbol_get(FAKE_SYMBOL_TABLE, "q", true, &fake_ptr);
     expect_report_error(ANALYSIS, -1, "Invalid operand to unary operator '!'");
     analysis_ast_walk_expr(parse_expr("!q"), FAKE_SYMBOL_TABLE);
+}
+
+static void assignment_operators(void** state) {
+    // 6.5.16 (2) An assignment operator shall have a modifiable lvalue as its left operand
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_primitive);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_ptr);
+    analysis_ast_walk_expr(parse_expr("a = *b = 1"), FAKE_SYMBOL_TABLE);
+
+    ExprAstNode* ast = parse_expr("1 ? 1 : 1 = 2 + 1 = 3 = 1");
+    expect_report_error(ANALYSIS, -1, "Invalid lvalue");
+    expect_report_error(ANALYSIS, -1, "Invalid lvalue");
+    expect_report_error(ANALYSIS, -1, "Invalid lvalue");
+    analysis_ast_walk_expr(ast, FAKE_SYMBOL_TABLE);
 }
 
 int main(void) {
