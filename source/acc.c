@@ -165,10 +165,10 @@ static DeclAstNode* get_ast(const char* source) {
 }
 
 static const char* read_file(const char* file_path) {
-  char* file_contents = malloc(1024 * sizeof(char));
+  char* file_contents = malloc(4096 * sizeof(char));
   FILE* f = fopen(file_path, "r");
 
-  fread(file_contents, sizeof(char), 1023, f);
+  fread(file_contents, sizeof(char), 4097, f);
   return file_contents;
 }
 

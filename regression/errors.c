@@ -38,3 +38,9 @@ void invalid_pointer_dereference() {
     // ?error ANALYSIS "Invalid Pointer dereference"
     **a = 12;
 }
+
+void invalid_assignment() {
+    char *b;
+    // ?error ANALYSIS "Incompatible assignment. Cannot assign type 'primitive' to type 'pointer to primitive'"
+    b = 12;
+}

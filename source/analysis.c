@@ -124,16 +124,20 @@ static void walk_argument_list(ParameterListItem* params, ArgumentListItem* argu
 
 static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
     CType *pf = walk_expr(node->postfix.left, tab, false);
-    if(pf->type == TYPE_FUNCTION) {
+    if(pf && pf->type == TYPE_FUNCTION) {
         walk_argument_list(pf->derived.params, node->postfix.args, tab);
         return pf->derived.type;
     }
+    return NULL;
 }
 
 static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
     if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
     CType *left = walk_expr(node->binary.left, tab, false);
     CType *right = walk_expr(node->binary.right, tab, false);
+
+    if(!left || !right)
+        return NULL;
 
     if(left->type == TYPE_PRIMITIVE && right->type == TYPE_PRIMITIVE) {
         left = integer_promote(&node->binary.left, left);
@@ -154,6 +158,10 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_l
 
 static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
     CType* ctype = walk_expr(node->unary.right, tab, false);
+
+    if(!ctype)
+        return NULL;
+
     if(node->unary.op->type == STAR) {
         // Pointer dereference.
         if(ctype->type != TYPE_POINTER) {
@@ -178,8 +186,8 @@ static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lv
             snprintf(err, 128, "Invalid operand to unary operator '%s'", node->unary.op->lexeme);
             Error_report_error(ANALYSIS, -1, err);
         }
+        return ctype;
     }
-    return NULL;
 }
 
 static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
@@ -198,6 +206,9 @@ static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_l
     if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
     CType* left = walk_expr(node->assign.left, tab, true);
     CType* right = walk_expr(node->assign.right, tab, false);
+
+    if(!left || !right) 
+        return NULL;
 
     if(left->type == TYPE_PRIMITIVE && right->type == TYPE_PRIMITIVE) {
         // Simple assignment: the left has arithmetic type, and the right has arithmetic type.
@@ -239,7 +250,7 @@ static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_l
     n += ctype_str(err + n, sizeof(err) - n, left);
     n += snprintf(err + n, sizeof(err) - n, "'");
     Error_report_error(ANALYSIS, -1, err);
-    
+
     return left;
 }
 
