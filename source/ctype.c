@@ -117,3 +117,18 @@ CTypeRank ctype_rank(CType *type) {
       return 0;
   }
 }
+
+int ctype_str(char *buf, int len, const CType* type) {
+  if(type->type == TYPE_PRIMITIVE) {
+    return snprintf(buf, len, "primitive");
+  } else if (type->type == TYPE_POINTER) {
+    int l = snprintf(buf, len, "pointer to ");
+    return l + ctype_str(buf+l, len - l, type->derived.type);
+  } else if (type->type == TYPE_ARRAY) {
+    int l = snprintf(buf, len, "array of ");
+    return l + ctype_str(buf + l, len - l, type->derived.type);
+  } else {
+    int l = snprintf(buf, len, "function returning");
+    return l + ctype_str(buf + l, len - l, type->derived.type);
+  }
+}

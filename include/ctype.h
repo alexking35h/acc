@@ -148,4 +148,6 @@ typedef unsigned char CTypeRank;
 
 CTypeRank ctype_rank(CType *type);
 
+int ctype_str(char *buf, int len, const CType* type);
+
 #endif

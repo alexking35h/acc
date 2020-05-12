@@ -186,8 +186,7 @@ static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab, _Bool need
     if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
     walk_expr(node->tertiary.condition_expr, tab, false);
     walk_expr(node->tertiary.expr_true, tab, false);
-    walk_expr(node->tertiary.expr_false, tab, false);
-    return NULL;
+    return walk_expr(node->tertiary.expr_false, tab, false);
 }
 
 static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
@@ -197,9 +196,51 @@ static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab, _Bool need_lva
 
 static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
     if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
-    walk_expr(node->assign.left, tab, true);
-    walk_expr(node->assign.right, tab, false);
-    return NULL;
+    CType* left = walk_expr(node->assign.left, tab, true);
+    CType* right = walk_expr(node->assign.right, tab, false);
+
+    if(left->type == TYPE_PRIMITIVE && right->type == TYPE_PRIMITIVE) {
+        // Simple assignment: the left has arithmetic type, and the right has arithmetic type.
+
+        if(left->primitive.type_specifier == right->primitive.type_specifier)
+            return left;
+        
+        // Create CAST.
+        CType *cast_type = calloc(1, sizeof(CType));
+        cast_type->type = TYPE_PRIMITIVE;
+        cast_type->primitive.type_specifier = left->primitive.type_specifier;
+
+        ExprAstNode* cast_node = calloc(1, sizeof(ExprAstNode));
+        cast_node->type = CAST;
+        cast_node->cast.type = cast_type;
+        cast_node->cast.right = node->assign.right;
+
+        node->assign.right = cast_node;
+        return left;
+
+    } else if (left->type == TYPE_POINTER && right->type == TYPE_POINTER) {
+        // Check if left and right are pointers to compatible types.
+        CType *l = left, *r = right;
+        
+        while(l->type != TYPE_PRIMITIVE && r->type != TYPE_PRIMITIVE) {
+            l = l->derived.type;
+            r = r->derived.type;
+        }
+
+        if(l->type == TYPE_PRIMITIVE && r->type == TYPE_PRIMITIVE) {
+            return left;
+        }
+    }
+
+    char err[256];
+    int n = snprintf(err, 256, "Incompatible assignment. Cannot assign type '");
+    n += ctype_str(err + n, sizeof(err) - n, right);
+    n += snprintf(err + n, sizeof(err) - n, "' to type '");
+    n += ctype_str(err + n, sizeof(err) - n, left);
+    n += snprintf(err + n, sizeof(err) - n, "'");
+    Error_report_error(ANALYSIS, -1, err);
+    
+    return left;
 }
 
 

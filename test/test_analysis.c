@@ -32,13 +32,17 @@
 
 #define FAKE_SYMBOL_TABLE ((SymbolTable*)0x1234)
 
-static CType fake_type = {
+static CType fake_int = {
     .type = TYPE_PRIMITIVE,
-    .primitive.type_specifier = TYPE_INT | TYPE_SIGNED
+    .primitive.type_specifier = TYPE_SIGNED_INT
+};
+static CType fake_char = {
+    .type = TYPE_PRIMITIVE,
+    .primitive.type_specifier = TYPE_UNSIGNED_CHAR
 };
 static CType fake_ptr_type = {
     .type = TYPE_POINTER,
-    .derived.type = &fake_type
+    .derived.type = &fake_int
 };
 static CType fake_ptr_ptr_type = {
     .type = TYPE_POINTER,
@@ -46,10 +50,10 @@ static CType fake_ptr_ptr_type = {
 };
 static CType fake_function_type = {
     .type = TYPE_FUNCTION,
-    .derived.type = &fake_type,
-    .derived.params = &((ParameterListItem){NULL, &fake_type, NULL})
+    .derived.type = &fake_int,
+    .derived.params = &((ParameterListItem){NULL, &fake_int, NULL})
 };
-static Symbol fake_primitive = {"*", &fake_type};
+static Symbol fake_primitive = {"*", &fake_int};
 static Symbol fake_ptr = {"*", &fake_ptr_type};
 static Symbol fake_ptr_ptr = {"*", &fake_ptr_ptr_type};
 static Symbol fake_function = {"*", &fake_function_type};
@@ -135,8 +139,8 @@ static void postfix_operators(void** state) {
     // object with the unqualified version of the type of its corresponding parameter.
     CType function_ctype = {
         TYPE_FUNCTION,
-        .derived.type = &fake_type,
-        .derived.params = &((ParameterListItem){NULL, &fake_type, NULL})
+        .derived.type = &fake_int,
+        .derived.params = &((ParameterListItem){NULL, &fake_int, NULL})
     };
     Symbol function_symbol = {"a", &function_ctype};
     expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &function_symbol);
@@ -180,6 +184,37 @@ static void assignment_operators(void** state) {
     expect_report_error(ANALYSIS, -1, "Invalid lvalue");
     expect_report_error(ANALYSIS, -1, "Invalid lvalue");
     analysis_ast_walk_expr(ast, FAKE_SYMBOL_TABLE);
+
+    // 6.5.16.1 (2) The value of the right operand is converted to the type of the assignment
+    // expression. Here, b (signed int), should be implicitly cast to char.
+    Symbol a = {"a", &fake_char};
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &a);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_primitive);
+    ast = parse_expr("a = b");
+    analysis_ast_walk_expr(ast, FAKE_SYMBOL_TABLE);
+    assert_true(ast->assign.right->type == CAST);
+    assert_true(ast->assign.right->cast.type->primitive.type_specifier == TYPE_UNSIGNED_CHAR);
+
+    // 6.5.16.1 Simple Assignment
+    // - The left value has atomic, qualified, or unqualified arithmetic type, and the
+    // right has arithmetic type.
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_primitive);
+    analysis_ast_walk_expr(parse_expr("a = 1"), FAKE_SYMBOL_TABLE);
+
+    // - The left value has pointer type, and both operators pointers compatible types.
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_ptr);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_ptr);
+    analysis_ast_walk_expr(parse_expr("a = b"), FAKE_SYMBOL_TABLE);
+
+    // Incompatible assignment:
+    // b = c - assigning pointer to primitive.
+    // a = (b - c) - assigning primitive to a pointer.
+    expect_report_error(ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'pointer to primitive' to type 'primitive'");
+    expect_report_error(ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'primitive' to type 'pointer to primitive'");
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_ptr);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_primitive);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "c", true, &fake_ptr);
+    analysis_ast_walk_expr(parse_expr("a = b = c"), FAKE_SYMBOL_TABLE);
 }
 
 int main(void) {
