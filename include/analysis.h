@@ -21,5 +21,4 @@ void analysis_ast_walk(DeclAstNode*, ExprAstNode*, StmtAstNode*, SymbolTable*);
 #define analysis_ast_walk_expr(expr, tab) analysis_ast_walk(NULL, expr, NULL, tab)
 #define analysis_ast_walk_stmt(stmt, tab) analysis_ast_walk(NULL, NULL, stmt, tab)
 
-
 #endif

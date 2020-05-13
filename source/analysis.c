@@ -27,7 +27,12 @@ static ExprAstNode* create_cast(ExprAstNode* node, CType* type) {
 }
 
 static CType *integer_promote(ExprAstNode **node, CType *ctype) {
-    if(ctype == NULL || CTYPE_IS_BASIC(ctype)) {
+    // Integer promotion (6.3.1.1 (2)) is performed on operands of arithmetic operations,
+    // whose type is integer with rank less than signed/unsigned int. If an int can 
+    // represent all values of the original type, the value is converted to an int
+    // (We assume that this is always the case in ACC).
+
+    if(ctype == NULL || !CTYPE_IS_BASIC(ctype)) {
         return ctype;
     }
 
@@ -57,9 +62,17 @@ static CType *integer_promote(ExprAstNode **node, CType *ctype) {
 }
 
 static CType* type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode **node_b, CType *ctype_b){
-    if(ctype_a->basic.type_specifier == ctype_b->basic.type_specifier) {
+    // Usual Arithmetic Conversions (6.3.1.8) is performed to find a common type 
+    // in arithmetic operations. For integers:
+    // 1. If both operands have the same sign, the operand with the lower rank is converted.
+    // 2. If the unsigned operand has rank >= the signed operand, the signed operand is converted.
+    // 3. If the operand with the signed type can represent all values of the unsigned type,
+    //    then the unsigned operand is converted to the signed operand type.
+    // 
+    // ctype_rank implements (2) by by ensuring that the unsigned rank > signed rank, for the same type.
+    // ACC assumes that (3) is always true whenever casting to a signed int with a greater rank.
+    if(ctype_a->basic.type_specifier == ctype_b->basic.type_specifier)
         return ctype_a;
-    }
 
     ExprAstNode **cast_expr = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? node_a : node_b;
     CType *cast_type = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? ctype_b : ctype_a;

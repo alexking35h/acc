@@ -102,17 +102,24 @@ void ctype_set_derived(CType *parent, CType *child) {
 CTypeRank ctype_rank(CType *type) {
   switch (type->basic.type_specifier) {
     case TYPE_SIGNED_CHAR:
-    case TYPE_UNSIGNED_CHAR:
       return 1;
-    case TYPE_SIGNED_SHORT_INT:
-    case TYPE_UNSIGNED_SHORT_INT:
+    case TYPE_UNSIGNED_CHAR:
       return 2;
-    case TYPE_SIGNED_INT:
-    case TYPE_UNSIGNED_INT:
+
+    case TYPE_SIGNED_SHORT_INT:
       return 3;
-    case TYPE_SIGNED_LONG_INT:
-    case TYPE_UNSIGNED_LONG_INT:
+    case TYPE_UNSIGNED_SHORT_INT:
       return 4;
+
+    case TYPE_SIGNED_INT:
+      return 5;
+    case TYPE_UNSIGNED_INT:
+      return 6;
+
+    case TYPE_SIGNED_LONG_INT:
+      return 7;
+    case TYPE_UNSIGNED_LONG_INT:
+      return 8;
     default:
       return 0;
   }
