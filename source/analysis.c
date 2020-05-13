@@ -17,6 +17,15 @@ static CType *walk_expr(ExprAstNode*, SymbolTable*, _Bool need_lvalue);
 static void walk_decl(DeclAstNode*, SymbolTable*);
 static void walk_stmt(StmtAstNode*, SymbolTable*);
 
+static ExprAstNode* create_cast(ExprAstNode* node, CType* type) {
+    ExprAstNode* cast_node = calloc(1, sizeof(ExprAstNode));
+    cast_node->type = CAST;
+    cast_node->cast.type = type;
+    cast_node->cast.right = node;
+
+    return cast_node;
+}
+
 static CType *integer_promote(ExprAstNode **node, CType *ctype) {
     if(ctype == NULL || CTYPE_IS_BASIC(ctype)) {
         return ctype;
@@ -39,17 +48,11 @@ static CType *integer_promote(ExprAstNode **node, CType *ctype) {
         default:
             break;
     }
-
-    CType *cast_type = calloc(1, sizeof(CType));
+    CType* cast_type = calloc(1, sizeof(CType));
     cast_type->type = TYPE_BASIC;
     cast_type->basic.type_specifier = TYPE_SIGNED_INT;
 
-    ExprAstNode* cast_node = calloc(1, sizeof(ExprAstNode));
-    cast_node->type = CAST;
-    cast_node->cast.type = cast_type;
-    cast_node->cast.right = *node;
-
-    *node = cast_node;
+    *node = create_cast(*node, cast_type);
     return cast_type;
 }
 
@@ -61,12 +64,7 @@ static CType* type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode 
     ExprAstNode **cast_expr = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? node_a : node_b;
     CType *cast_type = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? ctype_b : ctype_a;
 
-    ExprAstNode *cast_node = calloc(1, sizeof(CType));
-    cast_node->type = CAST;
-    cast_node->cast.type = cast_type;
-    cast_node->cast.right = *cast_expr;
-
-    *cast_expr = cast_node;
+    *cast_expr = create_cast(*cast_expr, cast_type);
     return cast_type;
 }
 
@@ -207,53 +205,34 @@ static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab, _Bool need_lva
 
 static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
     if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
-    CType* left = walk_expr(node->assign.left, tab, true);
-    CType* right = walk_expr(node->assign.right, tab, false);
+    CType* left = walk_expr(node->assign.left, tab, true), *l = left;
+    CType* right = walk_expr(node->assign.right, tab, false), *r = right;
 
-    if(!left || !right) 
+    if(!l || !r) 
         return NULL;
 
-    if(CTYPE_IS_BASIC(left) && CTYPE_IS_BASIC(right)) {
-        // Simple assignment: the left has arithmetic type, and the right has arithmetic type.
-
-        if(left->basic.type_specifier == right->basic.type_specifier)
-            return left;
-        
-        // Create CAST.
-        CType *cast_type = calloc(1, sizeof(CType));
-        cast_type->type = TYPE_BASIC;
-        cast_type->basic.type_specifier = left->basic.type_specifier;
-
-        ExprAstNode* cast_node = calloc(1, sizeof(ExprAstNode));
-        cast_node->type = CAST;
-        cast_node->cast.type = cast_type;
-        cast_node->cast.right = node->assign.right;
-
-        node->assign.right = cast_node;
-        return left;
-
-    } else if (left->type == TYPE_POINTER && right->type == TYPE_POINTER) {
+    if(CTYPE_IS_POINTER(l) && CTYPE_IS_POINTER(r)) {
         // Check if left and right are pointers to compatible types.
-        CType *l = left, *r = right;
-        
         while(l->type != TYPE_BASIC && r->type != TYPE_BASIC) {
             l = l->derived.type;
             r = r->derived.type;
         }
-
-        if(l->type == TYPE_BASIC && r->type == TYPE_BASIC) {
-            return left;
-        }
     }
 
-    char err[256];
-    int n = snprintf(err, 256, "Incompatible assignment. Cannot assign type '");
-    n += ctype_str(err + n, sizeof(err) - n, right);
-    n += snprintf(err + n, sizeof(err) - n, "' to type '");
-    n += ctype_str(err + n, sizeof(err) - n, left);
-    n += snprintf(err + n, sizeof(err) - n, "'");
-    Error_report_error(ANALYSIS, -1, err);
+    if(CTYPE_IS_BASIC(l) && CTYPE_IS_BASIC(r)) {
+        // Simple assignment: the left has arithmetic type, and the right has arithmetic type.
+        if(l->basic.type_specifier != r->basic.type_specifier)
+            node->assign.right = create_cast(node->assign.right, left);
 
+    } else {
+        char err[256];
+        int n = snprintf(err, 256, "Incompatible assignment. Cannot assign type '");
+        n += ctype_str(err + n, sizeof(err) - n, right);
+        n += snprintf(err + n, sizeof(err) - n, "' to type '");
+        n += ctype_str(err + n, sizeof(err) - n, left);
+        n += snprintf(err + n, sizeof(err) - n, "'");
+        Error_report_error(ANALYSIS, -1, err);
+    }
     return left;
 }
 

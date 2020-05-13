@@ -155,5 +155,6 @@ int ctype_str(char *buf, int len, const CType* type);
  */
 #define CTYPE_IS_BASIC(C) (C->type == TYPE_BASIC)
 #define CTYPE_IS_FUNCTION(C) (C->type == TYPE_FUNCTION)
+#define CTYPE_IS_POINTER(C) (C->type == TYPE_POINTER)
 
 #endif
