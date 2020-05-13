@@ -41,6 +41,6 @@ void invalid_pointer_dereference() {
 
 void invalid_assignment() {
     char *b;
-    // ?error ANALYSIS "Incompatible assignment. Cannot assign type 'primitive' to type 'pointer to primitive'"
+    // ?error ANALYSIS "Incompatible assignment. Cannot assign type 'int signed' to type 'pointer to char'"
     b = 12;
 }
