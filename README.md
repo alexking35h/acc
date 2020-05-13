@@ -11,26 +11,24 @@ The goals of ACC are:
  * Thoroughly tested
 
 Optimizations are a nice-to-have, as is portability: ACC will support only
-one platform - probably x86, and is not designed with extensibility/porting in mind.
+one platform - probably ARM or MIPS, and is not designed with extensibility/porting in mind.
 
 ## Design
 
-The compiler is split into separate components which marshall the program from source, to
-intermediate, to machine code. 
+The compiler front-end produces an Abstract Syntax Tree (AST) representing the input. This includes:
 
-| Component | Header File | Notes |
-|-----------|-------------|-------|
-| Scanner | [scanner.h](include/scanner.h) | Generate a flat sequence of tokens from source input. |
-| [Parsing](design/parser.md) | [parser.h](incude/parser.h) | Generate the AST from the output of the scanner. | 
-| Context-sensitive Analysis | [analysis.h](include/analysis.h) | Annotate the AST with type information, catch semantic errors, and handle type conversions |
+ * [Scanner](include/scanner.h) - Generates a flat sequence of tokens from source input.
+ * [Parser](include/parser.h) - Generate the AST from the output of the scanner. See [design notes](design/parser.md)
 
-Seperately, parts of the C language are implemented independently to support compilation.
+During [Context-sensitive analysis](include/analysis.h), ACC:
+ * Annotates the AST with type information.
+ * Check for semantic errors.
+ * Handle integer promotions and type conversions.
 
-| Component | Header File | Notes |
-|-----------|-------------|-------|
-| Types | [ctype.h](include/ctype.h) | Handle type-declaration syntax, and dealing with C types |
-| Symbols | [symbol.h](include/symbol.h) | Handle symbol tables used for storing variable names and types |
-| Pretty-print | [pretty_print.h](include/pretty_print.h) | Generate concise textual representations of ASTs for debugging/testing |
+Seperately, parts of the C language are implemented independently to support compilation:
+ * [Types](include/ctype.h) - Handle type-declaration syntax, and dealing with C types.
+ * [Symbols](include/symbol.h) - Handle symbol tables used for storing object names, types, and locations.
+ * [Pretty-print](include/pretty_print.h) - Generate concise textual representations of ASTs for debugging/testing.
 
 ## Testing
 
