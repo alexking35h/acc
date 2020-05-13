@@ -135,8 +135,7 @@ static void postfix_operators(void** state) {
     analysis_ast_walk_expr(parse_expr("c[1000][2]"), FAKE_SYMBOL_TABLE);
 
     // 6.5.2.2  (2): (In a function call) the number of arguments shall agree with the number
-    // of parameters. Each argument shall have a type such that its value may be assigned to an
-    // object with the unqualified version of the type of its corresponding parameter.
+    // of parameters. 
     CType function_ctype = {
         TYPE_FUNCTION,
         .derived.type = &fake_int,
@@ -147,7 +146,14 @@ static void postfix_operators(void** state) {
     expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_primitive);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "c", true, &fake_primitive);
     expect_report_error(ANALYSIS, -1, "Invalid number of arguments to function. Expected 1, got 2");
-    analysis_ast_walk_decl(parse_decl("void ignoreme(){ return a(b,c); }"), FAKE_SYMBOL_TABLE);
+    analysis_ast_walk_expr(parse_expr("a(b,c)"), FAKE_SYMBOL_TABLE);
+
+    // 6.5.2.2 (2): (In a functionc all) Each argument shall have a type such that its value may be
+    // assigned to an object with the unqualified version of the type of its corresponding parameter.
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &function_symbol);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_ptr);
+    expect_report_error(ANALYSIS, -1, "Incompatible argument type. Cannot pass type 'pointer to signed int' to 'signed int'");
+    analysis_ast_walk_expr(parse_expr("a(b)"), FAKE_SYMBOL_TABLE);
 
     // Error check - cannot call something that is not a function.
     expect_report_error(ANALYSIS, -1, "Not a function");
