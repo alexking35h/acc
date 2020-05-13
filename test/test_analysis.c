@@ -219,12 +219,17 @@ static void assignment_operators(void** state) {
     // Incompatible assignment:
     // b = c - assigning pointer to primitive.
     // a = (b - c) - assigning primitive to a pointer.
-    expect_report_error(ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'pointer to int signed' to type 'int signed'");
-    expect_report_error(ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'int signed' to type 'pointer to int signed'");
+    expect_report_error(
+        ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'pointer to pointer to int signed' to type 'pointer to int signed'");
+    expect_report_error(
+        ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'pointer to int signed' to type 'int signed'");
+    expect_report_error(
+        ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'int signed' to type 'pointer to int signed'");
     expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_ptr);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_primitive);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "c", true, &fake_ptr);
-    analysis_ast_walk_expr(parse_expr("a = b = c"), FAKE_SYMBOL_TABLE);
+    expect_symbol_get(FAKE_SYMBOL_TABLE, "d", true, &fake_ptr_ptr);
+    analysis_ast_walk_expr(parse_expr("a = b = c = d"), FAKE_SYMBOL_TABLE);
 }
 
 int main(void) {
