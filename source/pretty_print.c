@@ -26,7 +26,7 @@ static void pp_decl(DeclAstNode* node, StringBuffer* buf);
 static void pp_stmt(StmtAstNode* node, StringBuffer* buf);
 
 static void pp_type(CType* type, StringBuffer* buf);
-static void pp_type_primitive(CType* type, StringBuffer* buf);
+static void pp_type_basic(CType* type, StringBuffer* buf);
 static void pp_type_function(CType* type, StringBuffer* buf);
 
 /*
@@ -223,8 +223,8 @@ static void pp_type(CType* type, StringBuffer* buf) {
   pp_printf(buf, "[");
 
   switch (type->type) {
-    case TYPE_PRIMITIVE:
-      pp_type_primitive(type, buf);
+    case TYPE_BASIC:
+      pp_type_basic(type, buf);
       break;
 
     case TYPE_ARRAY:
@@ -244,9 +244,9 @@ static void pp_type(CType* type, StringBuffer* buf) {
   pp_printf(buf, "]");
 }
 
-static void pp_type_primitive(CType* type, StringBuffer* buf) {
+static void pp_type_basic(CType* type, StringBuffer* buf) {
   // storage specifier first.
-  switch (type->primitive.storage_class_specifier) {
+  switch (type->storage_class_specifier) {
     case TYPE_EXTERN:
       pp_printf(buf, "extern ");
       break;
@@ -262,7 +262,7 @@ static void pp_type_primitive(CType* type, StringBuffer* buf) {
   }
 
   // Qualifiers
-  switch (type->primitive.type_qualifier) {
+  switch (type->type_qualifier) {
     case TYPE_CONST:
       pp_printf(buf, "const ");
       break;
@@ -272,23 +272,23 @@ static void pp_type_primitive(CType* type, StringBuffer* buf) {
   }
 
   // Type
-  if (type->primitive.type_specifier & TYPE_SIGNED) {
+  if (type->basic.type_specifier & TYPE_SIGNED) {
     pp_printf(buf, "signed ");
-  } else if (type->primitive.type_specifier & TYPE_UNSIGNED) {
+  } else if (type->basic.type_specifier & TYPE_UNSIGNED) {
     pp_printf(buf, "unsigned ");
   }
 
-  if (type->primitive.type_specifier & TYPE_SHORT) {
+  if (type->basic.type_specifier & TYPE_SHORT) {
     pp_printf(buf, "short ");
-  } else if (type->primitive.type_specifier & TYPE_LONG) {
+  } else if (type->basic.type_specifier & TYPE_LONG) {
     pp_printf(buf, "long ");
   }
 
-  if (type->primitive.type_specifier & TYPE_VOID) {
+  if (type->basic.type_specifier & TYPE_VOID) {
     pp_printf(buf, "void");
-  } else if (type->primitive.type_specifier & TYPE_CHAR) {
+  } else if (type->basic.type_specifier & TYPE_CHAR) {
     pp_printf(buf, "char");
-  } else if (type->primitive.type_specifier & TYPE_INT) {
+  } else if (type->basic.type_specifier & TYPE_INT) {
     pp_printf(buf, "int");
   }
 }

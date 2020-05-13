@@ -9,25 +9,25 @@
 #define TYPE_SPECIFIERS (TYPE_VOID | TYPE_CHAR | TYPE_INT)
 #define TYPE_SIZE (TYPE_LONG | TYPE_SHORT)
 
-static void ctype_set_primitive_finalise(CType *type, char **err);
+static void ctype_set_basic_finalise(CType *type, char **err);
 
-void ctype_set_primitive_specifier(CType *type, TypeSpecifier type_specifier) {
-  type->primitive.type_specifier |= type_specifier;
+void ctype_set_basic_specifier(CType *type, TypeSpecifier type_specifier) {
+  type->basic.type_specifier |= type_specifier;
 }
 
-void ctype_set_primitive_qualifier(CType *type, TypeQualifier type_qualifier) {
-  type->primitive.type_qualifier |= type_qualifier;
+void ctype_set_qualifier(CType *type, TypeQualifier type_qualifier) {
+  type->type_qualifier |= type_qualifier;
 }
 
-void ctype_set_primitive_storage_specifier(CType *type, TypeStorageSpecifier storage_specifier) {
-  type->primitive.storage_class_specifier |= storage_specifier;
+void ctype_set_storage_specifier(CType *type, TypeStorageSpecifier storage_specifier) {
+  type->storage_class_specifier |= storage_specifier;
 }
 
-static void ctype_set_primitive_finalise(CType *type, char **error) {
-  TypeSpecifier *specifier = &type->primitive.type_specifier;
-  TypeStorageSpecifier *storage = &type->primitive.storage_class_specifier;
+static void ctype_set_basic_finalise(CType *type, char **error) {
+  TypeSpecifier *specifier = &type->basic.type_specifier;
+  TypeStorageSpecifier *storage = &type->storage_class_specifier;
 
-  // Report an error if no specifier/qualifiers were used.
+  // Report an error if no specifier present.
   if (*specifier == 0) goto err;
 
   // Check for at most one type-specifier (int/char/void)
@@ -76,8 +76,8 @@ void ctype_finalise(CType *ctype, char **err) {
   // Finalise CType:
   // - Check type validity
   // - Set primitive type defaults.
-  if (ctype->type == TYPE_PRIMITIVE) {
-    ctype_set_primitive_finalise(ctype, err);
+  if (ctype->type == TYPE_BASIC) {
+    ctype_set_basic_finalise(ctype, err);
     return;
   }
   if (ctype->type == TYPE_FUNCTION) {
@@ -100,7 +100,7 @@ void ctype_set_derived(CType *parent, CType *child) {
 }
 
 CTypeRank ctype_rank(CType *type) {
-  switch (type->primitive.type_specifier) {
+  switch (type->basic.type_specifier) {
     case TYPE_SIGNED_CHAR:
     case TYPE_UNSIGNED_CHAR:
       return 1;
@@ -119,16 +119,46 @@ CTypeRank ctype_rank(CType *type) {
 }
 
 int ctype_str(char *buf, int len, const CType* type) {
-  if(type->type == TYPE_PRIMITIVE) {
-    return snprintf(buf, len, "primitive");
-  } else if (type->type == TYPE_POINTER) {
+  if (type->type == TYPE_POINTER) {
     int l = snprintf(buf, len, "pointer to ");
     return l + ctype_str(buf+l, len - l, type->derived.type);
   } else if (type->type == TYPE_ARRAY) {
     int l = snprintf(buf, len, "array of ");
     return l + ctype_str(buf + l, len - l, type->derived.type);
-  } else {
-    int l = snprintf(buf, len, "function returning");
+  } else if (type->type == TYPE_FUNCTION) {
+    int l = snprintf(buf, len, "function returning ");
     return l + ctype_str(buf + l, len - l, type->derived.type);
   }
+
+  // Must be a basic/arithmetic type.
+  int l = 0;
+  for(int i=1;i < 256;i <<= 1) {
+    TypeSpecifier specifier = (TypeSpecifier)((int)type->basic.type_specifier & i);
+    switch(specifier) {
+      case TYPE_VOID:
+        l += snprintf(buf + l, len - l, "void ");
+        break;
+      case TYPE_CHAR:
+        l += snprintf(buf + l, len - l, "char ");
+        break;
+      case TYPE_SHORT:
+        l += snprintf(buf + l, len - l, "short ");
+        break;
+      case TYPE_INT:
+        l += snprintf(buf + l, len - l, "int ");
+        break;
+      case TYPE_LONG:
+        l += snprintf(buf + l, len - l, "long ");
+        break;
+      case TYPE_SIGNED:
+        l += snprintf(buf + l, len - l, "signed ");
+        break;
+      case TYPE_UNSIGNED:
+        l += snprintf(buf + l, len - l, "unsigned ");
+        break;
+      default:
+        break;
+    }
+  }
+  return l-1;
 }

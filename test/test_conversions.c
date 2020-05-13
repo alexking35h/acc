@@ -36,7 +36,7 @@
 
 #define FAKE_SYMBOL_TABLE ((SymbolTable*)0x1234)
 
-#define CTYPE(x) ((CType){TYPE_PRIMITIVE, .primitive.type_specifier = x})
+#define CTYPE(x) ((CType){TYPE_BASIC, .basic.type_specifier = x})
 
 static ExprAstNode* parse_expr(const char *source) {
     Scanner *scanner = Scanner_init(source);

@@ -33,12 +33,12 @@
 #define FAKE_SYMBOL_TABLE ((SymbolTable*)0x1234)
 
 static CType fake_int = {
-    .type = TYPE_PRIMITIVE,
-    .primitive.type_specifier = TYPE_SIGNED_INT
+    .type = TYPE_BASIC,
+    .basic.type_specifier = TYPE_SIGNED_INT
 };
 static CType fake_char = {
-    .type = TYPE_PRIMITIVE,
-    .primitive.type_specifier = TYPE_UNSIGNED_CHAR
+    .type = TYPE_BASIC,
+    .basic.type_specifier = TYPE_UNSIGNED_CHAR
 };
 static CType fake_ptr_type = {
     .type = TYPE_POINTER,
@@ -193,7 +193,7 @@ static void assignment_operators(void** state) {
     ast = parse_expr("a = b");
     analysis_ast_walk_expr(ast, FAKE_SYMBOL_TABLE);
     assert_true(ast->assign.right->type == CAST);
-    assert_true(ast->assign.right->cast.type->primitive.type_specifier == TYPE_UNSIGNED_CHAR);
+    assert_true(ast->assign.right->cast.type->basic.type_specifier == TYPE_UNSIGNED_CHAR);
 
     // 6.5.16.1 Simple Assignment
     // - The left value has atomic, qualified, or unqualified arithmetic type, and the
@@ -209,8 +209,8 @@ static void assignment_operators(void** state) {
     // Incompatible assignment:
     // b = c - assigning pointer to primitive.
     // a = (b - c) - assigning primitive to a pointer.
-    expect_report_error(ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'pointer to primitive' to type 'primitive'");
-    expect_report_error(ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'primitive' to type 'pointer to primitive'");
+    expect_report_error(ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'pointer to int signed' to type 'int signed'");
+    expect_report_error(ANALYSIS, -1, "Incompatible assignment. Cannot assign type 'int signed' to type 'pointer to int signed'");
     expect_symbol_get(FAKE_SYMBOL_TABLE, "a", true, &fake_ptr);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "b", true, &fake_primitive);
     expect_symbol_get(FAKE_SYMBOL_TABLE, "c", true, &fake_ptr);

@@ -119,51 +119,51 @@ static CType* declaration_specifiers(Parser* parser) {  // @TODO
       // Type specifiers
       // int, char, void, short, long, signed, unsigned
       case INT:
-        ctype_set_primitive_specifier(type, TYPE_INT);
+        ctype_set_basic_specifier(type, TYPE_INT);
         break;
       case CHAR:
-        ctype_set_primitive_specifier(type, TYPE_CHAR);
+        ctype_set_basic_specifier(type, TYPE_CHAR);
         break;
       case VOID:
-        ctype_set_primitive_specifier(type, TYPE_VOID);
+        ctype_set_basic_specifier(type, TYPE_VOID);
         break;
 
       case SHORT:
-        ctype_set_primitive_specifier(type, TYPE_SHORT);
+        ctype_set_basic_specifier(type, TYPE_SHORT);
         break;
       case LONG:
-        ctype_set_primitive_specifier(type, TYPE_LONG);
+        ctype_set_basic_specifier(type, TYPE_LONG);
         break;
 
       case SIGNED:
-        ctype_set_primitive_specifier(type, TYPE_SIGNED);
+        ctype_set_basic_specifier(type, TYPE_SIGNED);
         break;
       case UNSIGNED:
-        ctype_set_primitive_specifier(type, TYPE_UNSIGNED);
+        ctype_set_basic_specifier(type, TYPE_UNSIGNED);
         break;
 
       // Type qualifiers
       // const, volatile
       case CONST:
-        ctype_set_primitive_qualifier(type, TYPE_CONST);
+        ctype_set_qualifier(type, TYPE_CONST);
         break;
       case VOLATILE:
-        ctype_set_primitive_qualifier(type, TYPE_VOLATILE);
+        ctype_set_qualifier(type, TYPE_VOLATILE);
         break;
 
       // Storage-specifiers
       // extern, auto, static, register
       case EXTERN:
-        ctype_set_primitive_storage_specifier(type, TYPE_EXTERN);
+        ctype_set_storage_specifier(type, TYPE_EXTERN);
         break;
       case AUTO:
-        ctype_set_primitive_storage_specifier(type, TYPE_AUTO);
+        ctype_set_storage_specifier(type, TYPE_AUTO);
         break;
       case STATIC:
-        ctype_set_primitive_storage_specifier(type, TYPE_STATIC);
+        ctype_set_storage_specifier(type, TYPE_STATIC);
         break;
       case REGISTER:
-        ctype_set_primitive_storage_specifier(type, TYPE_REGISTER);
+        ctype_set_storage_specifier(type, TYPE_REGISTER);
         break;
 
       default:

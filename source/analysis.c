@@ -18,20 +18,18 @@ static void walk_decl(DeclAstNode*, SymbolTable*);
 static void walk_stmt(StmtAstNode*, SymbolTable*);
 
 static CType *integer_promote(ExprAstNode **node, CType *ctype) {
-    if (ctype == NULL || ctype->type != TYPE_PRIMITIVE) {
+    if(ctype == NULL || CTYPE_IS_BASIC(ctype)) {
         return ctype;
     }
 
-    switch (ctype->primitive.type_specifier) {
+    switch (ctype->basic.type_specifier) {
         case TYPE_UNSIGNED_INT:
         case TYPE_SIGNED_INT:
             return ctype;
 
         case TYPE_SIGNED_LONG_INT:
         case TYPE_UNSIGNED_LONG_INT:
-        case TYPE_FLOAT:
         case TYPE_VOID:
-        case TYPE_DOUBLE:
             return ctype;
         
         case TYPE_SIGNED_CHAR:
@@ -43,8 +41,8 @@ static CType *integer_promote(ExprAstNode **node, CType *ctype) {
     }
 
     CType *cast_type = calloc(1, sizeof(CType));
-    cast_type->type = TYPE_PRIMITIVE;
-    cast_type->primitive.type_specifier = TYPE_INT | TYPE_SIGNED;
+    cast_type->type = TYPE_BASIC;
+    cast_type->basic.type_specifier = TYPE_SIGNED_INT;
 
     ExprAstNode* cast_node = calloc(1, sizeof(ExprAstNode));
     cast_node->type = CAST;
@@ -56,7 +54,7 @@ static CType *integer_promote(ExprAstNode **node, CType *ctype) {
 }
 
 static CType* type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode **node_b, CType *ctype_b){
-    if(ctype_a->primitive.type_specifier == ctype_b->primitive.type_specifier) {
+    if(ctype_a->basic.type_specifier == ctype_b->basic.type_specifier) {
         return ctype_a;
     }
 
@@ -78,16 +76,16 @@ static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_
             Error_report_error(ANALYSIS, -1, "Invalid lvalue");
         }
         CType *constant_ctype = calloc(1, sizeof(CType));
-        constant_ctype->type = TYPE_PRIMITIVE;
-        constant_ctype->primitive.type_specifier = TYPE_SIGNED_INT;
+        constant_ctype->type = TYPE_BASIC;
+        constant_ctype->basic.type_specifier = TYPE_SIGNED_INT;
         return constant_ctype;
     } else if (node->primary.string_literal) {
         if(need_lvalue) {
             Error_report_error(ANALYSIS, -1, "Invalid lvalue");
         }
         CType *char_ctype = calloc(1, sizeof(CType));
-        char_ctype->type = TYPE_PRIMITIVE;
-        char_ctype->primitive.storage_class_specifier = TYPE_UNSIGNED_CHAR;
+        char_ctype->type = TYPE_BASIC;
+        char_ctype->basic.type_specifier = TYPE_UNSIGNED_CHAR;
 
         CType *ptr_ctype = calloc(1, sizeof(CType));
         ptr_ctype->type = TYPE_POINTER;
@@ -139,7 +137,7 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_l
     if(!left || !right)
         return NULL;
 
-    if(left->type == TYPE_PRIMITIVE && right->type == TYPE_PRIMITIVE) {
+    if(CTYPE_IS_BASIC(left) && CTYPE_IS_BASIC(right)) {
         left = integer_promote(&node->binary.left, left);
         right = integer_promote(&node->binary.right, right);
         return type_conversion(
@@ -148,9 +146,9 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_l
             &node->binary.right,
             right
         );
-    } else if (left->type == TYPE_PRIMITIVE && right->type == TYPE_POINTER) {
+    } else if (CTYPE_IS_BASIC(left) && right->type == TYPE_POINTER) {
         return right;
-    } else if (left->type == TYPE_POINTER && right->type == TYPE_PRIMITIVE) {
+    } else if (CTYPE_IS_BASIC(right) && left->type == TYPE_POINTER) {
         return left;
     }  
     return NULL;
@@ -181,7 +179,7 @@ static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lv
     } else {
         // '-', '+', '~', or '!' operators.
         // Test that the operand is of type 'primitive' (section 6.5.3.1)
-        if(ctype->type != TYPE_PRIMITIVE) {
+        if(!CTYPE_IS_BASIC(ctype)) {
             char *err = calloc(128, sizeof(char));
             snprintf(err, 128, "Invalid operand to unary operator '%s'", node->unary.op->lexeme);
             Error_report_error(ANALYSIS, -1, err);
@@ -210,16 +208,16 @@ static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_l
     if(!left || !right) 
         return NULL;
 
-    if(left->type == TYPE_PRIMITIVE && right->type == TYPE_PRIMITIVE) {
+    if(CTYPE_IS_BASIC(left) && CTYPE_IS_BASIC(right)) {
         // Simple assignment: the left has arithmetic type, and the right has arithmetic type.
 
-        if(left->primitive.type_specifier == right->primitive.type_specifier)
+        if(left->basic.type_specifier == right->basic.type_specifier)
             return left;
         
         // Create CAST.
         CType *cast_type = calloc(1, sizeof(CType));
-        cast_type->type = TYPE_PRIMITIVE;
-        cast_type->primitive.type_specifier = left->primitive.type_specifier;
+        cast_type->type = TYPE_BASIC;
+        cast_type->basic.type_specifier = left->basic.type_specifier;
 
         ExprAstNode* cast_node = calloc(1, sizeof(ExprAstNode));
         cast_node->type = CAST;
@@ -233,12 +231,12 @@ static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_l
         // Check if left and right are pointers to compatible types.
         CType *l = left, *r = right;
         
-        while(l->type != TYPE_PRIMITIVE && r->type != TYPE_PRIMITIVE) {
+        while(l->type != TYPE_BASIC && r->type != TYPE_BASIC) {
             l = l->derived.type;
             r = r->derived.type;
         }
 
-        if(l->type == TYPE_PRIMITIVE && r->type == TYPE_PRIMITIVE) {
+        if(l->type == TYPE_BASIC && r->type == TYPE_BASIC) {
             return left;
         }
     }
