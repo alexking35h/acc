@@ -122,9 +122,14 @@ static void walk_argument_list(ParameterListItem* params, ArgumentListItem* argu
 
 static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
     CType *pf = walk_expr(node->postfix.left, tab, false);
-    if(pf && pf->type == TYPE_FUNCTION) {
+    if(!pf) return NULL;
+
+    // The only implemented postfix expression is a function call.
+    if(CTYPE_IS_FUNCTION(pf)) {
         walk_argument_list(pf->derived.params, node->postfix.args, tab);
         return pf->derived.type;
+    } else {
+        Error_report_error(ANALYSIS, -1, "Not a function");
     }
     return NULL;
 }
@@ -292,7 +297,7 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab) {
     Symbol* sym = symbol_table_put(tab, node->identifier->lexeme, node->type);
     node->symbol = sym;
 
-    if(node->type->type == TYPE_FUNCTION && node->body) {
+    if(CTYPE_IS_FUNCTION(node->type) && node->body) {
         walk_stmt(node->body, tab);
     } else if (node->initializer) {
         walk_expr(node->initializer, tab, false);

@@ -148,6 +148,10 @@ static void postfix_operators(void** state) {
     expect_symbol_get(FAKE_SYMBOL_TABLE, "c", true, &fake_primitive);
     expect_report_error(ANALYSIS, -1, "Invalid number of arguments to function. Expected 1, got 2");
     analysis_ast_walk_decl(parse_decl("void ignoreme(){ return a(b,c); }"), FAKE_SYMBOL_TABLE);
+
+    // Error check - cannot call something that is not a function.
+    expect_report_error(ANALYSIS, -1, "Not a function");
+    analysis_ast_walk_expr(parse_expr("1(2,3)"), FAKE_SYMBOL_TABLE);
 }
 
 static void unary_operators(void** state) {
