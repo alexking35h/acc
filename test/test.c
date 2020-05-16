@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 
 #include <cmocka.h>
@@ -17,7 +18,7 @@
 #include "scanner.h"
 #include "token.h"
 #include "error.h"
-
+#include "symbol.h"
 /*
  * Compare the expected textual AST representation for expr/decl/stmt
  * against 'expected'.
@@ -107,42 +108,52 @@ void expect_report_error(ErrorType error_type, int expect_line, char* expect_err
   expect_string(Error_report_error, error_string, expect_err_str);
 }
 
-/* 
- * Mock symbol table functions
- */
-SymbolTable* __wrap_symbol_table_create(SymbolTable* parent){
-    check_expected(parent);
-    return (SymbolTable*)mock();
-}
-Symbol* __wrap_symbol_table_put(SymbolTable* tab, char* name, CType* type) {
-    if(!strcmp(name, "ignoreme")) return NULL;
-    check_expected(tab);
-    check_expected(name);
-    return (Symbol*)mock();
-}
-Symbol* __wrap_symbol_table_get(SymbolTable* tab, char* name, bool search_parent) {
-    if(!strcmp(name, "ignoreme")) return NULL;
-    check_expected(tab);
-    check_expected(name);
-    check_expected(search_parent);
-    return (Symbol*)mock();
+/* Test symbol table Implementation */
+SymbolTable *test_symbol_table;
+
+static CType _int_type = {
+    .type = TYPE_BASIC,
+    .basic.type_specifier = TYPE_SIGNED_INT
+};
+static CType _long_int_type = {
+    .type = TYPE_BASIC,
+    .basic.type_specifier = TYPE_SIGNED_LONG_INT
+};
+static CType _char_type = {
+    .type = TYPE_BASIC,
+    .basic.type_specifier = TYPE_UNSIGNED_CHAR
+};
+static CType _ptr_type = {
+    .type = TYPE_POINTER,
+    .derived.type = &_int_type
+};
+static CType _ptr_ptr_type = {
+    .type = TYPE_POINTER,
+    .derived.type = &_ptr_type
+};
+static CType _function_type = {
+    .type = TYPE_FUNCTION,
+    .derived.type = &_int_type,
+    .derived.params = &((ParameterListItem){NULL, &_int_type, NULL})
+};
+
+Symbol *_int;
+Symbol *_long_int;
+Symbol *_char;
+Symbol *_ptr;
+Symbol *_ptr_ptr;
+Symbol *_function;
+
+void test_symbol_table_setup() {
+    test_symbol_table = symbol_table_create(NULL);
+    _int = symbol_table_put(test_symbol_table, "_int", &_int_type);
+    _long_int = symbol_table_put(test_symbol_table, "_long_int", &_long_int_type);
+    _char = symbol_table_put(test_symbol_table, "_char", &_char_type);
+    _ptr = symbol_table_put(test_symbol_table, "_ptr", &_ptr_type);
+    _ptr_ptr = symbol_table_put(test_symbol_table, "_ptr_ptr", &_ptr_ptr_type);
+    _function = symbol_table_put(test_symbol_table, "_function", &_function_type);
 }
 
-/* 
- * Helper functions for checking mock function parameters and setting return values
- */
-void expect_symbol_create(SymbolTable* parent, SymbolTable* ret) {
-    expect_value(__wrap_symbol_table_create, parent, parent);
-    will_return(__wrap_symbol_table_create, ret);
-}
-void expect_symbol_put(SymbolTable* tab, char* name, Symbol* ret) {
-    expect_value(__wrap_symbol_table_put, tab, tab);
-    expect_string(__wrap_symbol_table_put, name, name);
-    will_return(__wrap_symbol_table_put, ret);
-}
-void expect_symbol_get(SymbolTable* tab, char* name, bool search_parent, Symbol* ret) {
-    expect_value(__wrap_symbol_table_get, tab, tab);
-    expect_string(__wrap_symbol_table_get, name, name);
-    expect_value(__wrap_symbol_table_get, search_parent, search_parent);
-    will_return(__wrap_symbol_table_get, ret);
+void test_symbol_table_teardown() {
+    free(test_symbol_table);
 }

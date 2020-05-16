@@ -47,11 +47,23 @@ _Bool test_parse_compare_ast_set(AstTestSet test_set[], TestParserType);
  */
 void expect_report_error(ErrorType error_type, int expect_line, char* expect_err_str);
 
-/* 
- * Helper functions for checking mock function parameters and setting return values
+/*
+ * Test symbol table used in:
+ * - test_analysis_type_checking
+ * - test_analysis_conversions
+ *
+ * Setup/teardown with:
+ * - symbol_table_setup()
+ * - symbol_table_teardown()
  */
-void expect_symbol_create(SymbolTable* parent, SymbolTable* ret);
-void expect_symbol_put(SymbolTable* tab, char* name, Symbol* ret);
-void expect_symbol_get(SymbolTable* tab, char* name, bool search_parent, Symbol* ret);
+Symbol *_int;
+Symbol *_long_int;
+Symbol *_char;
+Symbol *_ptr;
+Symbol *_ptr_ptr;
+Symbol *_function;
+extern SymbolTable *test_symbol_table;
+void test_symbol_table_setup();
+void test_symbol_table_teardown();
 
 #endif

@@ -20,6 +20,7 @@
 typedef struct Symbol_t {
   char* name;
   CType* type;
+  struct Symbol_t* next;
 } Symbol;
 
 typedef struct SymbolTable_t SymbolTable;

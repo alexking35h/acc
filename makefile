@@ -40,7 +40,7 @@ build/test_scanner: $(ACC_OBJECTS) build/test_scanner.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=Error_report_error
 
 build/test_parser_expression: $(ACC_OBJECTS) build/test_parser_expression.o build/test.o
-	$(CC) $^ -o $@ $(CFLAGS) 
+	$(CC) $^ -o $@ $(CFLAGS)
 
 build/test_parser_declaration: $(ACC_OBJECTS) build/test_parser_declaration.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS) 
@@ -54,11 +54,11 @@ build/test_parser_error: $(ACC_OBJECTS) build/test_parser_error.o build/test.o
 build/test_symbol_table: $(ACC_OBJECTS) build/test_symbol_table.o
 	$(CC) $^ -o $@ $(CFLAGS)
 
-build/test_analysis: $(ACC_OBJECTS) build/test_analysis.o build/test.o
-	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=symbol_table_create -Wl,--wrap=symbol_table_put -Wl,--wrap=symbol_table_get
+build/test_analysis_type_checking: $(ACC_OBJECTS) build/test_analysis_type_checking.o build/test.o
+	$(CC) $^ -o $@ $(CFLAGS)
 
-build/test_conversions: $(ACC_OBJECTS) build/test_conversions.o build/test.o
-	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=symbol_table_create -Wl,--wrap=symbol_table_put -Wl,--wrap=symbol_table_get
+build/test_analysis_conversions: $(ACC_OBJECTS) build/test_analysis_conversions.o build/test.o
+	$(CC) $^ -o $@ $(CFLAGS)
 
 regression_test: build/acc
 	python3 regression/regression.py --acc $^ regression/*.c
