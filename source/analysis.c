@@ -57,6 +57,11 @@ static const struct operand_requirements {
     {NE_OP, true, true, &int_type},
     {NE_OP, false, false, &int_type},
 
+    // &, |, ^ - both operands must be arithmetic.
+    {AMPERSAND, true, true, NULL},
+    {BAR, true, true, NULL},
+    {CARET, true, true, NULL},
+
     // &&, || - both operands must be scalar (arithmetic and pointer)
     {AND_OP, true, true, &int_type},
     {AND_OP, true, false, &int_type},

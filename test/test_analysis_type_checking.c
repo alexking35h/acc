@@ -168,9 +168,9 @@ static void bitwise_operators(void** state) {
     expect_report_error(ANALYSIS, -1, "Invalid operand type to binary operator '&'");
     analysis_ast_walk_expr(parse_expr("_int & _ptr"), test_symbol_table);
     expect_report_error(ANALYSIS, -1, "Invalid operand type to binary operator '|'");
-    analysis_ast_walk_expr(parse_expr("_int | _char"), test_symbol_table);
-    expect_report_error(ANALYSIS, -1, "Invalid operand type to binary operator '|'");
-    analysis_ast_walk_expr(parse_expr("_int ^ _long_int"), test_symbol_table);
+    analysis_ast_walk_expr(parse_expr("_int | _ptr"), test_symbol_table);
+    expect_report_error(ANALYSIS, -1, "Invalid operand type to binary operator '^'");
+    analysis_ast_walk_expr(parse_expr("_ptr_ptr ^ _long_int"), test_symbol_table);
 }
 
 static void logical_operators(void** state) {
@@ -241,6 +241,7 @@ int main(void) {
         cmocka_unit_test(unary_operators),
         cmocka_unit_test(arithmetic_operators),
         cmocka_unit_test(comparison_operators),
+        cmocka_unit_test(bitwise_operators),
         cmocka_unit_test(logical_operators),
         cmocka_unit_test(assignment_operators),
     };
