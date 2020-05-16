@@ -7,6 +7,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Operand requirements for binary operations.
+static const struct operand_requirements {
+    TokenType op;
+
+    // Left/Right operands must be basic/arithmetic type.
+    _Bool left_is_basic;
+    _Bool right_is_basic;
+} binary_op_requirements[] = {
+
+    // '+': both operands arithmetic, or one is pointer.
+    {PLUS, true, true},
+    {PLUS, true, false},
+    {PLUS, false, true},
+
+    // '-' both operands can be arithmetic, pointer, or left is pointer, right is arithmetic.
+    {MINUS, true, true},
+    {MINUS, false, true},
+    {MINUS, false, false},
+
+    // '*' - both operands must be arithmetic
+    {STAR, true, true},
+
+    // '/' - both operands must be arithmetic
+    {SLASH, true, true},
+
+    // '%' - both operands must be arithmetic
+    {PERCENT, true, true},
+
+    {NAT, false, false}
+};
+
 /*
  * Walk Expression AST Nodes. Parsing expressions often requires getting type
  * information from child nodes (e.g., a+b requires type information for 'a' and 'b').
@@ -150,23 +181,37 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_l
     CType *left = walk_expr(node->binary.left, tab, false);
     CType *right = walk_expr(node->binary.right, tab, false);
 
-    if(!left || !right)
-        return NULL;
+    for(int i = 0;binary_op_requirements[i].op != NAT;i++) {
+        if(binary_op_requirements[i].op != node->binary.op->type) continue;
+        if(binary_op_requirements[i].left_is_basic && !CTYPE_IS_BASIC(left)) continue;
+        if(binary_op_requirements[i].right_is_basic && !CTYPE_IS_BASIC(right)) continue;
 
-    if(CTYPE_IS_BASIC(left) && CTYPE_IS_BASIC(right)) {
-        left = integer_promote(&node->binary.left, left);
-        right = integer_promote(&node->binary.right, right);
-        return type_conversion(
-            &node->binary.left, 
-            left,
-            &node->binary.right,
-            right
-        );
-    } else if (CTYPE_IS_BASIC(left) && right->type == TYPE_POINTER) {
-        return right;
-    } else if (CTYPE_IS_BASIC(right) && left->type == TYPE_POINTER) {
-        return left;
-    }  
+        if(CTYPE_IS_BASIC(left) && CTYPE_IS_BASIC(right)) {
+            left = integer_promote(&node->binary.left, left);
+            right = integer_promote(&node->binary.right, right);
+            return type_conversion(
+                &node->binary.left, 
+                left,
+                &node->binary.right,
+                right
+            );
+        } else if(CTYPE_IS_POINTER(left) && CTYPE_IS_POINTER(right)) {
+            // Todo.
+            if(!ctype_pointers_compatible(left, right)) break;
+
+            // Pointers are compatible. The type of this expression is
+            // signed integer.
+            CType *rt = calloc(1, sizeof(CType));
+            rt->type = TYPE_BASIC;
+            rt->basic.type_specifier = TYPE_SIGNED_INT;
+            return rt;
+        } else {
+            return CTYPE_IS_POINTER(left) ? left : right;
+        }
+    }
+    char err[100];
+    snprintf(err, 100, "Invalid operand type to binary operator '%s'", node->binary.op->lexeme);
+    Error_report_error(ANALYSIS, -1, err);
     return NULL;
 }
 

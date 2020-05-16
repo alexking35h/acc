@@ -151,6 +151,11 @@ CTypeRank ctype_rank(CType *type);
 int ctype_str(char *buf, int len, const CType* type);
 
 /*
+ * Check if two pointers are compatible.
+ */
+_Bool ctype_pointers_compatible(CType* a, CType* b);
+
+/*
  * Macro definitions
  */
 #define CTYPE_IS_BASIC(C) (C->type == TYPE_BASIC)

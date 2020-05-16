@@ -169,3 +169,14 @@ int ctype_str(char *buf, int len, const CType* type) {
   }
   return l-1;
 }
+
+/*
+ * Check if two pointers are compatible
+ */
+_Bool ctype_pointers_compatible(CType* a, CType* b){
+    while(CTYPE_IS_POINTER(a) && CTYPE_IS_POINTER(b)) {
+        a = a->derived.type;
+        b = b->derived.type;
+    }
+    return CTYPE_IS_BASIC(a) && CTYPE_IS_BASIC(b);
+}
