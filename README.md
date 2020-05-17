@@ -50,8 +50,7 @@ this means it's missing some (many) features of the C11 grammar, which really ma
 
 ### Scanner
 
- * `_Thread_local`, `_Noreturn`, `_Alignas`, `_Atomic`, `_Bool`, `_Complex`, `_Imaginary` type-specifiers are not implemented.
-   The first four were both new additions in C11, the others were added in C99.
+ * `_Thread_local`, `_Noreturn`, `_Alignas`, `restrict`, `_Atomic`, `_Bool`, `_Complex`, `_Imaginary` type-specifiers are not implemented. The first five were both new additions in C11, the others were added in C99.
 
  * `_Alignof`, `_Generic`, and `_Static_assert` are not implemented (all were added in C11). The pre-defined identifier `__func__`
    is not implemented (added in C99).
@@ -77,5 +76,7 @@ this means it's missing some (many) features of the C11 grammar, which really ma
    diverges from the standard (6.5.16.2): The lvalue must be evaluated only once.
 
 ### Context-sensitive Analysis
+
+  * Type qualifiers (`const`, `volatile` and `volatile`) are ignored by the compiler.
 
 ### Code generation
