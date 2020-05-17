@@ -2,6 +2,7 @@
 #include "ast.h"
 #include "token.h"
 #include "symbol.h"
+#include "arch.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -186,6 +187,20 @@ static CType* type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode 
 
     *cast_expr = create_cast(*cast_expr, cast_type);
     return cast_type;
+}
+
+static void arch_allocate_address(int* current_allocated, Symbol* sym, _Bool is_static) {
+    int size = arch_get_size(sym->type);
+    int align = arch_get_alignment(sym->type);
+    
+    // The alignment is a power of 2.
+    if((*current_allocated & (align-1)) != 0) {
+        // We need padding!
+        *current_allocated = (*current_allocated | (align-1)) + 1;
+    }
+    sym->address.offset = *current_allocated;
+    sym->address.type = is_static ? ADDRESS_STATIC : ADDRESS_AUTOMATIC;
+    *current_allocated += size;
 }
 
 static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
@@ -427,6 +442,12 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab) {
     }
     Symbol* sym = symbol_table_put(tab, node->identifier->lexeme, node->type);
     node->symbol = sym;
+    sym->type = node->type;
+
+    static int currently_allocated_hack = 0;
+    if(!CTYPE_IS_FUNCTION(node->type)) {
+        arch_allocate_address(&currently_allocated_hack, node->symbol, true);
+    }
 
     if(CTYPE_IS_FUNCTION(node->type) && node->body) {
         walk_stmt(node->body, tab);

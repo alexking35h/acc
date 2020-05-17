@@ -92,7 +92,7 @@ void basic_type(void** state) {
     assert_true(t2.address.type == ADDRESS_STATIC && t2.address.offset == 2);
     assert_true(t3.address.type == ADDRESS_STATIC && t3.address.offset == 4);
     assert_true(t4.address.type == ADDRESS_STATIC && t4.address.offset == 8);
-    assert_true(t5.address.type == ADDRESS_STATIC && t4.address.offset == 16);
+    assert_true(t5.address.type == ADDRESS_STATIC && t5.address.offset == 16);
 }
 
 void array_type(void** state) {
@@ -115,7 +115,7 @@ void ptr_type(void** state) {
     expect_get(MOCK_SYMBOL_TABLE, "var1", false, NULL);
     expect_put(MOCK_SYMBOL_TABLE, "var1", &t2);
 
-    analysis_ast_walk_decl(parse_decl("int *a;in var1;"), MOCK_SYMBOL_TABLE);
+    analysis_ast_walk_decl(parse_decl("int *ptr1;int var1;"), MOCK_SYMBOL_TABLE);
 
     assert_true(t1.address.type == ADDRESS_STATIC && t1.address.offset == 0);
     assert_true(t2.address.type == ADDRESS_STATIC && t2.address.offset == 4);
@@ -123,7 +123,8 @@ void ptr_type(void** state) {
 
 int main(void) {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(basic_type)
+        cmocka_unit_test(basic_type),
+        // cmocka_unit_test(ptr_type),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
