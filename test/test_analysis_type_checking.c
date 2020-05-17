@@ -160,6 +160,12 @@ static void comparison_operators(void** state) {
     analysis_ast_walk_expr(parse_expr("_ptr != _ptr"), test_symbol_table);
     expect_report_error(ANALYSIS, -1, "Invalid operand type to binary operator '!='");
     analysis_ast_walk_expr(parse_expr("_ptr != _int"), test_symbol_table);
+    expect_report_error(ANALYSIS, -1, "Invalid operand type to binary operator '!='");
+    analysis_ast_walk_expr(parse_expr("_ptr != _ptr_ptr"), test_symbol_table);
+
+    expect_report_error(ANALYSIS, -1, "Invalid operand type to binary operator '=='");
+    analysis_ast_walk_expr(parse_expr("_function == _ptr"), test_symbol_table);
+    analysis_ast_walk_expr(parse_expr("&_function && 98"), test_symbol_table);
 }
 
 static void bitwise_operators(void** state) {

@@ -12,67 +12,82 @@ static CType int_type = {
     .basic.type_specifier = TYPE_SIGNED_INT
 };
 
-// Operand requirements for binary operations.
-static const struct operand_requirements {
+// Binary nodes include additive (+,-), multiplicative (*,/,%), bitwise operations (<<, >>, &, |),
+// comparison operators (<=, <, >, >=, ==, !=) and logical operators (&&, ||). These all have different
+// operand constraints and semantics:
+// - Can operands be basic/pointer?
+// - Must operands be compatible?
+// - What is the type for this expression?
+//These constraints are described in the binary_op_requirements array. This is used in walk_expr_binary().
+typedef struct OpRequirements {
     TokenType op;
 
-    // Left/Right operands must be basic/arithmetic type.
+    // Left/right types must be basic.
     _Bool left_basic;
     _Bool right_basic;
-    CType* type;
-} binary_op_requirements[] = {
+
+    // Type compatibility requirement, if both operands are pointer/basic:
+    // pointer - to same type
+    // basic - compatible types, and perform usual conversions
+    _Bool compatible;
+
+    // Expression type of this node.
+    CType *expr_type;
+} OpRequirements;
+
+static OpRequirements binary_op_requirements[] = {
 
     // '+': both operands arithmetic, or one is pointer.
-    {PLUS, true, true, NULL},
-    {PLUS, true, false, NULL},
-    {PLUS, false, true, NULL},
+    {PLUS, true, true, true, NULL},
+    {PLUS, true, false, false, NULL},
+    {PLUS, false, true, false, NULL},
 
     // '-' both operands can be arithmetic, pointer, or left is pointer, right is arithmetic.
-    {MINUS, true, true},
-    {MINUS, false, true, NULL},
-    {MINUS, false, false, NULL},
+    {MINUS, true, true, true, NULL},
+    {MINUS, false, true, false, NULL},
+    {MINUS, false, false, true, NULL},
 
     // '*' - both operands must be arithmetic
-    {STAR, true, true, NULL},
+    {STAR, true, true, true, NULL},
 
     // '/' - both operands must be arithmetic
-    {SLASH, true, true, NULL},
+    {SLASH, true, true, true, NULL},
 
     // '%' - both operands must be arithmetic
-    {PERCENT, true, true, NULL},
+    {PERCENT, true, true, true, NULL},
 
     // <, <=, >, >= - both operands must be arithmetic, or both pointers to compatible types
-    {LESS_THAN, true, true, &int_type},
-    {LESS_THAN, false, false, &int_type},
-    {LE_OP, true, true, &int_type},
-    {LE_OP, false, false, &int_type},
-    {GREATER_THAN, true, true, &int_type},
-    {GREATER_THAN, false, false, &int_type},
-    {GE_OP, true, true, &int_type},
-    {GE_OP, false, false, &int_type},
+    {LESS_THAN, true, true, true, &int_type},
+    {LESS_THAN, false, false, true, &int_type},
+    {LE_OP, true, true, true, &int_type},
+    {LE_OP, false, false, true, &int_type},
+    {GREATER_THAN, true, true, true, &int_type},
+    {GREATER_THAN, false, false, true, &int_type},
+    {GE_OP, true, true, true, &int_type},
+    {GE_OP, false, false, true, &int_type},
 
     // ==, != - both operands must be arithmetic, or both are pointers to compatible types.
-    {EQ_OP, true, true, &int_type},
-    {EQ_OP, false, false, &int_type},
-    {NE_OP, true, true, &int_type},
-    {NE_OP, false, false, &int_type},
+    {EQ_OP, true, true, true, &int_type},
+    {EQ_OP, false, false, false, &int_type},
+    {NE_OP, true, true, true, &int_type},
+    {NE_OP, false, false, true, &int_type},
 
     // &, |, ^ - both operands must be arithmetic.
-    {AMPERSAND, true, true, NULL},
-    {BAR, true, true, NULL},
-    {CARET, true, true, NULL},
+    {AMPERSAND, true, true, true, NULL},
+    {BAR, true, true, true, NULL},
+    {CARET, true, true, true, NULL},
 
     // &&, || - both operands must be scalar (arithmetic and pointer)
-    {AND_OP, true, true, &int_type},
-    {AND_OP, true, false, &int_type},
-    {AND_OP, false, true, &int_type},
-    {AND_OP, false, false, &int_type},
-    {OR_OP, true, true, &int_type},
-    {OR_OP, true, false, &int_type},
-    {OR_OP, false, true, &int_type},
-    {OR_OP, false, false, &int_type},
+    {AND_OP, true, true, false, &int_type},
+    {AND_OP, true, false, false, &int_type},
+    {AND_OP, false, true, false, &int_type},
+    {AND_OP, false, false, false, &int_type},
+    {OR_OP, true, true, false, &int_type},
+    {OR_OP, true, false, false, &int_type},
+    {OR_OP, false, true, false, &int_type},
+    {OR_OP, false, false, false, &int_type},
 
-    {NAT, false, false}
+    {NAT, false, false, NULL}
 };
 
 /*
@@ -218,45 +233,44 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_l
     CType *left = walk_expr(node->binary.left, tab, false);
     CType *right = walk_expr(node->binary.right, tab, false);
 
-    for(int i = 0;binary_op_requirements[i].op != NAT;i++) {
-        if(binary_op_requirements[i].op != node->binary.op->type) continue;
+    char err_string[100];
 
-        _Bool left_basic = binary_op_requirements[i].left_basic;
-        _Bool right_basic = binary_op_requirements[i].right_basic;
-        CType* expr_type = binary_op_requirements[i].type;
+    // The only valid operands to binary operators are scalar (pointer/basic)
+    if(!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right)) goto error;
+    
+    for(OpRequirements *req = binary_op_requirements;req->op != NAT;req++) {
+        if(req->op != node->binary.op->type) continue;
 
-        if((left_basic && !CTYPE_IS_BASIC(left))
-            || (right_basic && !CTYPE_IS_BASIC(right))) continue;
-
-        if(left_basic && right_basic) {
-            left = integer_promote(&node->binary.left, left);
-            right = integer_promote(&node->binary.right, right);
-            CType *ret = type_conversion(
-                &node->binary.left, 
-                left,
-                &node->binary.right,
-                right
-            );
-            return expr_type ? expr_type : ret;
-        } else if(!left_basic && !right_basic) {
-            // Screw it, I'll tidy this up later.
-            if(node->binary.op->type == AND_OP || node->binary.op->type == OR_OP) {
-                return expr_type;
+        if((req->left_basic && !CTYPE_IS_BASIC(left))
+            || (req->right_basic && !CTYPE_IS_BASIC(right))) continue;
+        
+        if(req->left_basic && req->right_basic) {
+            CType *expr_type;
+            if(req->compatible) {
+                left = integer_promote(&node->binary.left, left);
+                right = integer_promote(&node->binary.right, right);
+                expr_type = type_conversion(
+                    &node->binary.left, 
+                    left,
+                    &node->binary.right,
+                    right
+                );
             }
-            if(!ctype_pointers_compatible(left, right)) break;
+            return req->expr_type ? req->expr_type : expr_type;
 
-            // Pointers are compatible. The type of this expression is signed integer.
-            CType *rt = calloc(1, sizeof(CType));
-            rt->type = TYPE_BASIC;
-            rt->basic.type_specifier = TYPE_SIGNED_INT;
-            return rt;
+        } else if (!req->left_basic && !req->right_basic) {
+            if(req->compatible && !ctype_pointers_compatible(left, right)) break;
+
+            // Pointer-Pointer operands (==, !=, &&, ||, <, <=, >, >=) always return an int.
+            return req->expr_type;
         } else {
-            return expr_type ? expr_type : (left_basic ? right : left);
+            return req->expr_type ? req->expr_type : (req->left_basic ? right : left);
         }
     }
-    char err[100];
-    snprintf(err, 100, "Invalid operand type to binary operator '%s'", node->binary.op->lexeme);
-    Error_report_error(ANALYSIS, -1, err);
+
+error:
+    snprintf(err_string, 100, "Invalid operand type to binary operator '%s'", node->binary.op->lexeme);
+    Error_report_error(ANALYSIS, -1, err_string);
     return NULL;
 }
 

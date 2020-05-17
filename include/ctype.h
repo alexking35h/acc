@@ -161,5 +161,6 @@ _Bool ctype_pointers_compatible(CType* a, CType* b);
 #define CTYPE_IS_BASIC(C) (C->type == TYPE_BASIC)
 #define CTYPE_IS_FUNCTION(C) (C->type == TYPE_FUNCTION)
 #define CTYPE_IS_POINTER(C) (C->type == TYPE_POINTER)
+#define CTYPE_IS_SCALAR(C) (CTYPE_IS_BASIC(C) || CTYPE_IS_POINTER(C))
 
 #endif
