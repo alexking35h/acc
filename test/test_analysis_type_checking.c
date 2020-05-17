@@ -68,13 +68,13 @@ static void postfix_operators(void** state) {
     expect_report_error(ANALYSIS, -1, "Invalid number of arguments to function. Expected 1, got 2");
     analysis_ast_walk_expr(parse_expr("_function(_int, _int)"), test_symbol_table);
 
-    // // 6.5.2.2 (2): (In a functionc all) Each argument shall have a type such that its value may be
-    // // assigned to an object with the unqualified version of the type of its corresponding parameter.
-    //  expect_report_error(
-    //     ANALYSIS, 
-    //     -1, 
-    //     "Incompatible argument type. Cannot pass type 'pointer to signed int' to 'signed int'");
-    //  analysis_ast_walk_expr(parse_expr("_function(_ptr)"), test_symbol_table);
+    // 6.5.2.2 (2): (In a functionc all) Each argument shall have a type such that its value may be
+    // assigned to an object with the unqualified version of the type of its corresponding parameter.
+     expect_report_error(
+        ANALYSIS, 
+        -1, 
+        "Incompatible argument type. Cannot pass type 'pointer to int signed' to type 'int signed'");
+     analysis_ast_walk_expr(parse_expr("_function(_ptr)"), test_symbol_table);
 
     // Error check - cannot call something that is not a function.
     expect_report_error(ANALYSIS, -1, "Not a function");

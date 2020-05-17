@@ -7,6 +7,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * Walk Expression AST Nodes. Parsing expressions often requires getting type
+ * information from child nodes (e.g., a+b requires type information for 'a' and 'b').
+ * Therefore, all expressions that walk expression types return a pointer to a type.
+ */
+static CType *walk_expr(ExprAstNode*, SymbolTable*, _Bool need_lvalue);
+
+static void walk_decl(DeclAstNode*, SymbolTable*);
+static void walk_stmt(StmtAstNode*, SymbolTable*);
+
 static CType int_type = {
     TYPE_BASIC,
     .basic.type_specifier = TYPE_SIGNED_INT
@@ -90,16 +100,6 @@ static OpRequirements binary_op_requirements[] = {
     {NAT, false, false, NULL}
 };
 
-/*
- * Walk Expression AST Nodes. Parsing expressions often requires getting type
- * information from child nodes (e.g., a+b requires type information for 'a' and 'b').
- * Therefore, all expressions that walk expression types return a pointer to a type.
- */
-static CType *walk_expr(ExprAstNode*, SymbolTable*, _Bool need_lvalue);
-
-static void walk_decl(DeclAstNode*, SymbolTable*);
-static void walk_stmt(StmtAstNode*, SymbolTable*);
-
 static ExprAstNode* create_cast(ExprAstNode* node, CType* type) {
     ExprAstNode* cast_node = calloc(1, sizeof(ExprAstNode));
     cast_node->type = CAST;
@@ -107,6 +107,30 @@ static ExprAstNode* create_cast(ExprAstNode* node, CType* type) {
     cast_node->cast.right = node;
 
     return cast_node;
+}
+
+static _Bool check_assign_cast(ExprAstNode** node, CType* left, CType* right) {
+    // Check if type 'right' can be validly assigned to 'left', and create
+    // cast if required. Return false if not.
+    CType* l = left, *r = right;
+
+    // Check if left and right are pointers to compatible types.
+    while(CTYPE_IS_POINTER(l) && CTYPE_IS_POINTER(r)) {
+        l = l->derived.type;
+        r = r->derived.type;
+    }
+
+    // Check if the types are compatible
+    if(CTYPE_IS_BASIC(l) && CTYPE_IS_BASIC(r)) {
+        // Simple assignment: the left has arithmetic type, and the right has arithmetic type.
+        if(l->basic.type_specifier != r->basic.type_specifier)
+            *node = create_cast((*node)->assign.right, left);
+        return true;
+    } else if (CTYPE_IS_FUNCTION(l) && CTYPE_IS_FUNCTION(r)) {
+        // Todo: function prototypes are the same.
+        return true;
+    }
+    return false;
 }
 
 static CType *integer_promote(ExprAstNode **node, CType *ctype) {
@@ -199,14 +223,29 @@ static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_
 }
 
 static void walk_argument_list(ParameterListItem* params, ArgumentListItem* arguments, SymbolTable* tab) {
-    int param_count = 0, arg_count = 0;
-    for(;params;params = params->next) param_count++;
-    for(;arguments;arguments = arguments->next) {
+    int arg_count = 0, param_count = 0;
+
+    for(;arguments && params; arguments = arguments->next, params = params->next) {
         arg_count++;
-        walk_expr(arguments->argument, tab, false);
+        param_count++;
+        CType* param_type = params->type;
+        CType* arg_type = walk_expr(arguments->argument, tab, false);
+
+        if(!check_assign_cast(&arguments->argument, param_type, arg_type)) {
+            char err[256];
+            int n = snprintf(err, 256, "Incompatible argument type. Cannot pass type '");
+            n += ctype_str(err + n, sizeof(err) - n, arg_type);
+            n += snprintf(err + n, sizeof(err) - n, "' to type '");
+            n += ctype_str(err + n, sizeof(err) - n, param_type);
+            n += snprintf(err + n, sizeof(err) - n, "'");
+            Error_report_error(ANALYSIS, -1, err);
+        }
     }
 
-    if(param_count != arg_count) {
+    if(params || arguments) {
+        for(;arguments;arguments = arguments->next) arg_count++;
+        for(;params;params = params->next) param_count++;
+
         char *err = calloc(128, sizeof(char));
         snprintf(err, 128, "Invalid number of arguments to function. Expected %d, got %d",
             param_count, arg_count);
@@ -332,26 +371,13 @@ static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab, _Bool need_lva
 
 static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
     if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
-    CType* left = walk_expr(node->assign.left, tab, true), *l = left;
-    CType* right = walk_expr(node->assign.right, tab, false), *r = right;
+    CType* left = walk_expr(node->assign.left, tab, true);
+    CType* right = walk_expr(node->assign.right, tab, false);
 
-    if(!l || !r) 
+    if(!left || !right) 
         return NULL;
-
-    if(CTYPE_IS_POINTER(l) && CTYPE_IS_POINTER(r)) {
-        // Check if left and right are pointers to compatible types.
-        while(l->type != TYPE_BASIC && r->type != TYPE_BASIC) {
-            l = l->derived.type;
-            r = r->derived.type;
-        }
-    }
-
-    if(CTYPE_IS_BASIC(l) && CTYPE_IS_BASIC(r)) {
-        // Simple assignment: the left has arithmetic type, and the right has arithmetic type.
-        if(l->basic.type_specifier != r->basic.type_specifier)
-            node->assign.right = create_cast(node->assign.right, left);
-
-    } else {
+    
+    if(!check_assign_cast(&node->assign.right, left, right)) {
         char err[256];
         int n = snprintf(err, 256, "Incompatible assignment. Cannot assign type '");
         n += ctype_str(err + n, sizeof(err) - n, right);
