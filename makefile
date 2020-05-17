@@ -60,6 +60,9 @@ build/test_analysis_type_checking: $(ACC_OBJECTS) build/test_analysis_type_check
 build/test_analysis_conversions: $(ACC_OBJECTS) build/test_analysis_conversions.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS)
 
+build/test_analysis_declarations: $(ACC_OBJECTS) build/test_analysis_declarations.o build/test.o
+	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=symbol_table_get -Wl,--wrap=symbol_table_put -Wl,--wrap=symbol_table_create
+
 regression_test: build/acc
 	python3 regression/regression.py --acc $^ regression/*.c
 

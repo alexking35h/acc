@@ -38,6 +38,12 @@ static ExprAstNode* parse_expr(const char *source) {
     return Parser_expression(parser);
 }
 
+static DeclAstNode* parse_decl(const char *source) {
+    Scanner *scanner = Scanner_init(source);
+    Parser *parser = Parser_init(scanner);
+    return Parser_declaration(parser);
+}
+
 static void primary(void** state) {
     expect_report_error(ANALYSIS, -1, "Undeclared identifier 'missing'");
     analysis_ast_walk_expr(parse_expr("missing"), test_symbol_table);
@@ -218,8 +224,6 @@ static void assignment_operators(void** state) {
     analysis_ast_walk_expr(parse_expr("_int = _int"), test_symbol_table);
 
     // Incompatible assignment:
-    // b = c - assigning pointer to primitive.
-    // a = (b - c) - assigning primitive to a pointer.
     expect_report_error(
         ANALYSIS,
         -1,
@@ -236,6 +240,27 @@ static void assignment_operators(void** state) {
         "Incompatible assignment. Cannot assign type 'int signed' to type 'pointer to int signed'"
     );
     analysis_ast_walk_expr(parse_expr("_ptr = _int = _ptr = _ptr_ptr"), test_symbol_table);
+
+    // Incompatible assignment:
+    expect_report_error(
+        ANALYSIS,
+        -1,
+        "Incompatible assignment. Cannot assign type 'pointer to function returning int signed' "
+        "to type 'pointer to int signed'"
+    );
+    analysis_ast_walk_expr(parse_expr("_ptr = &_function"), test_symbol_table);
+}
+
+static void declaration_initializer(void** state) {
+    // 6.7.9 (Initialization) No initializer shall attempt to provide a value for an object not
+    // contained within the entity being initialized.
+    analysis_ast_walk_decl(parse_decl("int a = _int;"), test_symbol_table);
+    expect_report_error(
+        ANALYSIS,
+        -1,
+        "Invalid initializer value. Cannot assign type 'int signed' to type 'pointer to int signed'"
+    );
+    analysis_ast_walk_decl(parse_decl("int *b = _int;"), test_symbol_table);
 }
 
 int main(void) {
@@ -250,6 +275,7 @@ int main(void) {
         cmocka_unit_test(bitwise_operators),
         cmocka_unit_test(logical_operators),
         cmocka_unit_test(assignment_operators),
+        cmocka_unit_test(declaration_initializer),
     };
     int result = cmocka_run_group_tests(tests, NULL, NULL);
 

@@ -419,11 +419,10 @@ static CType *walk_expr(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) 
 static void walk_decl(DeclAstNode* node, SymbolTable* tab) {
     // Check if there is already a symbol table entry for this
     // identifier within the current scope.
+    char err[128];
     if(symbol_table_get(tab, node->identifier->lexeme, false)) {
-        char err[128];
         snprintf(err, sizeof(err), "Previously declared identifier '%s'", node->identifier->lexeme);
         Error_report_error(ANALYSIS, -1, err);
-
         return;
     }
     Symbol* sym = symbol_table_put(tab, node->identifier->lexeme, node->type);
@@ -432,7 +431,16 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab) {
     if(CTYPE_IS_FUNCTION(node->type) && node->body) {
         walk_stmt(node->body, tab);
     } else if (node->initializer) {
-        walk_expr(node->initializer, tab, false);
+        CType *type = walk_expr(node->initializer, tab, false);
+
+        if(!check_assign_cast(&node->initializer, node->type, type)) {
+            int l = snprintf(err, sizeof(err), "Invalid initializer value. Cannot assign type '");
+            l += ctype_str(err+l, sizeof(err) - l, type);
+            l += snprintf(err+l, sizeof(err)-l, "' to type '");
+            l+= ctype_str(err+l, sizeof(err)-l, node->type);
+            l+= snprintf(err+l, sizeof(err), "'");
+            Error_report_error(ANALYSIS, -1, err);
+        }
     }
 
     if(node->next)

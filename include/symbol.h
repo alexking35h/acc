@@ -20,6 +20,12 @@
 typedef struct Symbol_t {
   char* name;
   CType* type;
+
+  struct {
+    enum {ADDRESS_STATIC, ADDRESS_AUTOMATIC} type;
+    int offset;
+  } address;
+
   struct Symbol_t* next;
 } Symbol;
 
