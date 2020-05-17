@@ -8,15 +8,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct Allocator {
+    int currently_allocated;
+    bool translation_unit;
+} Allocator;
+
 /*
  * Walk Expression AST Nodes. Parsing expressions often requires getting type
  * information from child nodes (e.g., a+b requires type information for 'a' and 'b').
  * Therefore, all expressions that walk expression types return a pointer to a type.
  */
-static CType *walk_expr(ExprAstNode*, SymbolTable*, _Bool need_lvalue);
+static CType *walk_expr(ExprAstNode*, SymbolTable*, _Bool);
 
-static void walk_decl(DeclAstNode*, SymbolTable*);
-static void walk_stmt(StmtAstNode*, SymbolTable*);
+static void walk_decl(DeclAstNode*, SymbolTable*, Allocator*);
+static void walk_stmt(StmtAstNode*, SymbolTable*, Allocator*);
 
 static CType int_type = {
     TYPE_BASIC,
@@ -431,7 +436,7 @@ static CType *walk_expr(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) 
    return NULL;
 }
 
-static void walk_decl(DeclAstNode* node, SymbolTable* tab) {
+static void walk_decl(DeclAstNode* node, SymbolTable* tab, Allocator* allocator) {
     // Check if there is already a symbol table entry for this
     // identifier within the current scope.
     char err[128];
@@ -444,13 +449,20 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab) {
     node->symbol = sym;
     sym->type = node->type;
 
-    static int currently_allocated_hack = 0;
+    Allocator top_level_allocator = {0, true};
+    allocator = allocator ? allocator : &top_level_allocator;
     if(!CTYPE_IS_FUNCTION(node->type)) {
-        arch_allocate_address(&currently_allocated_hack, node->symbol, true);
+        arch_allocate_address(&allocator->currently_allocated, node->symbol, allocator->translation_unit);
     }
 
     if(CTYPE_IS_FUNCTION(node->type) && node->body) {
-        walk_stmt(node->body, tab);
+        // Create a new symbol table.
+        Allocator fn_allocator = {0, false};
+        walk_stmt(
+            node->body,
+            symbol_table_create(tab),
+            &fn_allocator
+        );
     } else if (node->initializer) {
         CType *type = walk_expr(node->initializer, tab, false);
 
@@ -465,15 +477,15 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab) {
     }
 
     if(node->next)
-        walk_decl(node->next, tab);
+        walk_decl(node->next, tab, allocator);
 }
 
-static void walk_stmt_decl(StmtAstNode* node, SymbolTable* tab) {
-    walk_decl(node->decl.decl, tab);
+static void walk_stmt_decl(StmtAstNode* node, SymbolTable* tab, Allocator* allocator) {
+    walk_decl(node->decl.decl, tab, allocator);
 }
 
-static void walk_stmt_block(StmtAstNode* node, SymbolTable* tab) {
-    walk_stmt(node->block.head, tab);
+static void walk_stmt_block(StmtAstNode* node, SymbolTable* tab, Allocator* allocator) {
+    walk_stmt(node->block.head, tab, allocator);
 }
 
 static void walk_stmt_expr(StmtAstNode* node, SymbolTable* tab) {
@@ -484,14 +496,14 @@ static void walk_stmt_ret(StmtAstNode* node, SymbolTable* tab) {
     walk_expr(node->return_jump.value, tab, false);
 }
 
-static void walk_stmt(StmtAstNode* node, SymbolTable* tab) {
+static void walk_stmt(StmtAstNode* node, SymbolTable* tab, Allocator* allocator) {
     switch(node->type) {
         case DECL:
-            walk_stmt_decl(node, tab);
+            walk_stmt_decl(node, tab, allocator);
             break;
 
         case BLOCK:
-            walk_stmt_block(node, tab);
+            walk_stmt_block(node, tab, allocator);
             break;
         
         case EXPR:
@@ -503,7 +515,7 @@ static void walk_stmt(StmtAstNode* node, SymbolTable* tab) {
             break;
     }
     if(node->next)
-        walk_stmt(node->next, tab);
+        walk_stmt(node->next, tab, allocator);
 
 }
 
@@ -512,10 +524,10 @@ static void walk_stmt(StmtAstNode* node, SymbolTable* tab) {
  */
 void analysis_ast_walk(DeclAstNode* decl, ExprAstNode* expr, StmtAstNode* stmt, SymbolTable* tab) {
     if(decl) {
-        walk_decl(decl, tab);
+        walk_decl(decl, tab, NULL);
     } else if (expr) {
         walk_expr(expr, tab, false);
     } else if (stmt) {
-        walk_stmt(stmt, tab);
+        walk_stmt(stmt, tab, NULL);
     }
 }

@@ -19,6 +19,8 @@ int arch_get_size(CType* type) {
         }
     } else if(CTYPE_IS_POINTER(type)) {
         return 4;
+    } else if(CTYPE_IS_ARRAY(type)) {
+        return type->derived.array_size * arch_get_size(type->derived.type);
     }
     return 0;
 }
@@ -39,7 +41,7 @@ int arch_get_alignment(CType* type) {
             case TYPE_SIGNED_LONG_INT:
                 return 4;
         }
-    } else if(CTYPE_IS_POINTER(type)) {
+    } else if(CTYPE_IS_POINTER(type) || CTYPE_IS_ARRAY(type)) {
         return 4;
     }
     return 0;
