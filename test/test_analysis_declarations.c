@@ -163,7 +163,7 @@ void nested_function(void **state) {
     expect_value(__wrap_symbol_table_create, parent, MOCK_SYMBOL_TABLE);
     will_return(__wrap_symbol_table_create, fun_symbol_table);
 
-    expect_report_error(ANALYSIS, -1, "Cannot have nested functions. Wait around for C30?");
+    expect_report_error(ANALYSIS, -1, "Cannot have nested functions ('inner'). Try Rust?");
     analysis_ast_walk_decl(parse_decl("void outer(){ int inner() {} }"), MOCK_SYMBOL_TABLE);
 }
 

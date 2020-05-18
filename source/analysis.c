@@ -17,8 +17,9 @@
         l += snprintf(error_string+l, 250-l, "%s", *p ? *p : "");\
         free(*(p++));\
     }
+
 /* 
- * Track currently allocated memory with in a translation unit (top-level),
+ * Track currently allocated memory within a translation unit (top-level),
  * or within a function.
  */
 typedef struct Allocator {
@@ -63,7 +64,7 @@ static CType char_ptr_type = {
 // - Can operands be basic/pointer?
 // - Must operands be compatible?
 // - What is the type for this expression?
-//These constraints are described in the binary_op_requirements array. This is used in walk_expr_binary().
+// These constraints are described in the binary_op_requirements array. This is used in walk_expr_binary().
 typedef struct OpRequirements {
     TokenType op;
 
@@ -80,7 +81,7 @@ typedef struct OpRequirements {
     CType *expr_type;
 } OpRequirements;
 
-static OpRequirements binary_op_requirements[] = {
+static const OpRequirements binary_op_requirements[] = {
 
     // '+': both operands arithmetic, or one is pointer.
     {PLUS, true, true, true, NULL},
@@ -494,16 +495,28 @@ static void walk_decl_object(DeclAstNode* node, SymbolTable *tab, Allocator* all
 }
 
 static void walk_decl(DeclAstNode* node, SymbolTable* tab, Allocator* allocator) {
-    // Check if there is already a symbol table entry for this
-    // identifier within the current scope.
+    if(allocator && !allocator->translation_unit && CTYPE_IS_FUNCTION(node->type)) {
+        // Check if we're trying to define a function within a function.
+        ERROR_STR(
+            err,
+            "Cannot have nested functions ('",
+            NULL,
+            node->identifier->lexeme,
+            NULL,
+            "'). Try Rust?"
+        );
+        Error_report_error(ANALYSIS, -1, err);
+        return;
+    }
     if(symbol_table_get(tab, node->identifier->lexeme, false)) {
+        // Check if there is already a symbol table entry for this
+        // identifier within the current scope.
         ERROR_STR(err, "Previously declared identifier '", NULL, node->identifier->lexeme, NULL, "'");
         Error_report_error(ANALYSIS, -1, err);
         return;
     }
-    Symbol* sym = symbol_table_put(tab, node->identifier->lexeme, node->type);
-    node->symbol = sym;
-    sym->type = node->type;
+    node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
+    node->symbol->type = node->type;
 
     Allocator translation_unit_allocator = {
         .currently_allocated = 0,
