@@ -143,6 +143,9 @@ void automatic_allocation(void **state) {
 
     assert_true(t2.address.type == ADDRESS_AUTOMATIC && t2.address.offset == 0);
     assert_true(t3.address.type == ADDRESS_AUTOMATIC && t3.address.offset == (23 * 4));
+
+    // Check that the frame size for the function has been correctly calculated.
+    assert_true(f1.frame_size == (23*4) + 4);
 }
 
 void previously_declared(void **state) {

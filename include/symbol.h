@@ -26,6 +26,8 @@ typedef struct Symbol_t {
     int offset;
   } address;
 
+  int frame_size;
+
   struct Symbol_t* next;
 } Symbol;
 

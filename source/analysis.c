@@ -316,7 +316,7 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_l
     if(!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right)) 
         goto err;
 
-    for(OpRequirements *req = binary_op_requirements;req->op != NAT;req++) {
+    for(OpRequirements const *req = binary_op_requirements;req->op != NAT;req++) {
         if(req->op != node->binary.op->type) continue;
 
         if((req->left_basic && !CTYPE_IS_BASIC(left))
