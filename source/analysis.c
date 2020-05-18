@@ -473,6 +473,14 @@ static void walk_decl_function(DeclAstNode* node, SymbolTable *tab, Allocator* a
             symbol_table_create(tab),
             &function_allocator
         );
+        int frame_size = function_allocator.currently_allocated;
+        if(frame_size & (ARCH_WORD_SIZE-1)) {
+            node->symbol->frame_size = (frame_size | (ARCH_WORD_SIZE-1)) + 1;
+        } else {
+            node->symbol->frame_size = frame_size;
+        }
+    } else {
+        node->symbol->frame_size = 0;
     }
 }
 
