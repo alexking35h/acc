@@ -8,8 +8,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define ERROR_STR(error_string, ...) \
+    char error_string[250] = "";\
+    char *ptr[] = {__VA_ARGS__, NULL, NULL}, **p = ptr;\
+    int l = 0;\
+    for(;*p;) {\
+        l += snprintf(error_string+l, 250-l, "%s", *(p++));\
+        l += snprintf(error_string+l, 250-l, "%s", *p ? *p : "");\
+        free(*(p++));\
+    }
+/* 
+ * Track currently allocated memory with in a translation unit (top-level),
+ * or within a function.
+ */
 typedef struct Allocator {
+    // (in bytes)
     int currently_allocated;
+
+    // If true - allocate static by default. Otherwise, allocate on the stack.
     bool translation_unit;
 } Allocator;
 
@@ -20,12 +36,25 @@ typedef struct Allocator {
  */
 static CType *walk_expr(ExprAstNode*, SymbolTable*, _Bool);
 
+/*
+ * Walk Declaration and Statement nodes. This includes allocating symbols in
+ * memory. To track currently-allocated memory, these functions take an instance of
+ * Allocator, which also calculated the necessary frame size for functions.
+ */
 static void walk_decl(DeclAstNode*, SymbolTable*, Allocator*);
 static void walk_stmt(StmtAstNode*, SymbolTable*, Allocator*);
 
 static CType int_type = {
     TYPE_BASIC,
     .basic.type_specifier = TYPE_SIGNED_INT
+};
+static CType char_type = {
+    TYPE_BASIC,
+    .basic.type_specifier = TYPE_UNSIGNED_CHAR
+};
+static CType char_ptr_type = {
+    TYPE_POINTER,
+    .derived.type = &char_type
 };
 
 // Binary nodes include additive (+,-), multiplicative (*,/,%), bitwise operations (<<, >>, &, |),
@@ -194,18 +223,18 @@ static CType* type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode 
     return cast_type;
 }
 
-static void arch_allocate_address(int* current_allocated, Symbol* sym, _Bool is_static) {
+static void arch_allocate_address(Symbol* sym, Allocator *allocator) {
+    // Allocate memory for a given symbol, based on size and alignment requirements.
     int size = arch_get_size(sym->type);
     int align = arch_get_alignment(sym->type);
     
-    // The alignment is a power of 2.
-    if((*current_allocated & (align-1)) != 0) {
-        // We need padding!
-        *current_allocated = (*current_allocated | (align-1)) + 1;
-    }
-    sym->address.offset = *current_allocated;
-    sym->address.type = is_static ? ADDRESS_STATIC : ADDRESS_AUTOMATIC;
-    *current_allocated += size;
+    // The alignment is a power of 2. Check if we need padding.
+    if((allocator->currently_allocated & (align-1)) != 0)
+        allocator->currently_allocated = (allocator->currently_allocated | (align-1)) + 1;
+    
+    sym->address.offset = allocator->currently_allocated;
+    sym->address.type = allocator->translation_unit ? ADDRESS_STATIC : ADDRESS_AUTOMATIC;
+    allocator->currently_allocated += size;
 }
 
 static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
@@ -213,28 +242,17 @@ static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_
         if(need_lvalue) {
             Error_report_error(ANALYSIS, -1, "Invalid lvalue");
         }
-        CType *constant_ctype = calloc(1, sizeof(CType));
-        constant_ctype->type = TYPE_BASIC;
-        constant_ctype->basic.type_specifier = TYPE_SIGNED_INT;
-        return constant_ctype;
+        return &int_type;
     } else if (node->primary.string_literal) {
         if(need_lvalue) {
             Error_report_error(ANALYSIS, -1, "Invalid lvalue");
         }
-        CType *char_ctype = calloc(1, sizeof(CType));
-        char_ctype->type = TYPE_BASIC;
-        char_ctype->basic.type_specifier = TYPE_UNSIGNED_CHAR;
-
-        CType *ptr_ctype = calloc(1, sizeof(CType));
-        ptr_ctype->type = TYPE_POINTER;
-        ptr_ctype->derived.type = char_ctype;
-        return ptr_ctype;
+        return &char_ptr_type;
     }
 
     Symbol* sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
     if(sym == NULL) {
-        char err[50];
-        snprintf(err, 50, "Undeclared identifier '%s'", node->primary.identifier->lexeme);
+        ERROR_STR(err, "Undeclared identifier '", NULL, node->primary.identifier->lexeme, NULL, "'");
         Error_report_error(ANALYSIS, -1, err);
         return NULL;
     }
@@ -252,12 +270,13 @@ static void walk_argument_list(ParameterListItem* params, ArgumentListItem* argu
         CType* arg_type = walk_expr(arguments->argument, tab, false);
 
         if(!check_assign_cast(&arguments->argument, param_type, arg_type)) {
-            char err[256];
-            int n = snprintf(err, 256, "Incompatible argument type. Cannot pass type '");
-            n += ctype_str(err + n, sizeof(err) - n, arg_type);
-            n += snprintf(err + n, sizeof(err) - n, "' to type '");
-            n += ctype_str(err + n, sizeof(err) - n, param_type);
-            n += snprintf(err + n, sizeof(err) - n, "'");
+            ERROR_STR(
+                err, 
+                "Incompatible argument type. Cannot pass type '",
+                ctype_str(arg_type),
+                "' to type '",
+                ctype_str(param_type),
+                "'");
             Error_report_error(ANALYSIS, -1, err);
         }
     }
@@ -266,8 +285,8 @@ static void walk_argument_list(ParameterListItem* params, ArgumentListItem* argu
         for(;arguments;arguments = arguments->next) arg_count++;
         for(;params;params = params->next) param_count++;
 
-        char *err = calloc(128, sizeof(char));
-        snprintf(err, 128, "Invalid number of arguments to function. Expected %d, got %d",
+        char err[100];
+        snprintf(err, 100, "Invalid number of arguments to function. Expected %d, got %d",
             param_count, arg_count);
         Error_report_error(ANALYSIS, -1, err);
     }
@@ -292,11 +311,10 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_l
     CType *left = walk_expr(node->binary.left, tab, false);
     CType *right = walk_expr(node->binary.right, tab, false);
 
-    char err_string[100];
-
     // The only valid operands to binary operators are scalar (pointer/basic)
-    if(!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right)) goto error;
-    
+    if(!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right)) 
+        goto err;
+
     for(OpRequirements *req = binary_op_requirements;req->op != NAT;req++) {
         if(req->op != node->binary.op->type) continue;
 
@@ -326,10 +344,18 @@ static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_l
             return req->expr_type ? req->expr_type : (req->left_basic ? right : left);
         }
     }
-
-error:
-    snprintf(err_string, 100, "Invalid operand type to binary operator '%s'", node->binary.op->lexeme);
-    Error_report_error(ANALYSIS, -1, err_string);
+err:
+    {
+        ERROR_STR(
+            err, 
+            "Invalid operand type to binary operator '",
+            NULL,
+            node->binary.op->lexeme,
+            NULL,
+            "'"
+        );
+        Error_report_error(ANALYSIS, -1, err);
+    }
     return NULL;
 }
 
@@ -359,8 +385,7 @@ static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lv
         // '-', '+', '~', or '!' operators.
         // Test that the operand is of type 'basic' (section 6.5.3.1)
         if(!CTYPE_IS_BASIC(ctype)) {
-            char *err = calloc(128, sizeof(char));
-            snprintf(err, 128, "Invalid operand to unary operator '%s'", node->unary.op->lexeme);
+            ERROR_STR(err, "Invalid operand to unary operator '", NULL, node->unary.op->lexeme, NULL, "'");
             Error_report_error(ANALYSIS, -1, err);
         }
         return ctype;
@@ -398,17 +423,17 @@ static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_l
         return NULL;
     
     if(!check_assign_cast(&node->assign.right, left, right)) {
-        char err[256];
-        int n = snprintf(err, 256, "Incompatible assignment. Cannot assign type '");
-        n += ctype_str(err + n, sizeof(err) - n, right);
-        n += snprintf(err + n, sizeof(err) - n, "' to type '");
-        n += ctype_str(err + n, sizeof(err) - n, left);
-        n += snprintf(err + n, sizeof(err) - n, "'");
+        ERROR_STR(
+            err, 
+            "Incompatible assignment. Cannot assign type '",
+            ctype_str(right),
+            "' to type '",
+            ctype_str(left),
+            "'");
         Error_report_error(ANALYSIS, -1, err);
     }
     return left;
 }
-
 
 static CType *walk_expr(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
    switch (node->type) {
@@ -436,12 +461,43 @@ static CType *walk_expr(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) 
    return NULL;
 }
 
+static void walk_decl_function(DeclAstNode* node, SymbolTable *tab, Allocator* allocator) {
+    if(node->body) {
+        Allocator function_allocator = {
+            .currently_allocated = 0,
+            .translation_unit = false
+        };
+        walk_stmt(
+            node->body,
+            symbol_table_create(tab),
+            &function_allocator
+        );
+    }
+}
+
+static void walk_decl_object(DeclAstNode* node, SymbolTable *tab, Allocator* allocator) {
+    arch_allocate_address(node->symbol, allocator);
+    if(node->initializer) {
+        CType *type = walk_expr(node->initializer, tab, false);
+
+        if(!check_assign_cast(&node->initializer, node->type, type)) {
+            ERROR_STR(
+                err, 
+                "Invalid initializer value. Cannot assign type '",
+                ctype_str(type),
+                "' to type '",
+                ctype_str(node->type),
+                "'");
+            Error_report_error(ANALYSIS, -1, err);
+        }
+    }
+}
+
 static void walk_decl(DeclAstNode* node, SymbolTable* tab, Allocator* allocator) {
     // Check if there is already a symbol table entry for this
     // identifier within the current scope.
-    char err[128];
     if(symbol_table_get(tab, node->identifier->lexeme, false)) {
-        snprintf(err, sizeof(err), "Previously declared identifier '%s'", node->identifier->lexeme);
+        ERROR_STR(err, "Previously declared identifier '", NULL, node->identifier->lexeme, NULL, "'");
         Error_report_error(ANALYSIS, -1, err);
         return;
     }
@@ -449,31 +505,16 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab, Allocator* allocator)
     node->symbol = sym;
     sym->type = node->type;
 
-    Allocator top_level_allocator = {0, true};
-    allocator = allocator ? allocator : &top_level_allocator;
-    if(!CTYPE_IS_FUNCTION(node->type)) {
-        arch_allocate_address(&allocator->currently_allocated, node->symbol, allocator->translation_unit);
-    }
+    Allocator translation_unit_allocator = {
+        .currently_allocated = 0,
+        .translation_unit = true
+    };
+    allocator = allocator ? allocator : &translation_unit_allocator;
 
-    if(CTYPE_IS_FUNCTION(node->type) && node->body) {
-        // Create a new symbol table.
-        Allocator fn_allocator = {0, false};
-        walk_stmt(
-            node->body,
-            symbol_table_create(tab),
-            &fn_allocator
-        );
-    } else if (node->initializer) {
-        CType *type = walk_expr(node->initializer, tab, false);
-
-        if(!check_assign_cast(&node->initializer, node->type, type)) {
-            int l = snprintf(err, sizeof(err), "Invalid initializer value. Cannot assign type '");
-            l += ctype_str(err+l, sizeof(err) - l, type);
-            l += snprintf(err+l, sizeof(err)-l, "' to type '");
-            l+= ctype_str(err+l, sizeof(err)-l, node->type);
-            l+= snprintf(err+l, sizeof(err), "'");
-            Error_report_error(ANALYSIS, -1, err);
-        }
+    if(CTYPE_IS_FUNCTION(node->type)) {
+        walk_decl_function(node, tab, allocator);
+    } else {
+        walk_decl_object(node, tab, allocator);
     }
 
     if(node->next)

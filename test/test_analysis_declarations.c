@@ -152,13 +152,29 @@ void previously_declared(void **state) {
     analysis_ast_walk_decl(parse_decl("int ** missing;"), MOCK_SYMBOL_TABLE);
 }
 
+void nested_function(void **state) {
+    Symbol t1, t2;
+    SymbolTable* fun_symbol_table = (SymbolTable*)0x5678;
+
+    expect_get(MOCK_SYMBOL_TABLE, "outer", false, NULL);
+    expect_put(MOCK_SYMBOL_TABLE, "outer", &t1);
+    
+    expect_function_call(__wrap_symbol_table_create);
+    expect_value(__wrap_symbol_table_create, parent, MOCK_SYMBOL_TABLE);
+    will_return(__wrap_symbol_table_create, fun_symbol_table);
+
+    expect_report_error(ANALYSIS, -1, "Cannot have nested functions. Wait around for C30?");
+    analysis_ast_walk_decl(parse_decl("void outer(){ int inner() {} }"), MOCK_SYMBOL_TABLE);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(basic_type),
         cmocka_unit_test(array_type),
         cmocka_unit_test(ptr_type),
         cmocka_unit_test(automatic_allocation),
-        cmocka_unit_test(previously_declared)
+        cmocka_unit_test(previously_declared),
+        cmocka_unit_test(nested_function)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

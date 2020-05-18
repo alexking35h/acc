@@ -2,6 +2,7 @@
 #include "ctype.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "token.h"
 
@@ -125,49 +126,55 @@ CTypeRank ctype_rank(CType *type) {
   }
 }
 
-int ctype_str(char *buf, int len, const CType* type) {
-  if (type->type == TYPE_POINTER) {
-    int l = snprintf(buf, len, "pointer to ");
-    return l + ctype_str(buf+l, len - l, type->derived.type);
-  } else if (type->type == TYPE_ARRAY) {
-    int l = snprintf(buf, len, "array of ");
-    return l + ctype_str(buf + l, len - l, type->derived.type);
-  } else if (type->type == TYPE_FUNCTION) {
-    int l = snprintf(buf, len, "function returning ");
-    return l + ctype_str(buf + l, len - l, type->derived.type);
-  }
+char *ctype_str(const CType* type) {
+  char *buf = calloc(250, sizeof(char));
+  int len = 0;
 
-  // Must be a basic/arithmetic type.
-  int l = 0;
-  for(int i=1;i < 256;i <<= 1) {
-    TypeSpecifier specifier = (TypeSpecifier)((int)type->basic.type_specifier & i);
-    switch(specifier) {
-      case TYPE_VOID:
-        l += snprintf(buf + l, len - l, "void ");
-        break;
-      case TYPE_CHAR:
-        l += snprintf(buf + l, len - l, "char ");
-        break;
-      case TYPE_SHORT:
-        l += snprintf(buf + l, len - l, "short ");
-        break;
-      case TYPE_INT:
-        l += snprintf(buf + l, len - l, "int ");
-        break;
-      case TYPE_LONG:
-        l += snprintf(buf + l, len - l, "long ");
-        break;
-      case TYPE_SIGNED:
-        l += snprintf(buf + l, len - l, "signed ");
-        break;
-      case TYPE_UNSIGNED:
-        l += snprintf(buf + l, len - l, "unsigned ");
-        break;
-      default:
-        break;
+  while(1) {
+    if (type->type == TYPE_POINTER) {
+      len += snprintf(buf+len, 250-len, "pointer to ");
+      type = type->derived.type;
+    } else if (type->type == TYPE_ARRAY) {
+      len += snprintf(buf+len, 250-len, "array of ");
+      type = type->derived.type;
+    } else if (type->type == TYPE_FUNCTION) {
+      len += snprintf(buf+len, 250-len, "function returning ");
+      type = type->derived.type;
+    } else {
+      // Must be a basic/arithmetic type.
+      for(int i=1;i < 256;i <<= 1) {
+        TypeSpecifier specifier = (TypeSpecifier)((int)type->basic.type_specifier & i);
+        switch(specifier) {
+          case TYPE_VOID:
+            len += snprintf(buf + len, 250-len, "void ");
+            break;
+          case TYPE_CHAR:
+            len += snprintf(buf + len, 250-len, "char ");
+            break;
+          case TYPE_SHORT:
+            len += snprintf(buf + len, 250-len, "short ");
+            break;
+          case TYPE_INT:
+            len += snprintf(buf + len, 250-len, "int ");
+            break;
+          case TYPE_LONG:
+            len += snprintf(buf + len, 250-len, "long ");
+            break;
+          case TYPE_SIGNED:
+            len += snprintf(buf + len, 250-len, "signed ");
+            break;
+          case TYPE_UNSIGNED:
+            len += snprintf(buf + len, 250-len, "unsigned ");
+            break;
+          default:
+            break;
+        }
+      }
+      break;
     }
   }
-  return l-1;
+  buf[len-1] = '\0';
+  return buf;
 }
 
 /*

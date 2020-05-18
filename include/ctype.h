@@ -148,7 +148,7 @@ CTypeRank ctype_rank(CType *type);
  * Get the user-friendly name for a type.
  * E.g. `int *` -> `pointer to signed int`
  */
-int ctype_str(char *buf, int len, const CType* type);
+char *ctype_str(const CType* type);
 
 /*
  * Check if two pointers are compatible.
