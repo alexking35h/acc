@@ -1,0 +1,81 @@
+{
+    "constants": {
+        "hello_world_string": [72, 101, 108, 108, 111, 44, 32, 119, 111, 114, 108, 100, 33, 10, 0]
+    },
+    "functions": {
+        "main": {
+            "local_variables": {},
+            "parameters": [],
+            "blocks": {
+                "main_init": [
+                    ["call", "hello_world"],
+                    ["loadi", "a1", 1],
+                    ["jmp", "do_fib"]
+                ],
+                "do_fib": [
+                    ["call", "fibonacci", "a1"],
+                    ["prni", "r"],
+                    ["loadi", "a3", 1],
+                    ["add", "a1", "a1", "a3"],
+                    ["loadi", "a4", 21],
+                    ["cmp", "a1", "a4"],
+                    ["je", "main_exit", "do_fib"]
+                ],
+                "main_exit": [
+                    ["return"]
+                ]
+            }
+        },
+        "hello_world": {
+            "local_variables": {},
+            "parameters": {},
+            "blocks": {
+                "hello_world_init": [
+                    ["loadi", "a0", 0],
+                    ["jmp", "start"]
+                ],
+                "start": [
+                    ["load", "a1", "@hello_world_string", "a0"],
+                    ["prn", "a1"],
+
+                    ["loadi", "a2", 1],
+                    ["add", "a0", "a0", "a2"],
+
+                    ["loadi", "a4", 0],
+                    ["cmp", "a1", "a4"],
+                    ["je", "end", "start"]
+                ],
+                "end": [
+                    ["return"]
+                ]
+            }
+        },
+        "fibonacci": {
+            "local_variables": {},
+            "parameters": ["a1"],
+            "blocks": {
+                "fibonacci_init": [
+                    ["loadi", "a2", 3],
+                    ["cmp", "a1", "a2"],
+                    ["jlt", "fibonacci_early_exit", "fibonacci_calc"]
+                ],
+                "fibonacci_early_exit": [
+                    ["loadi", "r", 1],
+                    ["return"]
+                ],
+                "fibonacci_calc": [
+                    ["loadi", "a3", 1],
+                    ["loadi", "a0", 0],
+                    ["sub", "a1", "a1", "a3"],
+                    ["call", "fibonacci", "a1"],
+                    ["add", "a4", "r", "a0"],
+                    ["sub", "a1", "a1", "a3"],
+                    ["call", "fibonacci", "a1"],
+                    ["add", "a5", "r", "a0"],
+                    ["add", "r", "a4", "a5"],
+                    ["return"]
+                ]
+            }
+        }
+    }
+}
