@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define ERROR_REPORT_ERROR(typ, pos, msg) \
+    Error_report_error(NULL, typ, pos, 0, msg, "")
+
 #define ERROR_STR(error_string, ...) \
     char error_string[250] = "";\
     char *ptr[] = {__VA_ARGS__, NULL, NULL}, **p = ptr;\
@@ -241,12 +244,12 @@ static void arch_allocate_address(Symbol* sym, Allocator *allocator) {
 static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
     if(node->primary.constant) {
         if(need_lvalue) {
-            Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+            ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
         }
         return &int_type;
     } else if (node->primary.string_literal) {
         if(need_lvalue) {
-            Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+            ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
         }
         return &char_ptr_type;
     }
@@ -254,7 +257,7 @@ static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_
     Symbol* sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
     if(sym == NULL) {
         ERROR_STR(err, "Undeclared identifier '", NULL, node->primary.identifier->lexeme, NULL, "'");
-        Error_report_error(ANALYSIS, -1, err);
+        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
         return NULL;
     }
     node->primary.symbol = sym;
@@ -278,7 +281,7 @@ static void walk_argument_list(ParameterListItem* params, ArgumentListItem* argu
                 "' to type '",
                 ctype_str(param_type),
                 "'");
-            Error_report_error(ANALYSIS, -1, err);
+            ERROR_REPORT_ERROR(ANALYSIS, -1, err);
         }
     }
 
@@ -289,7 +292,7 @@ static void walk_argument_list(ParameterListItem* params, ArgumentListItem* argu
         char err[100];
         snprintf(err, 100, "Invalid number of arguments to function. Expected %d, got %d",
             param_count, arg_count);
-        Error_report_error(ANALYSIS, -1, err);
+        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
     }
 }
 
@@ -302,13 +305,13 @@ static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab, _Bool need_
         walk_argument_list(pf->derived.params, node->postfix.args, tab);
         return pf->derived.type;
     } else {
-        Error_report_error(ANALYSIS, -1, "Not a function");
+        ERROR_REPORT_ERROR(ANALYSIS, -1, "Not a function");
     }
     return NULL;
 }
 
 static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+    if(need_lvalue) ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
     CType *left = walk_expr(node->binary.left, tab, false);
     CType *right = walk_expr(node->binary.right, tab, false);
 
@@ -355,7 +358,7 @@ err:
             NULL,
             "'"
         );
-        Error_report_error(ANALYSIS, -1, err);
+        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
     }
     return NULL;
 }
@@ -369,7 +372,7 @@ static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lv
     if(node->unary.op->type == STAR) {
         // Pointer dereference.
         if(ctype->type != TYPE_POINTER) {
-            Error_report_error(ANALYSIS, -1, "Invalid Pointer dereference");
+            ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid Pointer dereference");
             return NULL;
         }
 
@@ -387,14 +390,14 @@ static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lv
         // Test that the operand is of type 'basic' (section 6.5.3.1)
         if(!CTYPE_IS_BASIC(ctype)) {
             ERROR_STR(err, "Invalid operand to unary operator '", NULL, node->unary.op->lexeme, NULL, "'");
-            Error_report_error(ANALYSIS, -1, err);
+            ERROR_REPORT_ERROR(ANALYSIS, -1, err);
         }
         return ctype;
     }
 }
 
 static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+    if(need_lvalue) ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
 
     CType* left = walk_expr(node->tertiary.condition_expr, tab, false);
     CType* right = walk_expr(node->tertiary.expr_true, tab, false);
@@ -406,17 +409,17 @@ static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab, _Bool need
     }
 
     // Error occurred - the types are not the same.
-    Error_report_error(ANALYSIS, -1, "Invalid types in tertiary expression");
+    ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid types in tertiary expression");
     return NULL;
 }
 
 static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+    if(need_lvalue) ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
     return walk_expr(node->cast.right, tab, false);
 }
 
 static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    if(need_lvalue) Error_report_error(ANALYSIS, -1, "Invalid lvalue");
+    if(need_lvalue) ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
     CType* left = walk_expr(node->assign.left, tab, true);
     CType* right = walk_expr(node->assign.right, tab, false);
 
@@ -431,7 +434,7 @@ static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_l
             "' to type '",
             ctype_str(left),
             "'");
-        Error_report_error(ANALYSIS, -1, err);
+        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
     }
     return left;
 }
@@ -497,7 +500,7 @@ static void walk_decl_object(DeclAstNode* node, SymbolTable *tab, Allocator* all
                 "' to type '",
                 ctype_str(node->type),
                 "'");
-            Error_report_error(ANALYSIS, -1, err);
+            ERROR_REPORT_ERROR(ANALYSIS, -1, err);
         }
     }
 }
@@ -513,14 +516,14 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab, Allocator* allocator)
             NULL,
             "'). Try Rust?"
         );
-        Error_report_error(ANALYSIS, -1, err);
+        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
         return;
     }
     if(symbol_table_get(tab, node->identifier->lexeme, false)) {
         // Check if there is already a symbol table entry for this
         // identifier within the current scope.
         ERROR_STR(err, "Previously declared identifier '", NULL, node->identifier->lexeme, NULL, "'");
-        Error_report_error(ANALYSIS, -1, err);
+        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
         return;
     }
     node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);

@@ -71,7 +71,14 @@ Token *Parser_consume_token(Parser *parser, TokenType token_type) {
     snprintf(err_msg, 80, "Expecting '%s', got '%s'", Token_str(token_type),
              Token_str(tok->type));
 
-    Error_report_error(PARSER, tok->line_number, err_msg);
+    Error_report_error(
+        NULL,
+        PARSER,
+        tok->line_number,
+        tok->line_position,
+        err_msg,
+        ""
+    );
     THROW_ERROR(parser);
   }
   return tok;

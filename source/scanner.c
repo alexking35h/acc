@@ -148,8 +148,14 @@ static bool consume_string(Scanner *scanner) {
 
   while (true) {
     if (END_OF_FILE(scanner)) {
-      Error_report_error(SCANNER, scanner->line_number,
-                         "Unterminated string literal");
+      Error_report_error(
+          NULL,
+          SCANNER,
+          scanner->line_number,
+          0,
+          "Unterminated string literal",
+          NULL
+      );
       return false;
     }
 
@@ -160,8 +166,14 @@ static bool consume_string(Scanner *scanner) {
 
     // Reach end of line (before end of string).
     if (focus == '\n') {
-      Error_report_error(SCANNER, scanner->line_number,
-                         "Unterminated string literal");
+      Error_report_error(
+          NULL,
+          SCANNER,
+          scanner->line_number,
+          0,
+          "Unterminated string literal",
+          NULL
+      );
       scanner->line_number++;
       return false;
     }
@@ -344,8 +356,14 @@ static TokenType get_next_token_type(Scanner *scanner) {
 
   char error_string[50];
   snprintf(error_string, 50, "Invalid character in input: '%c'", focus);
-  Error_report_error(SCANNER, scanner->line_number,
-                     error_string);
+  Error_report_error(
+    NULL,
+    SCANNER,
+    scanner->line_number,
+    0,
+    error_string,
+    NULL
+  );
 
   return 0;
 }
@@ -362,7 +380,7 @@ static TokenType get_next_token_type(Scanner *scanner) {
  * Returns:
  *  pointer to allocated Scanner instance, or NULL on error.
  */
-Scanner *Scanner_init(char const *source) {
+Scanner *Scanner_init(char const *source, ErrorReporter* error_reporter) {
   Scanner *scanner = malloc(sizeof(Scanner));
 
   scanner->source = source;

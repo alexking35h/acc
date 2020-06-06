@@ -47,7 +47,7 @@ _Bool test_compare_ast(const char* expected, ExprAstNode* expr, DeclAstNode* dec
  * - TEST_STMT: Parser_statement()
  */
 _Bool test_parse_compare_ast(const char* source, const char* expected, TestParserType test_type) {
-  Scanner* scanner = Scanner_init(source);
+  Scanner* scanner = Scanner_init(source, NULL);
   Parser* parser = Parser_init(scanner);
   _Bool success;
 
@@ -90,12 +90,18 @@ _Bool test_parse_compare_ast_set(AstTestSet test_set[], TestParserType test_type
 /*
  * Mock Error_report_error function
  */
-void Error_report_error(ErrorType error_type, int line_number,
-                        const char* error_string) {
+void Error_report_error(
+  ErrorReporter* error_reporter,
+  ErrorType error_type,
+  int line_number,
+  int line_position,
+  const char* title,
+  const char* description)
+{
   function_called();
   check_expected(error_type);
   check_expected(line_number);
-  check_expected(error_string);
+  check_expected(title);
 }
 
 /*
