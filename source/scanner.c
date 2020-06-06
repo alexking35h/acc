@@ -41,12 +41,16 @@ typedef struct TokenList_t {
  * This struct encapsulates all state required by the scanner.
  */
 typedef struct Scanner_t {
+
+  ErrorReporter * error_reporter;
+
   // Source file
   const char *source;
 
   // Current position in the input.
   int current;
   int line_number;
+  int line_start_position;
 
   // Allocated tokens
   TokenList *token_list;
@@ -101,6 +105,7 @@ static bool match_whitespace(Scanner *scanner) {
   char focus = scanner->source[scanner->current];
   if (focus == '\n') {
     scanner->line_number++;
+    scanner->line_start_position = scanner->current + 1;
     ADVANCE(scanner);
     return true;
   }
@@ -143,16 +148,18 @@ static bool consume_keyword_or_identifier(Scanner *scanner,
 }
 
 static bool consume_string(Scanner *scanner) {
+  int string_line_position = scanner->current - scanner->line_start_position;
+
   // Skip over the first double-quote
   ADVANCE(scanner);
 
   while (true) {
     if (END_OF_FILE(scanner)) {
       Error_report_error(
-          NULL,
+          scanner->error_reporter,
           SCANNER,
           scanner->line_number,
-          0,
+          string_line_position,
           "Unterminated string literal",
           NULL
       );
@@ -167,14 +174,15 @@ static bool consume_string(Scanner *scanner) {
     // Reach end of line (before end of string).
     if (focus == '\n') {
       Error_report_error(
-          NULL,
+          scanner->error_reporter,
           SCANNER,
           scanner->line_number,
-          0,
+          string_line_position,
           "Unterminated string literal",
           NULL
       );
       scanner->line_number++;
+      scanner->line_start_position = scanner->current;
       return false;
     }
 
@@ -357,10 +365,10 @@ static TokenType get_next_token_type(Scanner *scanner) {
   char error_string[50];
   snprintf(error_string, 50, "Invalid character in input: '%c'", focus);
   Error_report_error(
-    NULL,
+    scanner->error_reporter,
     SCANNER,
     scanner->line_number,
-    0,
+    scanner->current - scanner->line_start_position - 1,
     error_string,
     NULL
   );
@@ -383,9 +391,11 @@ static TokenType get_next_token_type(Scanner *scanner) {
 Scanner *Scanner_init(char const *source, ErrorReporter* error_reporter) {
   Scanner *scanner = malloc(sizeof(Scanner));
 
+  scanner->error_reporter = error_reporter;
   scanner->source = source;
   scanner->current = 0;
   scanner->line_number = 1;
+  scanner->line_start_position = 0;
 
   // Allocate the first block of tokens.
   scanner->token_list = (TokenList *)calloc(1, sizeof(TokenList));
@@ -424,6 +434,7 @@ Token *Scanner_get_next(Scanner *scanner) {
   Token *token = Scanner_create_token(scanner);
   token->type = token_type;
   token->line_number = token_line_number;
+  token->line_position = token_position - scanner->line_start_position;
 
   // Make a copy of the lexeme.
   int token_len = scanner->current - token_position;

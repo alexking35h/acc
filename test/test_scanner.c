@@ -79,12 +79,12 @@ static void assignments(void** state) {
       DIV_ASSIGN,  MUL_ASSIGN,   SUB_ASSIGN,  ADD_ASSIGN,
       LEFT_ASSIGN, RIGHT_ASSIGN, END_OF_FILE,
   };
-  int expected_positions[] = {0,3, 6, 9, 12, 15, 18, 21, 24, 28, 42};
+  int expected_positions[] = {0, 3, 6, 9, 12, 15, 18, 21, 24, 28, 32};
 
   for (int i = 0; i < COUNT(expected_tokens); i++) {
     Token* token = Scanner_get_next(scanner);
     assert_int_equal(token->type, expected_tokens[i]);
-    assert_int_equal(token->type, expected_positions[i]);
+    assert_int_equal(token->line_position, expected_positions[i]);
     assert_int_equal(token->line_number, 1);
   }
 }
@@ -98,7 +98,9 @@ static void operators(void** state) {
 
   for (int i = 0; i < COUNT(expected_tokens); i++) {
     Token* token = Scanner_get_next(scanner);
-    if (expected_tokens[i] != token->type) assert_true(false);
+    assert_true(expected_tokens[i] == token->type);
+    assert_int_equal(token->line_number, 1);
+    assert_int_equal(token->line_position, i*3);
   }
 }
 
@@ -109,14 +111,17 @@ static void comment(void** state) {
   Token* token = Scanner_get_next(scanner);
   assert_int_equal(token->type, COLON);
   assert_int_equal(token->line_number, 1);
+  assert_int_equal(token->line_position, 0);
 
   token = Scanner_get_next(scanner);
   assert_int_equal(token->type, SEMICOLON);
   assert_int_equal(token->line_number, 2);
+  assert_int_equal(token->line_position, 0);
 
   token = Scanner_get_next(scanner);
   assert_int_equal(token->type, BANG);
   assert_int_equal(token->line_number, 5);
+  assert_int_equal(token->line_position, 0);
 }
 
 static void string_literal(void** state) {
@@ -126,17 +131,19 @@ static void string_literal(void** state) {
   Token* string_token = Scanner_get_next(scanner);
   assert_int_equal(string_token->type, STRING_LITERAL);
   assert_int_equal(string_token->line_number, 1);
+  assert_int_equal(string_token->line_position, 1);
   assert_string_equal(string_token->lexeme, "\"qwertyuiop\"");
 
   string_token = Scanner_get_next(scanner);
   assert_int_equal(string_token->type, STRING_LITERAL);
   assert_int_equal(string_token->line_number, 1);
+  assert_int_equal(string_token->line_position, 14);
   assert_string_equal(string_token->lexeme, "\"qwert\\\"yuiop\\\t\"");
 }
 
 static void hex_literal(void** state) {
   const char* source =
-      "0x123abc  0X123abc  0x123abcU 0X123abcu 0x123abcl 0x123abcL";
+      "0x123abc 0X123abc 0x123abU 0X123abu 0x123abl 0x123abL";
   Scanner* scanner = Scanner_init(source, MOCK_ERROR_REPORTER);
 
   int expected_lexeme_length[] = {8, 8, 9, 9, 9, 9};
@@ -144,8 +151,8 @@ static void hex_literal(void** state) {
     Token* number_token = Scanner_get_next(scanner);
     assert_int_equal(number_token->type, CONSTANT);
     assert_int_equal(number_token->line_number, 1);
-    assert_true(strncmp(number_token->lexeme, source + (i * 10),
-                        expected_lexeme_length[i]) == 0);
+    assert_int_equal(number_token->line_position, i*9);
+    assert_true(strncmp(number_token->lexeme, source + (i * 9), 8) == 0);
   }
 }
 
@@ -167,15 +174,14 @@ static void keyword(void** state) {
   Scanner* scanner = Scanner_init(source, MOCK_ERROR_REPORTER);
   for (int i = 0; i < COUNT(keyword_tokens); i++) {
     Token* token = Scanner_get_next(scanner);
-    if (token->type != keyword_tokens[i]) {
-      assert_true(false);
-    }
+    assert_true(token->type == keyword_tokens[i]);
     assert_int_equal(token->type, keyword_tokens[i]);
+    assert_int_equal(token->line_number, 1);
   }
 }
 
 static void invalid_character(void** state) {
-  const char* source = " 432\n@ ";
+  const char* source = " 432\n @ ";
   Scanner* scanner = Scanner_init(source, MOCK_ERROR_REPORTER);
 
   Token* token = Scanner_get_next(scanner);
@@ -183,7 +189,7 @@ static void invalid_character(void** state) {
 
   expect_function_call(__wrap_Error_report_error);
   expect_value(__wrap_Error_report_error, line_number, 2);
-  expect_value(__wrap_Error_report_error, line_position, 0);
+  expect_value(__wrap_Error_report_error, line_position, 1);
   expect_string(__wrap_Error_report_error, title, "Invalid character in input: '@'");
 
   token = Scanner_get_next(scanner);
@@ -202,7 +208,8 @@ static void unterminated_string(void** state) {
 
   expect_function_call(__wrap_Error_report_error);
   expect_value(__wrap_Error_report_error, line_number, 1);
-  expect_string(__wrap_Error_report_error, error_string,
+  expect_value(__wrap_Error_report_error, line_position, 5);
+  expect_string(__wrap_Error_report_error, title,
                 "Unterminated string literal");
 
   token = Scanner_get_next(scanner);
@@ -212,7 +219,8 @@ static void unterminated_string(void** state) {
 
   expect_function_call(__wrap_Error_report_error);
   expect_value(__wrap_Error_report_error, line_number, 2);
-  expect_string(__wrap_Error_report_error, error_string,
+  expect_value(__wrap_Error_report_error, line_position, 4);
+  expect_string(__wrap_Error_report_error, title,
                 "Unterminated string literal");
 
   token = Scanner_get_next(scanner);

@@ -14,7 +14,7 @@
 
 typedef enum ErrorType_t { SCANNER, PARSER, ANALYSIS } ErrorType;
 
-typedef struct ErrorReporter {} ErrorReporter;
+typedef struct ErrorReporter ErrorReporter;
 
 /*
  * Report an error, with a line number and message
