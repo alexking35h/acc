@@ -5,6 +5,8 @@
 #include "error.h"
 #include "symbol.h"
 
+#define MOCK_ERROR_REPORTER (ErrorReporter*)0x1234
+
 typedef enum {
   TEST_EXPR,
   TEST_DECL,
@@ -45,7 +47,7 @@ _Bool test_parse_compare_ast_set(AstTestSet test_set[], TestParserType);
 /*
  * Helper function for declaring expected errors.
  */
-void expect_report_error(ErrorType error_type, int expect_line, char* expect_err_str);
+void expect_report_error(ErrorType, int, int, char*);
 
 /*
  * Test symbol table used in:

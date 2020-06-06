@@ -12,10 +12,11 @@
 #include "scanner.h"
 #include "test.h"
 
+#define MOCK_ERROR_REPORTER (ErrorReporter*)0x1234
 #define COUNT(x) ((sizeof(x)) / (sizeof(x[0])))
 
 static void initialize_parser(void** state) {
-  Scanner* scanner = Scanner_init("");
+  Scanner* scanner = Scanner_init("", MOCK_ERROR_REPORTER);
   Parser_destroy(Parser_init(scanner));
   Scanner_destroy(scanner);
 }

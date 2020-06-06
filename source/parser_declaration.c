@@ -94,7 +94,7 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
         NULL,
         PARSER,
         peek()->line_number,
-        peek()->line_position,
+        -1,
         "Missing identifier in declaration",
         ""
     );
@@ -117,6 +117,8 @@ static CType* declaration_specifiers(Parser* parser) {  // @TODO
    * alignment_specifier
    */
   CType* type = calloc(1, sizeof(CType));
+
+  int line = peek()->line_number, position = peek()->line_position;
 
   char* err = NULL;
   while (true) {
@@ -185,8 +187,8 @@ end:
     Error_report_error(
         NULL,
         PARSER,
-        peek()->line_number,
-        peek()->line_position,
+        line,
+        position,
         err,
         ""
     );
@@ -215,6 +217,7 @@ static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
    * declarator '=' initializer
    * declarator
    */
+  int line_number = peek()->line_number, position = peek()->line_position;
   DeclAstNode* decl = declarator(parser, type);
 
   char* err = NULL;
@@ -223,8 +226,8 @@ static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
     Error_report_error(
         NULL,
         PARSER,
-        peek()->line_number,
-        peek()->line_position,
+        line_number,
+        position,
         err,
         ""
     );
@@ -521,6 +524,7 @@ CType* Parser_type_name(Parser* parser) {  // @TODO
    * specifier_qualifier_list abstract_declarator
    * specifier_qualifier_list
    */
+  int line_number = peek()->line_number, position = peek()->line_position;
   DeclAstNode* decl = declarator(parser, declaration_specifiers(parser));
 
   // Check that it is an abstract declarator (identifier has
@@ -529,8 +533,8 @@ CType* Parser_type_name(Parser* parser) {  // @TODO
     Error_report_error(
         NULL,
         PARSER,
-        peek()->line_number,
-        peek()->line_position,
+        line_number, 
+        position,
         "Type names must not have an identifier",
         "");
     THROW_ERROR(parser);

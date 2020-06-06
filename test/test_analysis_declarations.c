@@ -66,7 +66,7 @@ static void expect_put(SymbolTable* table, char* name, Symbol* return_value) {
 }
 
 static DeclAstNode* parse_decl(char *src) {
-    Scanner *scanner = Scanner_init(src);
+    Scanner *scanner = Scanner_init(src, MOCK_ERROR_REPORTER);
     Parser *parser = Parser_init(scanner);
     return Parser_translation_unit(parser);
 }
@@ -151,7 +151,7 @@ void automatic_allocation(void **state) {
 void previously_declared(void **state) {
     Symbol t1;
     expect_get(MOCK_SYMBOL_TABLE, "missing", false, &t1);
-    expect_report_error(ANALYSIS, -1, "Previously declared identifier 'missing'");
+    expect_report_error(ANALYSIS, 1, 8, "Previously declared identifier 'missing'");
     analysis_ast_walk_decl(parse_decl("int ** missing;"), MOCK_SYMBOL_TABLE);
 }
 
@@ -166,8 +166,8 @@ void nested_function(void **state) {
     expect_value(__wrap_symbol_table_create, parent, MOCK_SYMBOL_TABLE);
     will_return(__wrap_symbol_table_create, fun_symbol_table);
 
-    expect_report_error(ANALYSIS, -1, "Cannot have nested functions ('inner'). Try Rust?");
-    analysis_ast_walk_decl(parse_decl("void outer(){ int inner() {} }"), MOCK_SYMBOL_TABLE);
+    expect_report_error(ANALYSIS, 2, 0, "Cannot have nested functions ('inner'). Try Rust?");
+    analysis_ast_walk_decl(parse_decl("void outer(){\nint inner() {} }"), MOCK_SYMBOL_TABLE);
 }
 
 int main(void) {

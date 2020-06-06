@@ -47,7 +47,7 @@ _Bool test_compare_ast(const char* expected, ExprAstNode* expr, DeclAstNode* dec
  * - TEST_STMT: Parser_statement()
  */
 _Bool test_parse_compare_ast(const char* source, const char* expected, TestParserType test_type) {
-  Scanner* scanner = Scanner_init(source, NULL);
+  Scanner* scanner = Scanner_init(source, MOCK_ERROR_REPORTER);
   Parser* parser = Parser_init(scanner);
   _Bool success;
 
@@ -99,19 +99,27 @@ void Error_report_error(
   const char* description)
 {
   function_called();
+  assert_true(error_reporter = MOCK_ERROR_REPORTER);
   check_expected(error_type);
   check_expected(line_number);
+  check_expected(line_position);
   check_expected(title);
 }
 
 /*
  * Helper function for declaring expected errors.
  */
-void expect_report_error(ErrorType error_type, int expect_line, char* expect_err_str) {
+void expect_report_error(
+  ErrorType error_type,
+  int expect_line,
+  int expect_line_position,
+  char* expect_error_title
+) {
   expect_function_call(Error_report_error);
   expect_value(Error_report_error, error_type, error_type);
   expect_value(Error_report_error, line_number, expect_line);
-  expect_string(Error_report_error, error_string, expect_err_str);
+  expect_value(Error_report_error, line_position, expect_line_position);
+  expect_string(Error_report_error, title, expect_error_title);
 }
 
 /* Test symbol table Implementation */
