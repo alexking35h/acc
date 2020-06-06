@@ -127,6 +127,7 @@ typedef struct Token_t {
 
   /* Position of the Token in the input */
   int line_number;
+  int line_position;
 
   /* Token lexeme. Null-terminated string */
   char* lexeme;

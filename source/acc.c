@@ -25,7 +25,7 @@
 #endif
 
 int main(int, char**) __attribute__((weak));
-void Error_report_error(ErrorType, int, const char *) __attribute__((weak));
+void Error_report_error(ErrorReporter*, ErrorType, int, int, const char *, const char *) __attribute__((weak));
 
 static bool json_stdout;
 
@@ -76,11 +76,18 @@ static void print_error_json(ErrorType type, int l, const char* msg) {
   printf("}");
 }
 
-void Error_report_error(ErrorType error_type, int line_number, const char *msg) {
+void Error_report_error(
+    ErrorReporter* error_reporter, 
+    ErrorType error_type,
+    int line_number,
+    int line_position,
+    const char* title,
+    const char* description
+) {
   if(json_stdout) {
-    print_error_json(error_type, line_number, msg);
+    print_error_json(error_type, line_number, title);
   } else {
-    print_error_terminal(error_type, line_number, msg);
+    print_error_terminal(error_type, line_number, title);
   }
 }
 
@@ -151,7 +158,7 @@ static _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* arg
 }
 
 static DeclAstNode* get_ast(const char* source) {
-  Scanner* scanner = Scanner_init(source);
+  Scanner* scanner = Scanner_init(source, NULL);
   Parser* parser = Parser_init(scanner);
 
   // // Generate the AST for the file.

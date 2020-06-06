@@ -14,6 +14,8 @@
 
 typedef enum ErrorType_t { SCANNER, PARSER, ANALYSIS } ErrorType;
 
+typedef struct ErrorReporter {} ErrorReporter;
+
 /*
  * Report an error, with a line number and message
  *
@@ -21,8 +23,10 @@ typedef enum ErrorType_t { SCANNER, PARSER, ANALYSIS } ErrorType;
  *  error - instance of Error class
  *  error_type
  *  line_number
- *  message (this can be NULL)
+ *  line_position
+ *  title
+ *  description
  */
-void Error_report_error(ErrorType, int, const char *);
+void Error_report_error(ErrorReporter*, ErrorType, int, int, const char *, const char *);
 
 #endif
