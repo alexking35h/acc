@@ -86,7 +86,7 @@ void basic_type(void** state) {
     expect_get(MOCK_SYMBOL_TABLE, "var5", false, NULL);
     expect_put(MOCK_SYMBOL_TABLE, "var5", &t5);
     DeclAstNode* decl = parse_decl("char var1;short var2;int var3;long int var4; char var5;");
-    analysis_ast_walk_decl(decl, MOCK_SYMBOL_TABLE);
+    analysis_ast_walk_decl(NULL, decl, MOCK_SYMBOL_TABLE);
 
     assert_true(t1.address.type == ADDRESS_STATIC && t1.address.offset == 0);
     assert_true(t2.address.type == ADDRESS_STATIC && t2.address.offset == 2);
@@ -102,7 +102,7 @@ void array_type(void** state) {
     expect_put(MOCK_SYMBOL_TABLE, "arr1", &t1);
     expect_get(MOCK_SYMBOL_TABLE, "var1", false, NULL);
     expect_put(MOCK_SYMBOL_TABLE, "var1", &t2);
-    analysis_ast_walk_decl(parse_decl("int arr1[13];char var1;"), MOCK_SYMBOL_TABLE);
+    analysis_ast_walk_decl(NULL, parse_decl("int arr1[13];char var1;"), MOCK_SYMBOL_TABLE);
 
     assert_true(t1.address.type == ADDRESS_STATIC && t1.address.offset == 0);
     assert_true(t2.address.type == ADDRESS_STATIC && t2.address.offset == (4 * 13));
@@ -115,7 +115,7 @@ void ptr_type(void** state) {
     expect_get(MOCK_SYMBOL_TABLE, "var1", false, NULL);
     expect_put(MOCK_SYMBOL_TABLE, "var1", &t2);
 
-    analysis_ast_walk_decl(parse_decl("int *ptr1;int var1;"), MOCK_SYMBOL_TABLE);
+    analysis_ast_walk_decl(NULL, parse_decl("int *ptr1;int var1;"), MOCK_SYMBOL_TABLE);
 
     assert_true(t1.address.type == ADDRESS_STATIC && t1.address.offset == 0);
     assert_true(t2.address.type == ADDRESS_STATIC && t2.address.offset == 4);
@@ -139,7 +139,7 @@ void automatic_allocation(void **state) {
     expect_put(fun_symbol_table, "var1", &t3);
 
     DeclAstNode* decl = parse_decl("int var1; void fun1(){int arr1[23];char var1;}");
-    analysis_ast_walk_decl(decl, MOCK_SYMBOL_TABLE);
+    analysis_ast_walk_decl(NULL, decl, MOCK_SYMBOL_TABLE);
 
     assert_true(t2.address.type == ADDRESS_AUTOMATIC && t2.address.offset == 0);
     assert_true(t3.address.type == ADDRESS_AUTOMATIC && t3.address.offset == (23 * 4));
@@ -151,8 +151,8 @@ void automatic_allocation(void **state) {
 void previously_declared(void **state) {
     Symbol t1;
     expect_get(MOCK_SYMBOL_TABLE, "missing", false, &t1);
-    expect_report_error(ANALYSIS, 1, 8, "Previously declared identifier 'missing'");
-    analysis_ast_walk_decl(parse_decl("int ** missing;"), MOCK_SYMBOL_TABLE);
+    expect_report_error(ANALYSIS, 1, 7, "Previously declared identifier 'missing'");
+    analysis_ast_walk_decl(NULL, parse_decl("int ** missing;"), MOCK_SYMBOL_TABLE);
 }
 
 void nested_function(void **state) {
@@ -166,8 +166,8 @@ void nested_function(void **state) {
     expect_value(__wrap_symbol_table_create, parent, MOCK_SYMBOL_TABLE);
     will_return(__wrap_symbol_table_create, fun_symbol_table);
 
-    expect_report_error(ANALYSIS, 2, 0, "Cannot have nested functions ('inner'). Try Rust?");
-    analysis_ast_walk_decl(parse_decl("void outer(){\nint inner() {} }"), MOCK_SYMBOL_TABLE);
+    expect_report_error(ANALYSIS, 2, 4, "Cannot have nested functions ('inner'). Try Rust?");
+    analysis_ast_walk_decl(NULL, parse_decl("void outer(){\nint inner() {} }"), MOCK_SYMBOL_TABLE);
 }
 
 int main(void) {

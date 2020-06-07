@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #define ERROR_REPORT_ERROR(typ, pos, msg) \
-    Error_report_error(NULL, typ, pos, 0, msg, "")
+    Error_report_error(error, typ, pos, 0, msg, "")
 
 #define ERROR_STR(error_string, ...) \
     char error_string[250] = "";\
@@ -38,15 +38,15 @@ typedef struct Allocator {
  * information from child nodes (e.g., a+b requires type information for 'a' and 'b').
  * Therefore, all expressions that walk expression types return a pointer to a type.
  */
-static CType *walk_expr(ExprAstNode*, SymbolTable*, _Bool);
+static CType *walk_expr(ErrorReporter*, ExprAstNode*, SymbolTable*, _Bool);
 
 /*
  * Walk Declaration and Statement nodes. This includes allocating symbols in
  * memory. To track currently-allocated memory, these functions take an instance of
  * Allocator, which also calculated the necessary frame size for functions.
  */
-static void walk_decl(DeclAstNode*, SymbolTable*, Allocator*);
-static void walk_stmt(StmtAstNode*, SymbolTable*, Allocator*);
+static void walk_decl(ErrorReporter*, DeclAstNode*, SymbolTable*, Allocator*);
+static void walk_stmt(ErrorReporter*, StmtAstNode*, SymbolTable*, Allocator*);
 
 static CType int_type = {
     TYPE_BASIC,
@@ -241,15 +241,29 @@ static void arch_allocate_address(Symbol* sym, Allocator *allocator) {
     allocator->currently_allocated += size;
 }
 
-static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
     if(node->primary.constant) {
         if(need_lvalue) {
-            ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
+            Error_report_error(
+                error,
+                ANALYSIS,
+                node->line_number,
+                node->line_position,
+                "Invalid lvalue",
+                ""
+            );
         }
         return &int_type;
     } else if (node->primary.string_literal) {
         if(need_lvalue) {
-            ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
+            Error_report_error(
+                error,
+                ANALYSIS,
+                node->line_number,
+                node->line_position,
+                "Invalid lvalue",
+                ""
+            );
         }
         return &char_ptr_type;
     }
@@ -257,21 +271,30 @@ static CType *walk_expr_primary(ExprAstNode* node, SymbolTable* tab, _Bool need_
     Symbol* sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
     if(sym == NULL) {
         ERROR_STR(err, "Undeclared identifier '", NULL, node->primary.identifier->lexeme, NULL, "'");
-        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
+        Error_report_error(
+            error,
+            ANALYSIS,
+            node->line_number,
+            node->line_position,
+            err, 
+            ""
+        );
         return NULL;
     }
     node->primary.symbol = sym;
     return node->primary.symbol->type;
 }
 
-static void walk_argument_list(ParameterListItem* params, ArgumentListItem* arguments, SymbolTable* tab) {
+static void walk_argument_list(ErrorReporter *error, ParameterListItem* params, ExprAstNode* call_node, SymbolTable* tab) {
     int arg_count = 0, param_count = 0;
+
+    ArgumentListItem *arguments = call_node->postfix.args;
 
     for(;arguments && params; arguments = arguments->next, params = params->next) {
         arg_count++;
         param_count++;
         CType* param_type = params->type;
-        CType* arg_type = walk_expr(arguments->argument, tab, false);
+        CType* arg_type = walk_expr(error, arguments->argument, tab, false);
 
         if(!check_assign_cast(&arguments->argument, param_type, arg_type)) {
             ERROR_STR(
@@ -281,7 +304,14 @@ static void walk_argument_list(ParameterListItem* params, ArgumentListItem* argu
                 "' to type '",
                 ctype_str(param_type),
                 "'");
-            ERROR_REPORT_ERROR(ANALYSIS, -1, err);
+            Error_report_error(
+                error,
+                ANALYSIS,
+                arguments->argument->line_number,
+                arguments->argument->line_position,
+                err,
+                ""
+            );
         }
     }
 
@@ -292,28 +322,44 @@ static void walk_argument_list(ParameterListItem* params, ArgumentListItem* argu
         char err[100];
         snprintf(err, 100, "Invalid number of arguments to function. Expected %d, got %d",
             param_count, arg_count);
-        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
+        Error_report_error(
+            error,
+            ANALYSIS,
+            call_node->line_number,
+            call_node->line_position,
+            err,
+            ""
+        );
     }
 }
 
-static CType *walk_expr_postfix(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    CType *pf = walk_expr(node->postfix.left, tab, false);
+static CType *walk_expr_postfix(ErrorReporter *error, ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    CType *pf = walk_expr(error, node->postfix.left, tab, false);
     if(!pf) return NULL;
 
     // The only implemented postfix expression is a function call.
     if(CTYPE_IS_FUNCTION(pf)) {
-        walk_argument_list(pf->derived.params, node->postfix.args, tab);
+        walk_argument_list(error, pf->derived.params, node, tab);
         return pf->derived.type;
     } else {
-        ERROR_REPORT_ERROR(ANALYSIS, -1, "Not a function");
+        Error_report_error(error, ANALYSIS, node->line_number, node->line_position, "Not a function", "");
     }
     return NULL;
 }
 
-static CType *walk_expr_binary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    if(need_lvalue) ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
-    CType *left = walk_expr(node->binary.left, tab, false);
-    CType *right = walk_expr(node->binary.right, tab, false);
+static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    if(need_lvalue) {
+        Error_report_error(
+            error,
+            ANALYSIS,
+            node->line_number,
+            node->line_position,
+            "Invalid lvalue",
+            ""
+        );
+    }
+    CType *left = walk_expr(error, node->binary.left, tab, false);
+    CType *right = walk_expr(error, node->binary.right, tab, false);
 
     // The only valid operands to binary operators are scalar (pointer/basic)
     if(!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right)) 
@@ -358,13 +404,19 @@ err:
             NULL,
             "'"
         );
-        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
+        Error_report_error(
+            error,
+            ANALYSIS,
+            node->line_number,
+            node->line_position,
+            err,
+            "");
     }
     return NULL;
 }
 
-static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    CType* ctype = walk_expr(node->unary.right, tab, false);
+static CType *walk_expr_unary(ErrorReporter* error, ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    CType* ctype = walk_expr(error, node->unary.right, tab, false);
 
     if(!ctype)
         return NULL;
@@ -372,7 +424,14 @@ static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lv
     if(node->unary.op->type == STAR) {
         // Pointer dereference.
         if(ctype->type != TYPE_POINTER) {
-            ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid Pointer dereference");
+            Error_report_error(
+                error,
+                ANALYSIS, 
+                node->line_number,
+                node->line_position,
+                "Invalid Pointer dereference",
+                ""
+            );
             return NULL;
         }
 
@@ -390,17 +449,33 @@ static CType *walk_expr_unary(ExprAstNode* node, SymbolTable* tab, _Bool need_lv
         // Test that the operand is of type 'basic' (section 6.5.3.1)
         if(!CTYPE_IS_BASIC(ctype)) {
             ERROR_STR(err, "Invalid operand to unary operator '", NULL, node->unary.op->lexeme, NULL, "'");
-            ERROR_REPORT_ERROR(ANALYSIS, -1, err);
+            Error_report_error(
+                error,
+                ANALYSIS,
+                node->line_number,
+                node->line_position,
+                err,
+                ""
+            );
         }
         return ctype;
     }
 }
 
-static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    if(need_lvalue) ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
+static CType *walk_expr_tertiary(ErrorReporter *error, ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    if(need_lvalue) {
+        Error_report_error(
+            error,
+            ANALYSIS,
+            node->line_number,
+            node->line_position,
+            "Invalid lvalue",
+            ""
+        );
+    }
 
-    CType* left = walk_expr(node->tertiary.condition_expr, tab, false);
-    CType* right = walk_expr(node->tertiary.expr_true, tab, false);
+    CType* left = walk_expr(error, node->tertiary.condition_expr, tab, false);
+    CType* right = walk_expr(error, node->tertiary.expr_true, tab, false);
 
     if(CTYPE_IS_BASIC(left) && CTYPE_IS_BASIC(right)) {
         return left;
@@ -409,19 +484,44 @@ static CType *walk_expr_tertiary(ExprAstNode* node, SymbolTable* tab, _Bool need
     }
 
     // Error occurred - the types are not the same.
-    ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid types in tertiary expression");
+    Error_report_error(
+        error,
+        ANALYSIS,
+        node->line_number,
+        node->line_position,
+        "Invalid types in tertiary expression",
+        ""
+    );
     return NULL;
 }
 
-static CType *walk_expr_cast(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    if(need_lvalue) ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
-    return walk_expr(node->cast.right, tab, false);
+static CType *walk_expr_cast(ErrorReporter *error, ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    if(need_lvalue) {
+        Error_report_error(
+            error,
+            ANALYSIS,
+            node->line_number,
+            node->line_position,
+            "Invalid lvalue",
+            ""
+        );
+    }
+    return walk_expr(error, node->cast.right, tab, false);
 }
 
-static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
-    if(need_lvalue) ERROR_REPORT_ERROR(ANALYSIS, -1, "Invalid lvalue");
-    CType* left = walk_expr(node->assign.left, tab, true);
-    CType* right = walk_expr(node->assign.right, tab, false);
+static CType *walk_expr_assign(ErrorReporter *error, ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+    if(need_lvalue) {
+        Error_report_error(
+            error,
+            ANALYSIS,
+            node->line_number,
+            node->line_position,
+            "Invalid lvalue",
+            ""
+        );
+    }
+    CType* left = walk_expr(error, node->assign.left, tab, true);
+    CType* right = walk_expr(error, node->assign.right, tab, false);
 
     if(!left || !right) 
         return NULL;
@@ -434,44 +534,52 @@ static CType *walk_expr_assign(ExprAstNode* node, SymbolTable* tab, _Bool need_l
             "' to type '",
             ctype_str(left),
             "'");
-        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
+        Error_report_error(
+            error,
+            ANALYSIS,
+            node->line_number,
+            node->line_position,
+            err,
+            ""
+        );
     }
     return left;
 }
 
-static CType *walk_expr(ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
+static CType *walk_expr(ErrorReporter* error, ExprAstNode* node, SymbolTable* tab, _Bool need_lvalue) {
    switch (node->type) {
      case PRIMARY:
-         return walk_expr_primary(node, tab, need_lvalue);
+         return walk_expr_primary(error, node, tab, need_lvalue);
 
     case POSTFIX:
-        return walk_expr_postfix(node, tab, need_lvalue);
+        return walk_expr_postfix(error, node, tab, need_lvalue);
 
     case BINARY:
-        return walk_expr_binary(node, tab, need_lvalue);
+        return walk_expr_binary(error, node, tab, need_lvalue);
 
      case UNARY:
-         return walk_expr_unary(node, tab, need_lvalue);
+         return walk_expr_unary(error, node, tab, need_lvalue);
 
     case TERTIARY:
-        return walk_expr_tertiary(node, tab, need_lvalue);
+        return walk_expr_tertiary(error, node, tab, need_lvalue);
     
     case CAST:
-        return walk_expr_cast(node, tab, need_lvalue);
+        return walk_expr_cast(error, node, tab, need_lvalue);
 
     case ASSIGN:
-        return walk_expr_assign(node, tab, need_lvalue);
+        return walk_expr_assign(error, node, tab, need_lvalue);
    }
    return NULL;
 }
 
-static void walk_decl_function(DeclAstNode* node, SymbolTable *tab, Allocator* allocator) {
+static void walk_decl_function(ErrorReporter* error, DeclAstNode* node, SymbolTable *tab, Allocator* allocator) {
     if(node->body) {
         Allocator function_allocator = {
             .currently_allocated = 0,
             .translation_unit = false
         };
         walk_stmt(
+            error, 
             node->body,
             symbol_table_create(tab),
             &function_allocator
@@ -487,10 +595,10 @@ static void walk_decl_function(DeclAstNode* node, SymbolTable *tab, Allocator* a
     }
 }
 
-static void walk_decl_object(DeclAstNode* node, SymbolTable *tab, Allocator* allocator) {
+static void walk_decl_object(ErrorReporter *error, DeclAstNode* node, SymbolTable *tab, Allocator* allocator) {
     arch_allocate_address(node->symbol, allocator);
     if(node->initializer) {
-        CType *type = walk_expr(node->initializer, tab, false);
+        CType *type = walk_expr(error, node->initializer, tab, false);
 
         if(!check_assign_cast(&node->initializer, node->type, type)) {
             ERROR_STR(
@@ -500,12 +608,19 @@ static void walk_decl_object(DeclAstNode* node, SymbolTable *tab, Allocator* all
                 "' to type '",
                 ctype_str(node->type),
                 "'");
-            ERROR_REPORT_ERROR(ANALYSIS, -1, err);
+            Error_report_error(
+                error,
+                ANALYSIS,
+                node->initializer->line_number,
+                node->initializer->line_position,
+                err,
+                ""
+            );
         }
     }
 }
 
-static void walk_decl(DeclAstNode* node, SymbolTable* tab, Allocator* allocator) {
+static void walk_decl(ErrorReporter *error, DeclAstNode* node, SymbolTable* tab, Allocator* allocator) {
     if(allocator && !allocator->translation_unit && CTYPE_IS_FUNCTION(node->type)) {
         // Check if we're trying to define a function within a function.
         ERROR_STR(
@@ -516,14 +631,28 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab, Allocator* allocator)
             NULL,
             "'). Try Rust?"
         );
-        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
+        Error_report_error(
+            error,
+            ANALYSIS,
+            node->line_number,
+            node->line_position,
+            err,
+            NULL
+        );
         return;
     }
     if(symbol_table_get(tab, node->identifier->lexeme, false)) {
         // Check if there is already a symbol table entry for this
         // identifier within the current scope.
         ERROR_STR(err, "Previously declared identifier '", NULL, node->identifier->lexeme, NULL, "'");
-        ERROR_REPORT_ERROR(ANALYSIS, -1, err);
+        Error_report_error(
+            error,
+            ANALYSIS,
+            node->line_number,
+            node->line_position,
+            err,
+            ""
+        );
         return;
     }
     node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
@@ -536,63 +665,63 @@ static void walk_decl(DeclAstNode* node, SymbolTable* tab, Allocator* allocator)
     allocator = allocator ? allocator : &translation_unit_allocator;
 
     if(CTYPE_IS_FUNCTION(node->type)) {
-        walk_decl_function(node, tab, allocator);
+        walk_decl_function(error, node, tab, allocator);
     } else {
-        walk_decl_object(node, tab, allocator);
+        walk_decl_object(error, node, tab, allocator);
     }
 
     if(node->next)
-        walk_decl(node->next, tab, allocator);
+        walk_decl(error, node->next, tab, allocator);
 }
 
-static void walk_stmt_decl(StmtAstNode* node, SymbolTable* tab, Allocator* allocator) {
-    walk_decl(node->decl.decl, tab, allocator);
+static void walk_stmt_decl(ErrorReporter *error, StmtAstNode* node, SymbolTable* tab, Allocator* allocator) {
+    walk_decl(error, node->decl.decl, tab, allocator);
 }
 
-static void walk_stmt_block(StmtAstNode* node, SymbolTable* tab, Allocator* allocator) {
-    walk_stmt(node->block.head, tab, allocator);
+static void walk_stmt_block(ErrorReporter* error, StmtAstNode* node, SymbolTable* tab, Allocator* allocator) {
+    walk_stmt(error, node->block.head, tab, allocator);
 }
 
-static void walk_stmt_expr(StmtAstNode* node, SymbolTable* tab) {
-    walk_expr(node->expr.expr, tab, false);
+static void walk_stmt_expr(ErrorReporter *error, StmtAstNode* node, SymbolTable* tab) {
+    walk_expr(error, node->expr.expr, tab, false);
 }
 
-static void walk_stmt_ret(StmtAstNode* node, SymbolTable* tab) {
-    walk_expr(node->return_jump.value, tab, false);
+static void walk_stmt_ret(ErrorReporter *error, StmtAstNode* node, SymbolTable* tab) {
+    walk_expr(error, node->return_jump.value, tab, false);
 }
 
-static void walk_stmt(StmtAstNode* node, SymbolTable* tab, Allocator* allocator) {
+static void walk_stmt(ErrorReporter* error, StmtAstNode* node, SymbolTable* tab, Allocator* allocator) {
     switch(node->type) {
         case DECL:
-            walk_stmt_decl(node, tab, allocator);
+            walk_stmt_decl(error, node, tab, allocator);
             break;
 
         case BLOCK:
-            walk_stmt_block(node, tab, allocator);
+            walk_stmt_block(error, node, tab, allocator);
             break;
         
         case EXPR:
-            walk_stmt_expr(node, tab);
+            walk_stmt_expr(error, node, tab);
             break;
         
         case RETURN_JUMP:
-            walk_stmt_ret(node, tab);
+            walk_stmt_ret(error, node, tab);
             break;
     }
     if(node->next)
-        walk_stmt(node->next, tab, allocator);
+        walk_stmt(error, node->next, tab, allocator);
 
 }
 
 /*
  * Walk the AST.
  */
-void analysis_ast_walk(DeclAstNode* decl, ExprAstNode* expr, StmtAstNode* stmt, SymbolTable* tab) {
+void analysis_ast_walk(ErrorReporter *error, DeclAstNode* decl, ExprAstNode* expr, StmtAstNode* stmt, SymbolTable* tab) {
     if(decl) {
-        walk_decl(decl, tab, NULL);
+        walk_decl(error, decl, tab, NULL);
     } else if (expr) {
-        walk_expr(expr, tab, false);
+        walk_expr(error, expr, tab, false);
     } else if (stmt) {
-        walk_stmt(stmt, tab, NULL);
+        walk_stmt(error, stmt, tab, NULL);
     }
 }

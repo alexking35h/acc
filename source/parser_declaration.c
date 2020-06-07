@@ -74,10 +74,19 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
    * declaration_specifiers ';'
    * declaration_specifiers init_declarator_list ';'
    */
+  int line_number = peek()->line_number;
+  int line_position = peek()->line_position;
+
   CType* type = declaration_specifiers(parser);
 
-  if (match(SEMICOLON)) return DECL(.type = type);
-
+  if (match(SEMICOLON)) {
+    return DECL(
+      CONCRETE,
+      .line_number=line_number,
+      .line_position=line_position,
+      .type = type
+    );
+  }
   DeclAstNode* decl = init_declarator_list(parser, type);
 
   // If the ctype is a function, check for a compound statement after
@@ -93,8 +102,8 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
     Error_report_error(
         NULL,
         PARSER,
-        peek()->line_number,
-        -1,
+        line_number,
+        line_position,
         "Missing identifier in declaration",
         ""
     );
@@ -371,7 +380,12 @@ static DeclAstNode* direct_declarator(Parser* parser, CType* ctype) {  // @TODO
   DeclAstNode* decl_node;
   if ((tok = match(IDENTIFIER))) {
     ctype = direct_declarator_end(parser, ctype);
-    return DECL(.decl_type = CONCRETE, .identifier = tok, .type = ctype);
+    return DECL(
+      CONCRETE,
+      .line_number = tok->line_number,
+      .line_position = tok->line_position,
+      .identifier = tok,
+      .type = ctype);
 
   } else if (match(LEFT_PAREN)) {
     CType tmp_type;

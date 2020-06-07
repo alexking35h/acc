@@ -34,14 +34,15 @@
 #include "ast.h"
 #include "symbol.h"
 #include "parser.h"
+#include "error.h"
 
 /*
  * Walk the AST
  */
-void analysis_ast_walk(DeclAstNode*, ExprAstNode*, StmtAstNode*, SymbolTable*);
+void analysis_ast_walk(ErrorReporter*, DeclAstNode*, ExprAstNode*, StmtAstNode*, SymbolTable*);
 
-#define analysis_ast_walk_decl(decl, tab) analysis_ast_walk(decl, NULL, NULL, tab)
-#define analysis_ast_walk_expr(expr, tab) analysis_ast_walk(NULL, expr, NULL, tab)
-#define analysis_ast_walk_stmt(stmt, tab) analysis_ast_walk(NULL, NULL, stmt, tab)
+#define analysis_ast_walk_decl(err, decl, tab) analysis_ast_walk(err, decl, NULL, NULL, tab)
+#define analysis_ast_walk_expr(err, expr, tab) analysis_ast_walk(err, NULL, expr, NULL, tab)
+#define analysis_ast_walk_stmt(err, stmt, tab) analysis_ast_walk(err, NULL, NULL, stmt, tab)
 
 #endif

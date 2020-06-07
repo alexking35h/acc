@@ -166,7 +166,7 @@ static DeclAstNode* get_ast(const char* source) {
 
   // Context-sensitive analysis (semantic analysis).
   SymbolTable* global = symbol_table_create(NULL);
-  analysis_ast_walk_decl(ast, global);
+  analysis_ast_walk_decl(NULL, ast, global);
 
   return ast;
 }

@@ -49,8 +49,8 @@ static void panic_mode_declaration(void** state) {
   assert_true(test_parse_compare_ast("int a[b];", "", TEST_DECL));
 
   // Declarators must have an identifier (6.7.6)
-  expect_report_error(PARSER, 1, -1, "Missing identifier in declaration");
-  assert_true(test_parse_compare_ast("int static long [23];", "", TEST_DECL));
+  expect_report_error(PARSER, 1, 1, "Missing identifier in declaration");
+  assert_true(test_parse_compare_ast(" int static long [23];", "", TEST_DECL));
 }
 
 static void panic_mode_parameter_list(void** state) {

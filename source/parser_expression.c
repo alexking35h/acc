@@ -15,21 +15,21 @@
 #include "parser.h"
 #include "token.h"
 
-#define EXPR_BINARY(...) \
-  Ast_create_expr_node((ExprAstNode){.type = BINARY, .binary = {__VA_ARGS__}})
-#define EXPR_UNARY(...) \
-  Ast_create_expr_node((ExprAstNode){.type = UNARY, .unary = {__VA_ARGS__}})
-#define EXPR_PRIMARY(...) \
-  Ast_create_expr_node((ExprAstNode){.type = PRIMARY, .primary = {__VA_ARGS__}})
-#define EXPR_POSTFIX(...) \
-  Ast_create_expr_node((ExprAstNode){.type = POSTFIX, .postfix = {__VA_ARGS__}})
-#define EXPR_CAST(...) \
-  Ast_create_expr_node((ExprAstNode){.type = CAST, .cast = {__VA_ARGS__}})
-#define EXPR_TERTIARY(...) \
+#define EXPR_BINARY(l, p, ...) \
+  Ast_create_expr_node((ExprAstNode){BINARY, l, p, .binary = {__VA_ARGS__}})
+#define EXPR_UNARY(l, p, ...) \
+  Ast_create_expr_node((ExprAstNode){UNARY, l, p, .unary = {__VA_ARGS__}})
+#define EXPR_PRIMARY(l, p, ...) \
+  Ast_create_expr_node((ExprAstNode){PRIMARY, l, p, .primary = {__VA_ARGS__}})
+#define EXPR_POSTFIX(l, p, ...) \
+  Ast_create_expr_node((ExprAstNode){POSTFIX, l, p, .postfix = {__VA_ARGS__}})
+#define EXPR_CAST(l, p, ...) \
+  Ast_create_expr_node((ExprAstNode){CAST, l, p, .cast = {__VA_ARGS__}})
+#define EXPR_TERTIARY(l, p, ...) \
   Ast_create_expr_node(    \
-      (ExprAstNode){.type = TERTIARY, .tertiary = {__VA_ARGS__}})
-#define EXPR_ASSIGN(...) \
-  Ast_create_expr_node((ExprAstNode){.type = ASSIGN, .assign = {__VA_ARGS__}})
+      (ExprAstNode){TERTIARY, l, p, .tertiary = {__VA_ARGS__}})
+#define EXPR_ASSIGN(l, p, ...) \
+  Ast_create_expr_node((ExprAstNode){ASSIGN, l, p, .assign = {__VA_ARGS__}})
 
 #define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 #define consume(t) Parser_consume_token(parser, t)
@@ -98,17 +98,29 @@ static ExprAstNode* desugar_assign(Parser* parser, ExprAstNode* expr,
       break;
   }
   Token* op_token = Parser_create_fake_token(parser, op, op_tok_str);
-  ExprAstNode* op_expr =
-      EXPR_BINARY(.left = expr, .op = op_token, .right = operand);
+  ExprAstNode* op_expr = EXPR_BINARY(
+      expr->line_number,
+      expr->line_position,
+      .left=expr,
+      .op = op_token,
+      .right = operand
+  );
 
-  return EXPR_ASSIGN(.left = expr, .right = op_expr);
+  return EXPR_ASSIGN(
+      expr->line_number, 
+      expr->line_position,
+      .left = expr, .right = op_expr
+  );
 }
 
 static ExprAstNode *desugar_array(Parser *parser, ExprAstNode* base, ExprAstNode* index) {
   Token* op_plus = Parser_create_fake_token(parser, PLUS, "+");
   Token* op_star = Parser_create_fake_token(parser, STAR, "*");
-  ExprAstNode* binary_op = EXPR_BINARY(.left=base, .op=op_plus, .right=index);
-  ExprAstNode* ptr_op = EXPR_UNARY(.op=op_star, .right=binary_op);
+  ExprAstNode* binary_op = EXPR_BINARY(
+      base->line_number,
+      -1,
+      .left=base, .op=op_plus, .right=index);
+  ExprAstNode* ptr_op = EXPR_UNARY(base->line_number, -1, .op=op_star, .right=binary_op);
   return ptr_op;
 }
 
@@ -120,29 +132,36 @@ static ExprAstNode* primary_expression(Parser* parser) {  // @DONE
    * '(' expression ')'
    * generic_selection  @TODO
    */
-  Token* next;
+  Token* next = match(IDENTIFIER, CONSTANT, STRING_LITERAL, LEFT_PAREN);
 
-  if ((next = match(IDENTIFIER))) return EXPR_PRIMARY(.identifier = next);
+  if(!next) {
+      char err_str[100];
+      snprintf(err_str, 100, "Expected expression, got '%s'",
+              Token_str(peek()->type));
+      Error_report_error(NULL, PARSER, peek()->line_number, peek()->line_position, err_str, "");
 
-  if ((next = match(CONSTANT))) return EXPR_PRIMARY(.constant = next);
+      THROW_ERROR(parser);
 
-  if ((next = match(STRING_LITERAL)))
-    return EXPR_PRIMARY(.string_literal = next);
+      return NULL;
 
-  if (match(LEFT_PAREN)) {
+  }
+  int l = next->line_number, p = next->line_position;
+
+  if(next->type == IDENTIFIER) {
+    return EXPR_PRIMARY(l, p, .identifier = next);
+
+  } else if(next->type == CONSTANT) {
+    return EXPR_PRIMARY(l, p, .constant = next);
+
+  } else if(next->type == STRING_LITERAL) {
+    return EXPR_PRIMARY(l, p, .string_literal = next);
+
+  } else if(next->type == LEFT_PAREN) {
     ExprAstNode* expr = Parser_expression(parser);
     consume(RIGHT_PAREN);
     return expr;
   }
 
-  char err_str[100];
-  snprintf(err_str, 100, "Expected expression, got '%s'",
-           Token_str(peek()->type));
-  Error_report_error(NULL, PARSER, peek()->line_number, peek()->line_position, err_str, "");
-
-  THROW_ERROR(parser);
-
-  return NULL;
 }
 
 static ExprAstNode* postfix_expression(Parser* parser) {
@@ -167,10 +186,15 @@ static ExprAstNode* postfix_expression(Parser* parser) {
       consume(RIGHT_SQUARE);
       expr = desugar_array(parser, expr, index);
     } else if ((token = match(INC_OP, DEC_OP))) {
-      expr = EXPR_POSTFIX(.op=token, .left=expr);
+      expr = EXPR_POSTFIX(token->line_number, token->line_position, .op=token, .left=expr);
     } else if ((token = match(LEFT_PAREN))) {
       // Function call.
-      expr = EXPR_POSTFIX(.left=expr, .args = argument_expression_list(parser));
+      expr = EXPR_POSTFIX(
+          expr->line_number,
+          expr->line_position,
+          .left=expr,
+          .args = argument_expression_list(parser)
+      );
       consume(RIGHT_PAREN);
     }
     else {
@@ -205,11 +229,20 @@ static ExprAstNode* unary_expression(Parser* parser) {  // @DONE
   Token* token;
 
   if ((token = match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF))) {
-    return EXPR_UNARY(.op = token, .right = unary_expression(parser));
+    return EXPR_UNARY(
+        token->line_number,
+        token->line_position,
+        .op = token,
+        .right = unary_expression(parser)
+    );
   } else if ((token = match(INC_OP, DEC_OP))) {
     ExprAstNode* expr = unary_expression(parser);
     Token* constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
-    ExprAstNode* constant_node = EXPR_PRIMARY(.constant = constant_token);
+    ExprAstNode* constant_node = EXPR_PRIMARY(
+        token->line_number,
+        token->line_position,
+        .constant = constant_token
+    );
 
     return desugar_assign(
       parser, expr, 
@@ -250,7 +283,11 @@ static ExprAstNode* cast_expression(Parser* parser) {  // @TODO
   consume(LEFT_PAREN);
   CType* type = Parser_type_name(parser);
   consume(RIGHT_PAREN);
-  return EXPR_CAST(.type = type, .right = cast_expression(parser));
+  return EXPR_CAST(
+      peek()->line_number,
+      peek()->line_position,
+      .type = type,
+      .right = cast_expression(parser));
 }
 static ExprAstNode* multiplicative_expression(Parser* parser) {  // @DONE
   /*
@@ -266,7 +303,13 @@ static ExprAstNode* multiplicative_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(STAR, SLASH, PERCENT))) break;
 
     ExprAstNode* right = cast_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr,
+        .op = operator,
+        .right = right
+    );
   }
   return expr;
 }
@@ -283,7 +326,13 @@ static ExprAstNode* additive_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(PLUS, MINUS))) break;
 
     ExprAstNode* right = multiplicative_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr,
+        .op = operator,
+        .right = right
+    );
   }
   return expr;
 }
@@ -300,7 +349,13 @@ static ExprAstNode* shift_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(LEFT_OP, RIGHT_OP))) break;
 
     ExprAstNode* right = additive_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr,
+        .op = operator,
+        .right = right
+    );
   }
   return expr;
 }
@@ -319,7 +374,13 @@ static ExprAstNode* relational_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(LESS_THAN, GREATER_THAN, LE_OP, GE_OP))) break;
 
     ExprAstNode* right = shift_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr,
+        .op = operator,
+        .right = right
+    );
   }
   return expr;
 }
@@ -336,7 +397,13 @@ static ExprAstNode* equality_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(EQ_OP, NE_OP))) break;
 
     ExprAstNode* right = relational_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr,
+        .op = operator,
+        .right = right
+    );
   }
   return expr;
 
@@ -354,7 +421,13 @@ static ExprAstNode* and_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(AMPERSAND))) break;
 
     ExprAstNode* right = equality_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr,
+        .op = operator,
+        .right = right
+    );
   }
   return expr;
 }
@@ -370,7 +443,13 @@ static ExprAstNode* exclusive_or_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(CARET))) break;
 
     ExprAstNode* right = and_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr,
+        .op = operator,
+        .right = right
+    );
   }
   return expr;
 }
@@ -386,7 +465,10 @@ static ExprAstNode* inclusive_or_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(BAR))) break;
 
     ExprAstNode* right = exclusive_or_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr, .op = operator, .right = right);
   }
   return expr;
 }
@@ -402,7 +484,10 @@ static ExprAstNode* logical_and_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(AND_OP))) break;
 
     ExprAstNode* right = inclusive_or_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr, .op = operator, .right = right);
   }
   return expr;
 }
@@ -418,7 +503,10 @@ static ExprAstNode* logical_or_expression(Parser* parser) {  // @DONE
     if (NULL == (operator= match(OR_OP))) break;
 
     ExprAstNode* right = logical_and_expression(parser);
-    expr = EXPR_BINARY(.left = expr, .op = operator, .right = right);
+    expr = EXPR_BINARY(
+        operator->line_number,
+        operator->line_position,
+        .left = expr, .op = operator, .right = right);
   }
   return expr;
 }
@@ -429,13 +517,17 @@ static ExprAstNode* conditional_expression(Parser* parser) {  // @DONE
    * logical_or_expression '?' expression ':' conditional_expression
    */
   ExprAstNode* expr = logical_or_expression(parser);
-  if (!match(QUESTION)) return expr;
+  Token* question = match(QUESTION);
+  if(!question) return expr;
 
   ExprAstNode* expr_true = Parser_expression(parser);
   consume(COLON);
   ExprAstNode* expr_false = conditional_expression(parser);
 
-  return EXPR_TERTIARY(.condition_expr = expr, .expr_true = expr_true,
+  return EXPR_TERTIARY(
+      question->line_number,
+      question->line_position,
+    .condition_expr = expr, .expr_true = expr_true,
                        .expr_false = expr_false);
 }
 
@@ -458,7 +550,10 @@ ExprAstNode* Parser_assignment_expression(Parser* parser) {  // @DONE
     operator= match(EQUAL);
     if (operator!= NULL) {
       ExprAstNode* right = Parser_assignment_expression(parser);
-      expr = EXPR_ASSIGN(.left = expr, .right = right);
+      expr = EXPR_ASSIGN(
+          operator->line_number,
+          operator->line_position,
+          .left = expr, .right = right);
       continue;
     }
 

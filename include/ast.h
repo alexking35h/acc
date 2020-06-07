@@ -39,6 +39,9 @@ typedef struct ExprAstNode_t {
     ASSIGN,
   } type;
 
+  int line_number;
+  int line_position;
+
   // Anonymous union for each node sub-type.
   union {
     // Binary
@@ -100,6 +103,9 @@ typedef struct DeclAstNode_t {
   // used during parsing.
   enum { CONCRETE, ABSTRACT } decl_type;
 
+  int line_number;
+  int line_position;
+
   CType* type;
   Token* identifier;
 
@@ -117,6 +123,9 @@ typedef struct DeclAstNode_t {
 typedef struct StmtAstNode_t {
   // Type of this statement node.
   enum { DECL, EXPR, BLOCK, WHILE_LOOP, RETURN_JUMP } type;
+
+  int line_number;
+  int line_position;
 
   union {
     // Declaration
