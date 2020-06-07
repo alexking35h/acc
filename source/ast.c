@@ -11,21 +11,24 @@
  * E.g.:
  * > Ast_create_expr_node((ExprAstNode){.primary.identifier=...});
  */
-ExprAstNode* Ast_create_expr_node(ExprAstNode ast_node) {
-  ExprAstNode* node = calloc(1, sizeof(ExprAstNode));
+ExprAstNode *Ast_create_expr_node(ExprAstNode ast_node)
+{
+    ExprAstNode *node = calloc(1, sizeof(ExprAstNode));
 
-  memcpy(node, &ast_node, sizeof(ast_node));
-  return node;
+    memcpy(node, &ast_node, sizeof(ast_node));
+    return node;
 }
-DeclAstNode* Ast_create_decl_node(DeclAstNode ast_node) {
-  DeclAstNode* node = calloc(1, sizeof(DeclAstNode));
+DeclAstNode *Ast_create_decl_node(DeclAstNode ast_node)
+{
+    DeclAstNode *node = calloc(1, sizeof(DeclAstNode));
 
-  memcpy(node, &ast_node, sizeof(ast_node));
-  return node;
+    memcpy(node, &ast_node, sizeof(ast_node));
+    return node;
 }
-StmtAstNode* Ast_create_stmt_node(StmtAstNode ast_node) {
-  StmtAstNode* node = calloc(1, sizeof(StmtAstNode));
+StmtAstNode *Ast_create_stmt_node(StmtAstNode ast_node)
+{
+    StmtAstNode *node = calloc(1, sizeof(StmtAstNode));
 
-  memcpy(node, &ast_node, sizeof(ast_node));
-  return node;
+    memcpy(node, &ast_node, sizeof(ast_node));
+    return node;
 }

@@ -1,6 +1,6 @@
 /*
  * Error-handling interface.
- * 
+ *
  * Errors are reported during scanning, parsing, and code-gen,
  * by calling Error_report_error. This function is implemented
  * in acc.c, and is responsible for making sure we displaying
@@ -12,7 +12,12 @@
 
 #include <stdbool.h>
 
-typedef enum ErrorType_t { SCANNER, PARSER, ANALYSIS } ErrorType;
+typedef enum ErrorType_t
+{
+    SCANNER,
+    PARSER,
+    ANALYSIS
+} ErrorType;
 
 typedef struct ErrorReporter ErrorReporter;
 
@@ -27,6 +32,6 @@ typedef struct ErrorReporter ErrorReporter;
  *  title
  *  description
  */
-void Error_report_error(ErrorReporter*, ErrorType, int, int, const char *, const char *);
+void Error_report_error(ErrorReporter *, ErrorType, int, int, const char *, const char *);
 
 #endif

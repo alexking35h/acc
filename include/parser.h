@@ -8,16 +8,17 @@
 #include "scanner.h"
 #include "token.h"
 
-typedef struct Parser_t {
-  // Scanner and error instances.
-  Scanner *scanner;
-  ErrorReporter* error_reporter;
+typedef struct Parser_t
+{
+    // Scanner and error instances.
+    Scanner *scanner;
+    ErrorReporter *error_reporter;
 
-  // Next unread token.
-  Token *next_token[2];
-  int next_token_index;
+    // Next unread token.
+    Token *next_token[2];
+    int next_token_index;
 
-  jmp_buf panic_jmp;
+    jmp_buf panic_jmp;
 
 } Parser;
 
@@ -45,7 +46,7 @@ Token *Parser_peek_token(Parser *);
 /*
  * Check out the next+1 token.
  */
-Token* Parser_peek_next_token(Parser* );
+Token *Parser_peek_next_token(Parser *);
 
 /*
  * If the next token does not match, report an error and return false.

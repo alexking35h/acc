@@ -13,18 +13,16 @@
 #include "parser.h"
 #include "token.h"
 
-#define STMT_EXPR(...) \
-  Ast_create_stmt_node((StmtAstNode){.type = EXPR, .expr = {__VA_ARGS__}})
-#define STMT_DECL(...) \
-  Ast_create_stmt_node((StmtAstNode){.type = DECL, .decl = {__VA_ARGS__}})
-#define STMT_BLOCK(...) \
-  Ast_create_stmt_node((StmtAstNode){.type = BLOCK, .block = {__VA_ARGS__}})
-#define STMT_WHILE(...) \
-  Ast_create_stmt_node( \
-      (StmtAstNode){.type = WHILE_LOOP, .while_loop = {__VA_ARGS__}})
-#define STMT_RETURN(...) \
-  Ast_create_stmt_node( \
-      (StmtAstNode){.type = RETURN_JUMP, .return_jump = {__VA_ARGS__}})
+#define STMT_EXPR(...)                                                                   \
+    Ast_create_stmt_node((StmtAstNode){.type = EXPR, .expr = {__VA_ARGS__}})
+#define STMT_DECL(...)                                                                   \
+    Ast_create_stmt_node((StmtAstNode){.type = DECL, .decl = {__VA_ARGS__}})
+#define STMT_BLOCK(...)                                                                  \
+    Ast_create_stmt_node((StmtAstNode){.type = BLOCK, .block = {__VA_ARGS__}})
+#define STMT_WHILE(...)                                                                  \
+    Ast_create_stmt_node((StmtAstNode){.type = WHILE_LOOP, .while_loop = {__VA_ARGS__}})
+#define STMT_RETURN(...)                                                                 \
+    Ast_create_stmt_node((StmtAstNode){.type = RETURN_JUMP, .return_jump = {__VA_ARGS__}})
 
 #define consume(t) Parser_consume_token(parser, t)
 #define peek(t) Parser_peek_token(parser)
@@ -34,12 +32,14 @@
 
 #define static
 
-static StmtAstNode* expression_statement(Parser* parser);
-static StmtAstNode* iteration_statement(Parser* parser);
-static StmtAstNode* return_statement(Parser* parser);
+static StmtAstNode *expression_statement(Parser *parser);
+static StmtAstNode *iteration_statement(Parser *parser);
+static StmtAstNode *return_statement(Parser *parser);
 
-_Bool is_decl(TokenType tok) {
-  switch (tok) {
+_Bool is_decl(TokenType tok)
+{
+    switch (tok)
+    {
     case VOID:
     case CHAR:
     case SHORT:
@@ -49,138 +49,162 @@ _Bool is_decl(TokenType tok) {
     case DOUBLE:
     case SIGNED:
     case UNSIGNED:
-      return true;
+        return true;
     default:
-      return false;
-  }
-}
-
-static StmtAstNode* statement(Parser* parser) {  // @TODO
-  /*
-   * labeled_statement
-   * compound_statement
-   * expression_statement
-   * selection_statement
-   * iteration_statement
-   * jump_statement
-   */
-  if (peek()->type == LEFT_BRACE) {
-    // Compound statement.
-    return Parser_compound_statement(parser);
-  }
-  if (peek()->type == WHILE) {
-    // While statement.
-    return iteration_statement(parser);
-  }
-  if (peek()->type == RETURN) {
-    // Return statement.
-    return return_statement(parser);
-  }
-  return expression_statement(parser);
-}
-static ExprAstNode* labeled_statement(Parser* parser) {  // @TODO
-  /*
-   * IDENTIFIER ':' statement
-   * CASE constant_expression ':' statement
-   * DEFAULT ':' statement
-   */
-
-  return NULL;
-}
-StmtAstNode* Parser_compound_statement(Parser* parser) {  // @TODO
-  /*
-   * '{' '}'
-   * '{'  block_item_list '}'
-   */
-  StmtAstNode *stmt, *head = NULL, **curr = &stmt;
-
-  consume(LEFT_BRACE);
-  while (!match(RIGHT_BRACE)) {
-    if (CATCH_ERROR(parser)) {
-      // Error occurred parsing the following declaration.
-      // synchronise on the next semi-colon, or until we reach the RIGHT brace.
-      sync(SEMICOLON, RIGHT_BRACE, END_OF_FILE);
-
-      if (peek()->type == SEMICOLON) advance();
-      if (peek()->type == END_OF_FILE) return NULL;
-      continue;
+        return false;
     }
+}
 
-    if (is_decl(peek()->type)) {
-      // Declaration.
-      *curr = STMT_DECL(.decl = Parser_declaration(parser));
-    } else {
-      // Statement.
-      *curr = statement(parser);
+static StmtAstNode *statement(Parser *parser)
+{ // @TODO
+    /*
+     * labeled_statement
+     * compound_statement
+     * expression_statement
+     * selection_statement
+     * iteration_statement
+     * jump_statement
+     */
+    if (peek()->type == LEFT_BRACE)
+    {
+        // Compound statement.
+        return Parser_compound_statement(parser);
     }
-    if (!head) head = *curr;
-    curr = &((*curr)->next);
-  }
-  return STMT_BLOCK(.head = head);
+    if (peek()->type == WHILE)
+    {
+        // While statement.
+        return iteration_statement(parser);
+    }
+    if (peek()->type == RETURN)
+    {
+        // Return statement.
+        return return_statement(parser);
+    }
+    return expression_statement(parser);
 }
-ExprAstNode* Parser_block_item_list(Parser* parser) {  // @TODO
-  /*
-   * block_item
-   * block_item_list block_item
-   */
+static ExprAstNode *labeled_statement(Parser *parser)
+{ // @TODO
+    /*
+     * IDENTIFIER ':' statement
+     * CASE constant_expression ':' statement
+     * DEFAULT ':' statement
+     */
 
-  return NULL;
+    return NULL;
 }
-ExprAstNode* Parser_block_item(Parser* parser) {  // @TODO
-  /*
-   * declaration
-   * statement
-   */
+StmtAstNode *Parser_compound_statement(Parser *parser)
+{ // @TODO
+    /*
+     * '{' '}'
+     * '{'  block_item_list '}'
+     */
+    StmtAstNode *stmt, *head = NULL, **curr = &stmt;
 
-  return NULL;
+    consume(LEFT_BRACE);
+    while (!match(RIGHT_BRACE))
+    {
+        if (CATCH_ERROR(parser))
+        {
+            // Error occurred parsing the following declaration.
+            // synchronise on the next semi-colon, or until we reach the RIGHT brace.
+            sync(SEMICOLON, RIGHT_BRACE, END_OF_FILE);
+
+            if (peek()->type == SEMICOLON)
+                advance();
+            if (peek()->type == END_OF_FILE)
+                return NULL;
+            continue;
+        }
+
+        if (is_decl(peek()->type))
+        {
+            // Declaration.
+            *curr = STMT_DECL(.decl = Parser_declaration(parser));
+        }
+        else
+        {
+            // Statement.
+            *curr = statement(parser);
+        }
+        if (!head)
+            head = *curr;
+        curr = &((*curr)->next);
+    }
+    return STMT_BLOCK(.head = head);
 }
-static StmtAstNode* expression_statement(Parser* parser) {
-  /*
-   * expression ';'
-   */
-  StmtAstNode* stmt = STMT_EXPR(.expr = Parser_expression(parser));
-  consume(SEMICOLON);
-  return stmt;
+ExprAstNode *Parser_block_item_list(Parser *parser)
+{ // @TODO
+    /*
+     * block_item
+     * block_item_list block_item
+     */
+
+    return NULL;
 }
-ExprAstNode* Parser_selection_statement(Parser* parser) {  // @TODO
-  /*
-   * IF '(' expression ')' statement ELSE statement
-   * IF '(' expression ')' statement
-   * SWITCH '(' expression ')' statement
-   */
+ExprAstNode *Parser_block_item(Parser *parser)
+{ // @TODO
+    /*
+     * declaration
+     * statement
+     */
 
-  return NULL;
+    return NULL;
 }
-StmtAstNode* iteration_statement(Parser* parser) {  // @TODO
-  /*
-   * WHILE '(' expression ')' statement
-   * DO statement WHILE '(' expression ')' '
-   */
-  if (match(WHILE)) {
-    consume(LEFT_PAREN);
-    ExprAstNode* expr = Parser_expression(parser);
-    consume(RIGHT_PAREN);
-    StmtAstNode* block = statement(parser);
-
-    return STMT_WHILE(.expr = expr, .block = block);
-  }
-
-  return NULL;
-}
-StmtAstNode* return_statement(Parser* parser) {
-  /*
-   * RETURN ';'
-   * RETURN expression ';'
-   */
-  StmtAstNode* stmt;
-  consume(RETURN);
-
-  if(match(SEMICOLON)) {
-    stmt = STMT_RETURN();
-  } else {
-    stmt = STMT_RETURN(.value=Parser_expression(parser));
+static StmtAstNode *expression_statement(Parser *parser)
+{
+    /*
+     * expression ';'
+     */
+    StmtAstNode *stmt = STMT_EXPR(.expr = Parser_expression(parser));
     consume(SEMICOLON);
-  }
+    return stmt;
+}
+ExprAstNode *Parser_selection_statement(Parser *parser)
+{ // @TODO
+    /*
+     * IF '(' expression ')' statement ELSE statement
+     * IF '(' expression ')' statement
+     * SWITCH '(' expression ')' statement
+     */
 
-  return stmt;
+    return NULL;
+}
+StmtAstNode *iteration_statement(Parser *parser)
+{ // @TODO
+    /*
+     * WHILE '(' expression ')' statement
+     * DO statement WHILE '(' expression ')' '
+     */
+    if (match(WHILE))
+    {
+        consume(LEFT_PAREN);
+        ExprAstNode *expr = Parser_expression(parser);
+        consume(RIGHT_PAREN);
+        StmtAstNode *block = statement(parser);
+
+        return STMT_WHILE(.expr = expr, .block = block);
+    }
+
+    return NULL;
+}
+StmtAstNode *return_statement(Parser *parser)
+{
+    /*
+     * RETURN ';'
+     * RETURN expression ';'
+     */
+    StmtAstNode *stmt;
+    consume(RETURN);
+
+    if (match(SEMICOLON))
+    {
+        stmt = STMT_RETURN();
+    }
+    else
+    {
+        stmt = STMT_RETURN(.value = Parser_expression(parser));
+        consume(SEMICOLON);
+    }
+
+    return stmt;
 }

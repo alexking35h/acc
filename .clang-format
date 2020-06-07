@@ -1,0 +1,10 @@
+﻿---
+BasedOnStyle: Microsoft
+ColumnLimit: '90'
+IncludeBlocks: Preserve
+IndentWidth: '4'
+Language: Cpp
+SpacesInSquareBrackets: 'false'
+UseTab: Never
+
+...

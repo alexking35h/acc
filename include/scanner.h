@@ -19,7 +19,7 @@ typedef struct Scanner_t Scanner;
  * Returns:
  *  pointer to allocated Scanner instance, or NULL on error.
  */
-Scanner* Scanner_init(char const* source, ErrorReporter* error_reporter);
+Scanner *Scanner_init(char const *source, ErrorReporter *error_reporter);
 
 /*
  * Allocate a new Token
@@ -27,7 +27,7 @@ Scanner* Scanner_init(char const* source, ErrorReporter* error_reporter);
  * This is mostly used internally within the Scanner. However the
  * Parser may also wish to create new tokens for desugauring.
  */
-Token* Scanner_create_token(Scanner* scanner);
+Token *Scanner_create_token(Scanner *scanner);
 
 /*
  * Get the next token
@@ -35,11 +35,11 @@ Token* Scanner_create_token(Scanner* scanner);
  * This function generates the next token from the source file, including the
  * final EOF token. When finished, the function returns NULL.
  */
-Token* Scanner_get_next(Scanner* scanner);
+Token *Scanner_get_next(Scanner *scanner);
 
 /*
  * Destroy instance of ACC's Scanner.
  */
-void Scanner_destroy(Scanner* scanner);
+void Scanner_destroy(Scanner *scanner);
 
 #endif

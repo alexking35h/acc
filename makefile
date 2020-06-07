@@ -79,7 +79,7 @@ $(BUILD_DIR):
 	mkdir -p build
 
 format:
-	clang-format --style=Google -i include/*.h source/*.c test/*.c
+	clang-format --style=file -i include/*.h source/*.c test/*.c
 
 clean:
 	rm -rf build

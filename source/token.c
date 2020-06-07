@@ -1,176 +1,178 @@
 #include "token.h"
 
-const char* Token_str(TokenType type) {
-  switch (type) {
+const char *Token_str(TokenType type)
+{
+    switch (type)
+    {
     case AUTO:
-      return "auto";
+        return "auto";
     case BREAK:
-      return "break";
+        return "break";
     case CASE:
-      return "case";
+        return "case";
     case CHAR:
-      return "char";
+        return "char";
     case CONST:
-      return "const";
+        return "const";
     case CONTINUE:
-      return "continue";
+        return "continue";
     case DEFAULT:
-      return "default";
+        return "default";
     case DO:
-      return "do";
+        return "do";
     case DOUBLE:
-      return "double";
+        return "double";
     case ELSE:
-      return "else";
+        return "else";
     case ENUM:
-      return "enum";
+        return "enum";
     case EXTERN:
-      return "extern";
+        return "extern";
     case FLOAT:
-      return "float";
+        return "float";
     case FOR:
-      return "for";
+        return "for";
     case GOTO:
-      return "goto";
+        return "goto";
     case IF:
-      return "if";
+        return "if";
     case INLINE:
-      return "inline";
+        return "inline";
     case INT:
-      return "int";
+        return "int";
     case LONG:
-      return "long";
+        return "long";
     case REGISTER:
-      return "register";
+        return "register";
     case RESTRICT:
-      return "restrict";
+        return "restrict";
     case RETURN:
-      return "return";
+        return "return";
     case SHORT:
-      return "short";
+        return "short";
     case SIGNED:
-      return "signed";
+        return "signed";
     case SIZEOF:
-      return "sizeof";
+        return "sizeof";
     case STATIC:
-      return "static";
+        return "static";
     case STRUCT:
-      return "struct";
+        return "struct";
     case SWITCH:
-      return "switch";
+        return "switch";
     case TYPEDEF:
-      return "typedef";
+        return "typedef";
     case UNION:
-      return "union";
+        return "union";
     case UNSIGNED:
-      return "unsigned";
+        return "unsigned";
     case VOID:
-      return "void";
+        return "void";
     case VOLATILE:
-      return "volatile";
+        return "volatile";
     case WHILE:
-      return "while";
+        return "while";
     case ELLIPSIS:
-      return "...";
+        return "...";
     case RIGHT_ASSIGN:
-      return ">>=";
+        return ">>=";
     case LEFT_ASSIGN:
-      return "<<=";
+        return "<<=";
     case ADD_ASSIGN:
-      return "+=";
+        return "+=";
     case SUB_ASSIGN:
-      return "-=";
+        return "-=";
     case MUL_ASSIGN:
-      return "*=";
+        return "*=";
     case DIV_ASSIGN:
-      return "/=";
+        return "/=";
     case MOD_ASSIGN:
-      return "%=";
+        return "%=";
     case AND_ASSIGN:
-      return "&=";
+        return "&=";
     case XOR_ASSIGN:
-      return "^=";
+        return "^=";
     case OR_ASSIGN:
-      return "|=";
+        return "|=";
     case RIGHT_OP:
-      return ">>";
+        return ">>";
     case LEFT_OP:
-      return "<<";
+        return "<<";
     case INC_OP:
-      return "++";
+        return "++";
     case DEC_OP:
-      return "--";
+        return "--";
     case PTR_OP:
-      return "->";
+        return "->";
     case AND_OP:
-      return "&&";
+        return "&&";
     case OR_OP:
-      return "||";
+        return "||";
     case LE_OP:
-      return "<=";
+        return "<=";
     case GE_OP:
-      return ">=";
+        return ">=";
     case EQ_OP:
-      return "==";
+        return "==";
     case NE_OP:
-      return "!=";
+        return "!=";
     case SEMICOLON:
-      return ";";
+        return ";";
     case LEFT_BRACE:
-      return "{";
+        return "{";
     case RIGHT_BRACE:
-      return "}";
+        return "}";
     case COMMA:
-      return ",";
+        return ",";
     case COLON:
-      return ":";
+        return ":";
     case EQUAL:
-      return "=";
+        return "=";
     case LEFT_PAREN:
-      return "(";
+        return "(";
     case RIGHT_PAREN:
-      return ")";
+        return ")";
     case LEFT_SQUARE:
-      return "[";
+        return "[";
     case RIGHT_SQUARE:
-      return "]";
+        return "]";
     case DOT:
-      return ".";
+        return ".";
     case AMPERSAND:
-      return "&";
+        return "&";
     case BANG:
-      return "!";
+        return "!";
     case TILDE:
-      return "~";
+        return "~";
     case MINUS:
-      return "-";
+        return "-";
     case PLUS:
-      return "+";
+        return "+";
     case STAR:
-      return "*";
+        return "*";
     case SLASH:
-      return "/";
+        return "/";
     case PERCENT:
-      return "%";
+        return "%";
     case LESS_THAN:
-      return "<";
+        return "<";
     case GREATER_THAN:
-      return ">";
+        return ">";
     case CARET:
-      return "^";
+        return "^";
     case BAR:
-      return "|";
+        return "|";
     case QUESTION:
-      return "?";
+        return "?";
     case IDENTIFIER:
-      return "identifier";
+        return "identifier";
     case CONSTANT:
-      return "constant";
+        return "constant";
     case STRING_LITERAL:
-      return "string literal";
+        return "string literal";
     case END_OF_FILE:
-      return "End of File";
+        return "End of File";
     default:
-      return "(unknown)";
-  }
+        return "(unknown)";
+    }
 }
