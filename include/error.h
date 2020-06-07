@@ -21,6 +21,19 @@ typedef enum ErrorType_t
 
 typedef struct ErrorReporter ErrorReporter;
 
+ErrorReporter * Error_init();
+void Error_destroy(ErrorReporter *);
+int Error_get_errors(
+    ErrorReporter * error_reporter,
+    ErrorType *type,
+    int * line_number,
+    int * line_position,
+    char ** title,
+    char ** description,
+    _Bool beginning
+);
+int Error_has_errors(ErrorReporter *);
+
 /*
  * Report an error, with a line number and message
  *

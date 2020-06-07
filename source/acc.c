@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "analysis.h"
 #include "error.h"
@@ -24,98 +25,51 @@
 #define GIT_REPO ""
 #endif
 
+extern int errno;
+
+#define BANNER \
+    "     ___       ______   ______ \n"     \
+    "    /   \\     /      | /      |\n"     \
+    "   /  ^  \\   |  ,----'|  ,----'\n"     \
+    "  /  /_\\  \\  |  |     |  |     \n"     \
+    " /  _____  \\ |  `----.|  `----.\n"     \
+    "/__/     \\__\\ \\______| \\______|\n"
+
+
 int main(int, char **) __attribute__((weak));
-void Error_report_error(ErrorReporter *, ErrorType, int, int, const char *, const char *)
-    __attribute__((weak));
 
-static bool json_stdout;
-
-struct CommandLineArgs_t
-{
+typedef struct CommandLineArgs_t {
     const char *source_file;
-    _Bool interactive;
     _Bool json;
-};
+} CommandLineArgs;
 
-/* Print error message to stdout in human-readable form. */
-static void print_error_terminal(ErrorType type, int l, const char *msg)
-{
-    printf("Error occurred ");
-    switch (type)
-    {
-    case SCANNER:
-        printf("in Scanner:\n");
-        break;
-    case PARSER:
-        printf("in Parser:\n");
-        break;
-    default:
-        printf(":\n");
-        break;
-    }
-    printf(" > Line (%d): %s\n\n", l, msg);
-}
+typedef struct AccCompiler_t {
+    ErrorReporter * error_reporter;
+    Scanner * scanner;
+    Parser * parser;
+} AccCompiler;
 
-/* Print error message to stdout in json */
-static void print_error_json(ErrorType type, int l, const char *msg)
-{
-    static int first = 0;
-    if (first++)
-        printf(",");
-    printf("\n    {\"error_type\":");
-    switch (type)
-    {
-    case SCANNER:
-        printf("\"SCANNER\"");
-        break;
-    case PARSER:
-        printf("\"PARSER\"");
-        break;
-    case ANALYSIS:
-        printf("\"ANALYSIS\"");
-        break;
-    default:
-        printf("null");
-        break;
-    }
-    printf(", \"line_number\": %d, ", l);
-    printf("\"message\": \"%s\"", msg);
-    printf("}");
-}
-
-void Error_report_error(ErrorReporter *error_reporter, ErrorType error_type,
-                        int line_number, int line_position, const char *title,
-                        const char *description)
-{
-    if (json_stdout)
-    {
-        print_error_json(error_type, line_number, title);
-    }
-    else
-    {
-        print_error_terminal(error_type, line_number, title);
-    }
-}
-
-static void print_help()
-{
-    printf("ACC Version %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
-    printf("\nUsage: acc [OPTIONS] [FILE]\n\n");
+// Print help information.
+static void help(const char * exe_path) {
+    printf("ACC (%d.%d.%d)\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+    printf("\nUsage: %s [OPTIONS] [FILE]\n\n", exe_path);
     printf("Options:\n");
-    printf(" -v print version\n");
-    printf(" -h print help\n");
+    printf("  -v version information\n");
+    printf("  -h help\n");
+    printf("  -j json output\n");
     printf("\n");
-    printf("If [FILE] is omitted, acc runs in interactive mode, generating the "
-           "AST\n");
-    printf("for C source code passed to the command line\n");
+    printf("[FILE] is a file path to the C source file which will be compiled\n");
+    printf("Returns 0 if no errors were reported\n");
 }
 
-static void print_version()
-{
-    printf("ACC Version %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+// Print version information
+static void version() {
+    printf("%s\n", BANNER);
+    printf("Alex's C Compiler\n");
+    printf("Version: %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
     printf("Compiled: %s %s\n", __DATE__, __TIME__);
     printf("Git repository: %s\n", GIT_REPO);
-    printf("Git commit: %s\n", GIT_COMMIT);
+    printf("Git hash: %s\n", GIT_COMMIT);
 }
 
 /*
@@ -125,6 +79,7 @@ static void print_version()
  *
  * options:
  * -v  print version information
+ * -j  print output in json format
  * -h  print help information
  *
  * Returns true if the program should continue.
@@ -133,16 +88,17 @@ static void print_version()
 static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *args)
 {
     int c = 0;
+    args->json = false;
 
     while ((c = getopt(argc, argv, "vhj")) != -1)
     {
         switch (c)
         {
         case 'h':
-            print_help();
+            help(argv[0]);
             return false;
         case 'v':
-            print_version();
+            version();
             return false;
         case 'j':
             args->json = true;
@@ -152,89 +108,161 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
 
     if ((optind) == argc)
     {
-        // Running in interactive mode if no arguments are provided.
-        args->interactive = true;
-    }
-    else
-    {
-        // Read from file.
-        args->interactive = false;
-        args->source_file = argv[optind];
-    }
-
-    // JSON stdout can only be used in non-interactive mode.
-    if (args->interactive && args->json)
-    {
-        printf("JSON stdout (-j) cannot be used in interactive mode (-i)\n");
+        printf("No source file provided. See help (-h)\n");
         return false;
     }
+    args->source_file = argv[optind];
     return true;
 }
 
-static DeclAstNode *get_ast(const char *source)
-{
-    Scanner *scanner = Scanner_init(source, NULL);
-    Parser *parser = Parser_init(scanner, NULL);
+/*
+ * Read the source input into a character array.
+ */
+static const char * read_source(const char * path) {
+    FILE *f = fopen(path, "r");
+    if(!f) {
+        goto err;
+    }
 
-    // // Generate the AST for the file.
-    DeclAstNode *ast = Parser_translation_unit(parser);
+    // Get the file size.
+    if(fseek(f, 0, SEEK_END)) {
+        goto err;
+    }
+    int fsize = ftell(f);
+    if(fseek(f, 0, SEEK_SET)) {
+        goto err;
+    }
 
-    // Context-sensitive analysis (semantic analysis).
-    SymbolTable *global = symbol_table_create(NULL);
-    analysis_ast_walk_decl(NULL, ast, global);
+    // Allocate storage space on the heap for the file.
+    char * file_contents = malloc(fsize);
+    if(!file_contents) {
+        printf("Unable to allocate sufficient space for the file\n");
+        return NULL;
+    }
 
-    return ast;
+    // Read the entire file.
+    if(fsize != fread(file_contents, 1, fsize, f)) goto err;
+    fclose(f);
+
+    return file_contents;
+err:
+    if(file_contents) free(file_contents);
+    printf("Unable to read source file:\n%s\n", strerror(errno));
+    return NULL;
 }
 
-static const char *read_file(const char *file_path)
-{
-    char *file_contents = malloc(4096 * sizeof(char));
-    FILE *f = fopen(file_path, "r");
+static AccCompiler * compiler_init(const char * path) {
+    const char * src = read_source(path);
+    if(!src) return NULL;
 
-    fread(file_contents, sizeof(char), 4097, f);
-    return file_contents;
+    AccCompiler * compiler = calloc(1, sizeof(AccCompiler));
+    compiler->error_reporter = Error_init();
+    compiler->scanner = Scanner_init(src, compiler->error_reporter);
+    compiler->parser = Parser_init(compiler->scanner, compiler->error_reporter);
+
+    return compiler;
+}
+
+static DeclAstNode * compiler_parse(AccCompiler * compiler) {
+    return Parser_translation_unit(compiler->parser);
+}
+
+static void compiler_analysis(AccCompiler * compiler, DeclAstNode * ast_root) {
+    
+}
+
+static void print_error_json(ErrorType type, int line, int pos, char * title, char *desc) {
+
+}
+
+static void print_error_commandline(ErrorType type, char * line, int line_number, int pos, char * title, char *desc) {
+    int line_len = strchr(line, '\n') - line;
+    char * line_cpy = malloc(line_len+1);
+    strncpy(line_cpy, line, line_len);
+    line_cpy[line_len] = '\0';
+
+    // Print out the Error! :-)
+    printf("\nError occurred on line %d ", line_number);
+    switch(type) {
+        case SCANNER:
+            printf("(scanner)");
+            break;
+        case PARSER:
+            printf("(parser)");
+            break;
+        case ANALYSIS:
+            printf("(analysis)");
+            break;
+    }
+
+    printf("\nError: %s\n", title);
+    
+    if(desc) {
+        printf("%s", desc);
+    }
+
+    // Print out the source line, and arrow.
+    printf(" > %s\n", line_cpy);
+
+    for(int i = 0;i < pos+3;i++) printf(" ");
+    printf("^\n");
+}
+
+static void compiler_print_errors(AccCompiler *compiler, _Bool json) {
+    int beginning = 0;
+    ErrorType type;
+    int line_number;
+    int line_position;
+    char * title;
+    char * description;
+
+    for(;;) {
+        if(!Error_get_errors(
+            compiler->error_reporter,
+            &type,
+            &line_number,
+            &line_position,
+            &title,
+            &description,
+            beginning++ == 0
+        )) break;
+
+        if(json) {
+            print_error_json(type, line_number, line_position, title, description);
+        } else {
+            const char * line = Scanner_get_line(compiler->scanner, line_number-1);
+            print_error_commandline(type, line, line_number, line_position, title, description);
+        }
+    }
+}
+
+static void compiler_destroy(AccCompiler * compiler) {
+    Error_destroy(compiler->error_reporter);
+    Parser_destroy(compiler->parser);
+    Scanner_destroy(compiler->scanner);
 }
 
 int main(int argc, char **argv)
 {
-    struct CommandLineArgs_t args = {};
+    CommandLineArgs args;
+    AccCompiler * compiler;
     if (!parse_cmd_args(argc, argv, &args))
         return 1;
 
-    json_stdout = args.json;
-
-    if (args.interactive)
-    {
-        printf("Running acc in interactive mode.\n");
-
-        while (1)
-        {
-            char src[100], ast[300];
-
-            printf("\n>> ");
-            fgets(src, 99, stdin);
-
-            DeclAstNode *decl = get_ast(src);
-            if (!decl)
-                continue;
-
-            pretty_print_decl(decl, ast, 300);
-            printf("%s\n", ast);
-        }
+    if(!(compiler = compiler_init(args.source_file))) {
+        return 1;
     }
-    else
-    {
-        const char *file = read_file(args.source_file);
-        char ast[1000] = "";
-        if (args.json)
-            printf("{\n  \"errors\": [");
 
-        DeclAstNode *decl = get_ast(file);
+    // Generate the AST, from the source input.
+    DeclAstNode * ast_root = compiler_parse(compiler);
 
-        if (args.json)
-            printf("\n  ]\n}\n");
+    // Context-sensitive analysis on the AST.
+    compiler_analysis(compiler, ast_root);
 
-        // pretty_print_decl(decl, ast, 1000);
-        // printf("%s\n", ast);
+    // Check if errors occurred during scanning/parsing/analysis.
+    // Abort if we cannot proceed.
+    if(Error_has_errors(compiler->error_reporter)) {
+        compiler_print_errors(compiler, args.json);
+        return 1;
     }
 }

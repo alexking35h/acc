@@ -42,4 +42,9 @@ Token *Scanner_get_next(Scanner *scanner);
  */
 void Scanner_destroy(Scanner *scanner);
 
+/*
+ * Get pointer to line position in the file.
+ */
+const char * Scanner_get_line(Scanner *scanner, int line);
+
 #endif
