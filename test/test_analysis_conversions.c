@@ -37,14 +37,14 @@
 #include <string.h>
 
 static ExprAstNode* parse_expr(const char *source) {
-    Scanner *scanner = Scanner_init(source);
+    Scanner *scanner = Scanner_init(source, NULL);
     Parser *parser = Parser_init(scanner);
     return Parser_expression(parser);
 }
 
 static void integer_promotion(void** state) {
   ExprAstNode* ast = parse_expr("_int+_char");
-  analysis_ast_walk_expr(ast, test_symbol_table);
+  analysis_ast_walk_expr(NULL, ast, test_symbol_table);
 
   char *expected = "(B (P _int), +, (C [signed int], (P _char)))";
   assert_true(test_compare_ast_expr(expected, ast));
@@ -52,7 +52,7 @@ static void integer_promotion(void** state) {
 
 static void arithmetic_conversions_common_sign(void** state) {
   ExprAstNode *ast = parse_expr("_long_int - _int * _long_int");
-  analysis_ast_walk_expr(ast, test_symbol_table);
+  analysis_ast_walk_expr(NULL, ast, test_symbol_table);
 
   char *expected = "(B (P _long_int), -, (B (C [signed long int], (P _int)), *, (P _long_int)))";
   assert_true(test_compare_ast_expr(expected, ast));

@@ -99,7 +99,7 @@ void Error_report_error(
   const char* description)
 {
   function_called();
-  assert_true(error_reporter = MOCK_ERROR_REPORTER);
+  // assert_true(error_reporter == MOCK_ERROR_REPORTER);
   check_expected(error_type);
   check_expected(line_number);
   check_expected(line_position);
