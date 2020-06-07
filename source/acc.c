@@ -159,7 +159,7 @@ static _Bool parse_cmd_args(int argc, char** argv, struct CommandLineArgs_t* arg
 
 static DeclAstNode* get_ast(const char* source) {
   Scanner* scanner = Scanner_init(source, NULL);
-  Parser* parser = Parser_init(scanner);
+  Parser* parser = Parser_init(scanner, NULL);
 
   // // Generate the AST for the file.
   DeclAstNode* ast = Parser_translation_unit(parser);

@@ -12,9 +12,10 @@
 /*
  * Initialize the Parser instance.
  */
-Parser *Parser_init(Scanner *scanner) {
+Parser *Parser_init(Scanner *scanner, ErrorReporter * error_reporter) {
   Parser *parser = calloc(1, sizeof(Parser));
   parser->scanner = scanner;
+  parser->error_reporter = error_reporter;
 
   parser->next_token[0] = Scanner_get_next(parser->scanner);
   parser->next_token[1] = Scanner_get_next(parser->scanner);
@@ -72,7 +73,7 @@ Token *Parser_consume_token(Parser *parser, TokenType token_type) {
              Token_str(tok->type));
 
     Error_report_error(
-        NULL,
+        parser->error_reporter,
         PARSER,
         tok->line_number,
         tok->line_position,

@@ -100,7 +100,7 @@ DeclAstNode* Parser_declaration(Parser* parser) {  // @TODO
   // has been provided.
   if(!decl->identifier) {
     Error_report_error(
-        NULL,
+        parser->error_reporter,
         PARSER,
         line_number,
         line_position,
@@ -194,7 +194,7 @@ end:
   ctype_finalise(type, &err);
   if (err) {
     Error_report_error(
-        NULL,
+        parser->error_reporter,
         PARSER,
         line,
         position,
@@ -233,7 +233,7 @@ static DeclAstNode* init_declarator(Parser* parser, CType* type) {  // @TODO
   ctype_finalise(decl->type, &err);
   if (err) {
     Error_report_error(
-        NULL,
+        parser->error_reporter,
         PARSER,
         line_number,
         position,
@@ -545,7 +545,7 @@ CType* Parser_type_name(Parser* parser) {  // @TODO
   // been omitted)
   if(decl->decl_type == CONCRETE) {
     Error_report_error(
-        NULL,
+        parser->error_reporter,
         PARSER,
         line_number, 
         position,

@@ -138,7 +138,7 @@ static ExprAstNode* primary_expression(Parser* parser) {  // @DONE
       char err_str[100];
       snprintf(err_str, 100, "Expected expression, got '%s'",
               Token_str(peek()->type));
-      Error_report_error(NULL, PARSER, peek()->line_number, peek()->line_position, err_str, "");
+      Error_report_error(parser->error_reporter, PARSER, peek()->line_number, peek()->line_position, err_str, "");
 
       THROW_ERROR(parser);
 
@@ -161,7 +161,7 @@ static ExprAstNode* primary_expression(Parser* parser) {  // @DONE
     consume(RIGHT_PAREN);
     return expr;
   }
-
+  return NULL;
 }
 
 static ExprAstNode* postfix_expression(Parser* parser) {

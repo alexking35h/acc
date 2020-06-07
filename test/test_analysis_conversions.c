@@ -37,8 +37,8 @@
 #include <string.h>
 
 static ExprAstNode* parse_expr(const char *source) {
-    Scanner *scanner = Scanner_init(source, NULL);
-    Parser *parser = Parser_init(scanner);
+    Scanner *scanner = Scanner_init(source, MOCK_ERROR_REPORTER);
+    Parser *parser = Parser_init(scanner, MOCK_ERROR_REPORTER);
     return Parser_expression(parser);
 }
 

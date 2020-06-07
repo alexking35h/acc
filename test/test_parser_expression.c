@@ -17,7 +17,7 @@
 
 static void initialize_parser(void** state) {
   Scanner* scanner = Scanner_init("", MOCK_ERROR_REPORTER);
-  Parser_destroy(Parser_init(scanner));
+  Parser_destroy(Parser_init(scanner, MOCK_ERROR_REPORTER));
   Scanner_destroy(scanner);
 }
 

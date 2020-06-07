@@ -11,6 +11,7 @@
 typedef struct Parser_t {
   // Scanner and error instances.
   Scanner *scanner;
+  ErrorReporter* error_reporter;
 
   // Next unread token.
   Token *next_token[2];
@@ -23,7 +24,7 @@ typedef struct Parser_t {
 /*
  * Initialize the Parser instance.
  */
-Parser *Parser_init(Scanner *);
+Parser *Parser_init(Scanner *, ErrorReporter *);
 
 /*
  * Destroy the Parser instance.
