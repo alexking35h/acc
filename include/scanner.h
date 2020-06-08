@@ -1,3 +1,13 @@
+/*
+ * Scanner / Lexer
+ * 
+ * The scanner generates a sequence of tokens from the input source code,
+ * which are passed to the parser. Technically, the scanning is done
+ * before Scanner_init() is called, and this is actually lexical analysis.
+ * 
+ * @TODO: s/Scanner/Lexer/g
+ */
+
 #ifndef __SCANNER__
 #define __SCANNER__
 

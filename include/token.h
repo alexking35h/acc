@@ -1,9 +1,6 @@
 /*
  * ACC Tokens used during by the lexer/scanner
  *
- * Tokens constitute the microsyntax of the language
- * Tokens are the microsyntax of the langauge,
- *
  * Tokens are the 'microsyntax' of the language, as defined
  * by C's lexical grammar. The Scanner/Lexer generates a flat sequence
  * of tokens from the input source, which the parser takes as input.

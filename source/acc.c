@@ -175,7 +175,7 @@ static void print_error_json(ErrorType type, int line, int pos, char * title, ch
 
 }
 
-static void print_error_commandline(ErrorType type, char * line, int line_number, int pos, char * title, char *desc) {
+static void print_error_commandline(ErrorType type, const char * line, int line_number, int pos, char * title, char *desc) {
     int line_len = strchr(line, '\n') - line;
     char * line_cpy = malloc(line_len+1);
     strncpy(line_cpy, line, line_len);
@@ -196,7 +196,6 @@ static void print_error_commandline(ErrorType type, char * line, int line_number
     }
 
     printf("\nError: %s\n", title);
-    
     if(desc) {
         printf("%s", desc);
     }
@@ -209,14 +208,14 @@ static void print_error_commandline(ErrorType type, char * line, int line_number
 }
 
 static void compiler_print_errors(AccCompiler *compiler, _Bool json) {
-    int beginning = 0;
+    int errors = 0;
     ErrorType type;
     int line_number;
     int line_position;
     char * title;
     char * description;
 
-    for(;;) {
+    for(;;errors++) {
         if(!Error_get_errors(
             compiler->error_reporter,
             &type,
@@ -224,7 +223,7 @@ static void compiler_print_errors(AccCompiler *compiler, _Bool json) {
             &line_position,
             &title,
             &description,
-            beginning++ == 0
+            errors == 0
         )) break;
 
         if(json) {
@@ -233,6 +232,10 @@ static void compiler_print_errors(AccCompiler *compiler, _Bool json) {
             const char * line = Scanner_get_line(compiler->scanner, line_number-1);
             print_error_commandline(type, line, line_number, line_position, title, description);
         }
+    }
+    
+    if(!json) {
+        printf("%d errors reported in total.\n", errors);
     }
 }
 
@@ -263,6 +266,9 @@ int main(int argc, char **argv)
     // Abort if we cannot proceed.
     if(Error_has_errors(compiler->error_reporter)) {
         compiler_print_errors(compiler, args.json);
-        return 1;
+        goto tidyup;
     }
+
+tidyup:
+    compiler_destroy(compiler);
 }

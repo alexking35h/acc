@@ -1,3 +1,10 @@
+/*
+ * Generate concise strings from AST nodes.
+ * 
+ * These are used in unit tests to verify the generated AST for a given source
+ * string.
+ */
+
 #ifndef __PRETTY_PRINT__
 #define __PRETTY_PRINT__
 

@@ -1,3 +1,38 @@
+/*
+ * Recursive-descent Parser
+ * 
+ * The parser generates the Abstract Syntax Tree from the sequence
+ * of tokens provided by the scanner. The parser is split into three
+ * parts:
+ *  - Expressions (parser_expression.c)
+ *  - Declarations (parser_declaration.c)
+ *  - Statements (parser_statement.c)
+ * 
+ * This head file defines functions/types called outside the parser,
+ * and 
+ * 
+ * This header file defines functions/types used outside the parser
+ * 
+ * Therefore, this header file declares functions used outside the parser:
+ *  - Parser_init()
+ *  - Parser_destroy()
+ *  - Parser_translation_unit()
+ * 
+ * This header file also declares functions used internally within the parser.
+ * Common code is defined in parser.c
+ *  - Parser_match_token()
+ *  - Parser_peek_token()
+ *  - Parser_peek_next_token()
+ *  - Parser_consume_token()
+ *  - Parser_advance_token()
+ * 
+ * The parser implements panic-mode error recovery - if an error occurs during parsing,
+ * the parser synchronises on the next semicolon in the token stream.
+ * 
+ * The entry point for the parser is Parser_translation_unit(), which returns the 
+ * AST root node.
+ */
+
 #ifndef __PARSER__
 #define __PARSER__
 
@@ -66,21 +101,31 @@ void Parser_advance_token(Parser *);
  */
 Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme);
 
+/*
+ * Rudimentary try/catch statements using setjmp and longjmp. E.g.:
+ *  if(CATCH_ERROR(parser)) {
+ *    // Error occurred!
+ *  } else {
+ *    //...
+ *    THROW_ERROR(parser)
+ *  }
+ */
 #define CATCH_ERROR(parser) (setjmp(parser->panic_jmp) != 0)
 #define THROW_ERROR(parser) longjmp(parser->panic_jmp, 1)
 
-void Parser_sync_token(Parser *, TokenType[]);
+/*
+ * Synchronise the token stream input on any token in set types.
+ * The array types must end with NAT. (E.g., {SEMICOLON, EOF, NAT})
+ */
+void Parser_sync_token(Parser * parser, TokenType types[]);
 
 /*
  * Recursive descent parser function definitions.
  */
 ExprAstNode *Parser_expression(Parser *parser);
-
 DeclAstNode *Parser_declaration(Parser *parser);
 DeclAstNode *Parser_translation_unit(Parser *parser);
-
 StmtAstNode *Parser_compound_statement(Parser *parser);
-
 CType *Parser_type_name(Parser *parser);
 
 #endif
