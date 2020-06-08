@@ -25,8 +25,6 @@
 #define GIT_REPO ""
 #endif
 
-extern int errno;
-
 #define BANNER \
     "     ___       ______   ______ \n"     \
     "    /   \\     /      | /      |\n"     \
@@ -35,7 +33,9 @@ extern int errno;
     " /  _____  \\ |  `----.|  `----.\n"     \
     "/__/     \\__\\ \\______| \\______|\n"
 
+extern int errno;
 
+/* Extern is defined as weak so that it can be overriden by unit tests. */
 int main(int, char **) __attribute__((weak));
 
 typedef struct CommandLineArgs_t {
@@ -44,6 +44,7 @@ typedef struct CommandLineArgs_t {
 } CommandLineArgs;
 
 typedef struct AccCompiler_t {
+    char * source;
     ErrorReporter * error_reporter;
     Scanner * scanner;
     Parser * parser;
@@ -152,10 +153,11 @@ err:
 }
 
 static AccCompiler * compiler_init(const char * path) {
-    const char * src = read_source(path);
+    char * src = read_source(path);
     if(!src) return NULL;
 
     AccCompiler * compiler = calloc(1, sizeof(AccCompiler));
+    compiler->source = src;
     compiler->error_reporter = Error_init();
     compiler->scanner = Scanner_init(src, compiler->error_reporter);
     compiler->parser = Parser_init(compiler->scanner, compiler->error_reporter);
@@ -168,7 +170,7 @@ static DeclAstNode * compiler_parse(AccCompiler * compiler) {
 }
 
 static void compiler_analysis(AccCompiler * compiler, DeclAstNode * ast_root) {
-    
+    // analysis_ast_walk(compiler->error_reporter, ast_root, NULL, NULL);
 }
 
 static void print_error_json(ErrorType type, int line, int pos, char * title, char *desc) {
@@ -243,6 +245,7 @@ static void compiler_destroy(AccCompiler * compiler) {
     Error_destroy(compiler->error_reporter);
     Parser_destroy(compiler->parser);
     Scanner_destroy(compiler->scanner);
+    free(compiler->source);
 }
 
 int main(int argc, char **argv)
