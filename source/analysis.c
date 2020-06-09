@@ -1,5 +1,4 @@
 #include "analysis.h"
-#include "arch.h"
 #include "ast.h"
 #include "symbol.h"
 #include "token.h"
@@ -8,6 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
+ * Concatenate a sequence of strings into a single string. Also,
+ * every 2nd pointer is free'd (must be dyncamically allocated).
+ *
+ * E.g.:
+ * > ERROR_STR(error_str, "Hello, ", NULL, "World!");
+ */
 #define ERROR_STR(error_string, ...)                                                     \
     char error_string[250] = "";                                                         \
     char *ptr[] = {__VA_ARGS__, NULL, NULL}, **p = ptr;                                  \
@@ -20,33 +26,17 @@
     }
 
 /*
- * Track currently allocated memory within a translation unit (top-level),
- * or within a function.
- */
-typedef struct Allocator
-{
-    // (in bytes)
-    int currently_allocated;
-
-    // If true - allocate static by default. Otherwise, allocate on the stack.
-    bool translation_unit;
-} Allocator;
-
-/*
  * Walk Expression AST Nodes. Parsing expressions often requires getting type
  * information from child nodes (e.g., a+b requires type information for 'a' and 'b').
  * Therefore, all expressions that walk expression types return a pointer to a type.
  */
 static CType *walk_expr(ErrorReporter *, ExprAstNode *, SymbolTable *, _Bool);
 
-/*
- * Walk Declaration and Statement nodes. This includes allocating symbols in
- * memory. To track currently-allocated memory, these functions take an instance of
- * Allocator, which also calculated the necessary frame size for functions.
- */
-static void walk_decl(ErrorReporter *, DeclAstNode *, SymbolTable *, Allocator *);
-static void walk_stmt(ErrorReporter *, StmtAstNode *, SymbolTable *, Allocator *);
+/* Walk Declaration and Statement nodes. */
+static void walk_decl(ErrorReporter *, DeclAstNode *, SymbolTable *, _Bool);
+static void walk_stmt(ErrorReporter *, StmtAstNode *, SymbolTable *);
 
+/* Fixed CTypes used throughout analysis */
 static CType int_type = {TYPE_BASIC, .basic.type_specifier = TYPE_SIGNED_INT};
 static CType char_type = {TYPE_BASIC, .basic.type_specifier = TYPE_UNSIGNED_CHAR};
 static CType char_ptr_type = {TYPE_POINTER, .derived.type = &char_type};
@@ -237,42 +227,17 @@ static CType *type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode 
     return cast_type;
 }
 
-static void arch_allocate_address(Symbol *sym, Allocator *allocator)
-{
-    // Allocate memory for a given symbol, based on size and alignment requirements.
-    int size = arch_get_size(sym->type);
-    int align = arch_get_alignment(sym->type);
-
-    // The alignment is a power of 2. Check if we need padding.
-    if ((allocator->currently_allocated & (align - 1)) != 0)
-        allocator->currently_allocated =
-            (allocator->currently_allocated | (align - 1)) + 1;
-
-    sym->address.offset = allocator->currently_allocated;
-    sym->address.type = allocator->translation_unit ? ADDRESS_STATIC : ADDRESS_AUTOMATIC;
-    allocator->currently_allocated += size;
-}
-
 static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,
                                 _Bool need_lvalue)
 {
-    if (node->primary.constant)
+    if (node->primary.constant || node->primary.string_literal)
     {
         if (need_lvalue)
         {
             Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
                                "Invalid lvalue");
         }
-        return &int_type;
-    }
-    else if (node->primary.string_literal)
-    {
-        if (need_lvalue)
-        {
-            Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                               "Invalid lvalue");
-        }
-        return &char_ptr_type;
+        return node->primary.constant ? &int_type : &char_ptr_type;
     }
 
     Symbol *sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
@@ -333,17 +298,14 @@ static CType *walk_expr_postfix(ErrorReporter *error, ExprAstNode *node, SymbolT
         return NULL;
 
     // The only implemented postfix expression is a function call.
-    if (CTYPE_IS_FUNCTION(pf))
-    {
-        walk_argument_list(error, pf->derived.params, node, tab);
-        return pf->derived.type;
-    }
-    else
+    if (!CTYPE_IS_FUNCTION(pf))
     {
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
                            "Not a function");
+        return NULL;
     }
-    return NULL;
+    walk_argument_list(error, pf->derived.params, node, tab);
+    return pf->derived.type;
 }
 
 static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,
@@ -539,34 +501,16 @@ static CType *walk_expr(ErrorReporter *error, ExprAstNode *node, SymbolTable *ta
     return NULL;
 }
 
-static void walk_decl_function(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab,
-                               Allocator *allocator)
+static void walk_decl_function(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab)
 {
     if (node->body)
     {
-        Allocator function_allocator = {.currently_allocated = 0,
-                                        .translation_unit = false};
-        walk_stmt(error, node->body, symbol_table_create(tab), &function_allocator);
-        int frame_size = function_allocator.currently_allocated;
-        if (frame_size & (ARCH_WORD_SIZE - 1))
-        {
-            node->symbol->frame_size = (frame_size | (ARCH_WORD_SIZE - 1)) + 1;
-        }
-        else
-        {
-            node->symbol->frame_size = frame_size;
-        }
-    }
-    else
-    {
-        node->symbol->frame_size = 0;
+        walk_stmt(error, node->body, symbol_table_create(tab));
     }
 }
 
-static void walk_decl_object(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab,
-                             Allocator *allocator)
+static void walk_decl_object(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab)
 {
-    arch_allocate_address(node->symbol, allocator);
     if (node->initializer)
     {
         CType *type = walk_expr(error, node->initializer, tab, false);
@@ -581,10 +525,16 @@ static void walk_decl_object(ErrorReporter *error, DeclAstNode *node, SymbolTabl
     }
 }
 
-static void walk_decl(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab,
-                      Allocator *allocator)
+/*
+ * Walk declaration. Parameters:
+ * error - Instance of ErrorReporter
+ * node - DeclAstNode to inspect
+ * tab - symbol table
+ * tu - translation unit - false if this declaration is within a function body.
+ */
+static void walk_decl(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab, _Bool tu)
 {
-    if (allocator && !allocator->translation_unit && CTYPE_IS_FUNCTION(node->type))
+    if (!tu && CTYPE_IS_FUNCTION(node->type))
     {
         // Check if we're trying to define a function within a function.
         ERROR_STR(err, "Cannot have nested functions ('", NULL, node->identifier->lexeme,
@@ -604,33 +554,27 @@ static void walk_decl(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab,
     node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
     node->symbol->type = node->type;
 
-    Allocator translation_unit_allocator = {.currently_allocated = 0,
-                                            .translation_unit = true};
-    allocator = allocator ? allocator : &translation_unit_allocator;
-
     if (CTYPE_IS_FUNCTION(node->type))
     {
-        walk_decl_function(error, node, tab, allocator);
+        walk_decl_function(error, node, tab);
     }
     else
     {
-        walk_decl_object(error, node, tab, allocator);
+        walk_decl_object(error, node, tab);
     }
 
     if (node->next)
-        walk_decl(error, node->next, tab, allocator);
+        walk_decl(error, node->next, tab, tu);
 }
 
-static void walk_stmt_decl(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab,
-                           Allocator *allocator)
+static void walk_stmt_decl(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
-    walk_decl(error, node->decl.decl, tab, allocator);
+    walk_decl(error, node->decl.decl, tab, false);
 }
 
-static void walk_stmt_block(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab,
-                            Allocator *allocator)
+static void walk_stmt_block(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
-    walk_stmt(error, node->block.head, tab, allocator);
+    walk_stmt(error, node->block.head, tab);
 }
 
 static void walk_stmt_expr(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
@@ -643,17 +587,16 @@ static void walk_stmt_ret(ErrorReporter *error, StmtAstNode *node, SymbolTable *
     walk_expr(error, node->return_jump.value, tab, false);
 }
 
-static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab,
-                      Allocator *allocator)
+static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
     switch (node->type)
     {
     case DECL:
-        walk_stmt_decl(error, node, tab, allocator);
+        walk_stmt_decl(error, node, tab);
         break;
 
     case BLOCK:
-        walk_stmt_block(error, node, tab, allocator);
+        walk_stmt_block(error, node, tab);
         break;
 
     case EXPR:
@@ -665,7 +608,7 @@ static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab,
         break;
     }
     if (node->next)
-        walk_stmt(error, node->next, tab, allocator);
+        walk_stmt(error, node->next, tab);
 }
 
 /*
@@ -676,7 +619,7 @@ void analysis_ast_walk(ErrorReporter *error, DeclAstNode *decl, ExprAstNode *exp
 {
     if (decl)
     {
-        walk_decl(error, decl, tab, NULL);
+        walk_decl(error, decl, tab, true);
     }
     else if (expr)
     {
@@ -684,6 +627,6 @@ void analysis_ast_walk(ErrorReporter *error, DeclAstNode *decl, ExprAstNode *exp
     }
     else if (stmt)
     {
-        walk_stmt(error, stmt, tab, NULL);
+        walk_stmt(error, stmt, tab);
     }
 }

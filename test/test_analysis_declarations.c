@@ -94,12 +94,6 @@ void basic_type(void **state)
     DeclAstNode *decl =
         parse_decl("char var1;short var2;int var3;long int var4; char var5;");
     analysis_ast_walk_decl(MOCK_ERROR_REPORTER, decl, MOCK_SYMBOL_TABLE);
-
-    assert_true(t1.address.type == ADDRESS_STATIC && t1.address.offset == 0);
-    assert_true(t2.address.type == ADDRESS_STATIC && t2.address.offset == 2);
-    assert_true(t3.address.type == ADDRESS_STATIC && t3.address.offset == 4);
-    assert_true(t4.address.type == ADDRESS_STATIC && t4.address.offset == 8);
-    assert_true(t5.address.type == ADDRESS_STATIC && t5.address.offset == 16);
 }
 
 void array_type(void **state)
@@ -112,9 +106,6 @@ void array_type(void **state)
     expect_put(MOCK_SYMBOL_TABLE, "var1", &t2);
     analysis_ast_walk_decl(MOCK_ERROR_REPORTER, parse_decl("int arr1[13];char var1;"),
                            MOCK_SYMBOL_TABLE);
-
-    assert_true(t1.address.type == ADDRESS_STATIC && t1.address.offset == 0);
-    assert_true(t2.address.type == ADDRESS_STATIC && t2.address.offset == (4 * 13));
 }
 
 void ptr_type(void **state)
@@ -127,9 +118,6 @@ void ptr_type(void **state)
 
     analysis_ast_walk_decl(MOCK_ERROR_REPORTER, parse_decl("int *ptr1;int var1;"),
                            MOCK_SYMBOL_TABLE);
-
-    assert_true(t1.address.type == ADDRESS_STATIC && t1.address.offset == 0);
-    assert_true(t2.address.type == ADDRESS_STATIC && t2.address.offset == 4);
 }
 
 void automatic_allocation(void **state)
@@ -152,12 +140,6 @@ void automatic_allocation(void **state)
 
     DeclAstNode *decl = parse_decl("int var1; void fun1(){int arr1[23];char var1;}");
     analysis_ast_walk_decl(MOCK_ERROR_REPORTER, decl, MOCK_SYMBOL_TABLE);
-
-    assert_true(t2.address.type == ADDRESS_AUTOMATIC && t2.address.offset == 0);
-    assert_true(t3.address.type == ADDRESS_AUTOMATIC && t3.address.offset == (23 * 4));
-
-    // Check that the frame size for the function has been correctly calculated.
-    assert_true(f1.frame_size == (23 * 4) + 4);
 }
 
 void previously_declared(void **state)

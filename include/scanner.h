@@ -1,10 +1,10 @@
 /*
  * Scanner / Lexer
- * 
+ *
  * The scanner generates a sequence of tokens from the input source code,
  * which are passed to the parser. Technically, the scanning is done
  * before Scanner_init() is called, and this is actually lexical analysis.
- * 
+ *
  * @TODO: s/Scanner/Lexer/g
  */
 
@@ -55,6 +55,6 @@ void Scanner_destroy(Scanner *scanner);
 /*
  * Get pointer to line position in the file.
  */
-const char * Scanner_get_line(Scanner *scanner, int line);
+const char *Scanner_get_line(Scanner *scanner, int line);
 
 #endif

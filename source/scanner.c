@@ -60,7 +60,7 @@ typedef struct Scanner_t
     // Line position pointers.
     int line_positions_size;
     int line_positions_next;
-    const char ** line_positions;
+    const char **line_positions;
 } Scanner;
 
 /*
@@ -76,15 +76,16 @@ static bool consume_number(Scanner *);
 static bool consume_string(Scanner *);
 static bool consume_comment(Scanner *);
 
-static void store_line_position(Scanner * scanner) {
-    if(scanner->line_positions_next >= scanner->line_positions_size) {
+static void store_line_position(Scanner *scanner)
+{
+    if (scanner->line_positions_next >= scanner->line_positions_size)
+    {
         scanner->line_positions = realloc(
-            scanner->line_positions,
-            sizeof(char*)*(scanner->line_positions_size + 5)
-        );
+            scanner->line_positions, sizeof(char *) * (scanner->line_positions_size + 5));
         scanner->line_positions_size += 5;
     }
-    scanner->line_positions[scanner->line_positions_next++] = scanner->source + scanner->current;
+    scanner->line_positions[scanner->line_positions_next++] =
+        scanner->source + scanner->current;
 }
 
 Token *Scanner_create_token(Scanner *scanner)
@@ -477,7 +478,7 @@ Scanner *Scanner_init(char const *source, ErrorReporter *error_reporter)
     scanner->next_token = scanner->token_list->tokens;
 
     // Allocate space for the line positions array.
-    scanner->line_positions = calloc(5, sizeof(char*));
+    scanner->line_positions = calloc(5, sizeof(char *));
     scanner->line_positions_size = 5;
     scanner->line_positions_next = 1;
     scanner->line_positions[0] = scanner->source;
@@ -555,9 +556,10 @@ void Scanner_destroy(Scanner *scanner)
 /*
  * Get pointer to line position in the source file
  */
-const char * Scanner_get_line(Scanner * scanner, int line) {
-    if(line > scanner->line_positions_next)
+const char *Scanner_get_line(Scanner *scanner, int line)
+{
+    if (line > scanner->line_positions_next)
         return NULL;
-    
+
     return scanner->line_positions[line];
 }
