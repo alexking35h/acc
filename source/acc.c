@@ -135,7 +135,7 @@ static const char * read_source(const char * path) {
     }
 
     // Allocate storage space on the heap for the file.
-    char * file_contents = malloc(fsize);
+    char * file_contents = calloc(fsize+1, 1);
     if(!file_contents) {
         printf("Unable to allocate sufficient space for the file\n");
         return NULL;

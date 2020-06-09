@@ -209,6 +209,7 @@ static bool consume_string(Scanner *scanner)
                                string_line_position, "Unterminated string literal", NULL);
             scanner->line_number++;
             scanner->line_start_position = scanner->current;
+            store_line_position(scanner);
             return false;
         }
 
@@ -266,6 +267,7 @@ static bool consume_comment(Scanner *scanner)
             if (match_character(scanner, "\n"))
             {
                 scanner->line_number++;
+                store_line_position(scanner);
                 continue;
             }
             if (scanner->source[scanner->current++] != '*')
