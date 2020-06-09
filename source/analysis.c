@@ -8,8 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ERROR_REPORT_ERROR(typ, pos, msg) Error_report_error(error, typ, pos, 0, msg, "")
-
 #define ERROR_STR(error_string, ...)                                                     \
     char error_string[250] = "";                                                         \
     char *ptr[] = {__VA_ARGS__, NULL, NULL}, **p = ptr;                                  \
@@ -263,7 +261,7 @@ static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolT
         if (need_lvalue)
         {
             Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                               "Invalid lvalue", "");
+                               "Invalid lvalue");
         }
         return &int_type;
     }
@@ -272,7 +270,7 @@ static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolT
         if (need_lvalue)
         {
             Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                               "Invalid lvalue", "");
+                               "Invalid lvalue");
         }
         return &char_ptr_type;
     }
@@ -282,8 +280,7 @@ static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolT
     {
         ERROR_STR(err, "Undeclared identifier '", NULL, node->primary.identifier->lexeme,
                   NULL, "'");
-        Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err,
-                           "");
+        Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
         return NULL;
     }
     node->primary.symbol = sym;
@@ -309,7 +306,7 @@ static void walk_argument_list(ErrorReporter *error, ParameterListItem *params,
             ERROR_STR(err, "Incompatible argument type. Cannot pass type '",
                       ctype_str(arg_type), "' to type '", ctype_str(param_type), "'");
             Error_report_error(error, ANALYSIS, arguments->argument->line_number,
-                               arguments->argument->line_position, err, "");
+                               arguments->argument->line_position, err);
         }
     }
 
@@ -324,7 +321,7 @@ static void walk_argument_list(ErrorReporter *error, ParameterListItem *params,
         snprintf(err, 100, "Invalid number of arguments to function. Expected %d, got %d",
                  param_count, arg_count);
         Error_report_error(error, ANALYSIS, call_node->line_number,
-                           call_node->line_position, err, "");
+                           call_node->line_position, err);
     }
 }
 
@@ -344,7 +341,7 @@ static CType *walk_expr_postfix(ErrorReporter *error, ExprAstNode *node, SymbolT
     else
     {
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                           "Not a function", "");
+                           "Not a function");
     }
     return NULL;
 }
@@ -355,7 +352,7 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
     if (need_lvalue)
     {
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                           "Invalid lvalue", "");
+                           "Invalid lvalue");
     }
     CType *left = walk_expr(error, node->binary.left, tab, false);
     CType *right = walk_expr(error, node->binary.right, tab, false);
@@ -402,7 +399,7 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
 err : {
     ERROR_STR(err, "Invalid operand type to binary operator '", NULL,
               node->binary.op->lexeme, NULL, "'");
-    Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err, "");
+    Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
 }
     return NULL;
 }
@@ -421,7 +418,7 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
         if (ctype->type != TYPE_POINTER)
         {
             Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                               "Invalid Pointer dereference", "");
+                               "Invalid Pointer dereference");
             return NULL;
         }
 
@@ -446,7 +443,7 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
             ERROR_STR(err, "Invalid operand to unary operator '", NULL,
                       node->unary.op->lexeme, NULL, "'");
             Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                               err, "");
+                               err);
         }
         return ctype;
     }
@@ -458,7 +455,7 @@ static CType *walk_expr_tertiary(ErrorReporter *error, ExprAstNode *node,
     if (need_lvalue)
     {
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                           "Invalid lvalue", "");
+                           "Invalid lvalue");
     }
 
     CType *left = walk_expr(error, node->tertiary.condition_expr, tab, false);
@@ -475,7 +472,7 @@ static CType *walk_expr_tertiary(ErrorReporter *error, ExprAstNode *node,
 
     // Error occurred - the types are not the same.
     Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                       "Invalid types in tertiary expression", "");
+                       "Invalid types in tertiary expression");
     return NULL;
 }
 
@@ -485,7 +482,7 @@ static CType *walk_expr_cast(ErrorReporter *error, ExprAstNode *node, SymbolTabl
     if (need_lvalue)
     {
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                           "Invalid lvalue", "");
+                           "Invalid lvalue");
     }
     return walk_expr(error, node->cast.right, tab, false);
 }
@@ -496,7 +493,7 @@ static CType *walk_expr_assign(ErrorReporter *error, ExprAstNode *node, SymbolTa
     if (need_lvalue)
     {
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                           "Invalid lvalue", "");
+                           "Invalid lvalue");
     }
     CType *left = walk_expr(error, node->assign.left, tab, true);
     CType *right = walk_expr(error, node->assign.right, tab, false);
@@ -508,8 +505,7 @@ static CType *walk_expr_assign(ErrorReporter *error, ExprAstNode *node, SymbolTa
     {
         ERROR_STR(err, "Incompatible assignment. Cannot assign type '", ctype_str(right),
                   "' to type '", ctype_str(left), "'");
-        Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err,
-                           "");
+        Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
     }
     return left;
 }
@@ -580,7 +576,7 @@ static void walk_decl_object(ErrorReporter *error, DeclAstNode *node, SymbolTabl
             ERROR_STR(err, "Invalid initializer value. Cannot assign type '",
                       ctype_str(type), "' to type '", ctype_str(node->type), "'");
             Error_report_error(error, ANALYSIS, node->initializer->line_number,
-                               node->initializer->line_position, err, "");
+                               node->initializer->line_position, err);
         }
     }
 }
@@ -593,8 +589,7 @@ static void walk_decl(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab,
         // Check if we're trying to define a function within a function.
         ERROR_STR(err, "Cannot have nested functions ('", NULL, node->identifier->lexeme,
                   NULL, "'). Try Rust?");
-        Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err,
-                           NULL);
+        Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
         return;
     }
     if (symbol_table_get(tab, node->identifier->lexeme, false))
@@ -603,8 +598,7 @@ static void walk_decl(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab,
         // identifier within the current scope.
         ERROR_STR(err, "Previously declared identifier '", NULL, node->identifier->lexeme,
                   NULL, "'");
-        Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err,
-                           "");
+        Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
         return;
     }
     node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);

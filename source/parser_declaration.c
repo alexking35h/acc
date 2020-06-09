@@ -102,7 +102,7 @@ DeclAstNode *Parser_declaration(Parser *parser)
     if (!decl->identifier)
     {
         Error_report_error(parser->error_reporter, PARSER, line_number, line_position,
-                           "Missing identifier in declaration", "");
+                           "Missing identifier in declaration");
         THROW_ERROR(parser);
     }
 
@@ -193,7 +193,7 @@ end:
     ctype_finalise(type, &err);
     if (err)
     {
-        Error_report_error(parser->error_reporter, PARSER, line, position, err, "");
+        Error_report_error(parser->error_reporter, PARSER, line, position, err);
         THROW_ERROR(parser);
     }
     return type;
@@ -228,8 +228,7 @@ static DeclAstNode *init_declarator(Parser *parser, CType *type)
     ctype_finalise(decl->type, &err);
     if (err)
     {
-        Error_report_error(parser->error_reporter, PARSER, line_number, position, err,
-                           "");
+        Error_report_error(parser->error_reporter, PARSER, line_number, position, err);
         THROW_ERROR(parser);
     }
 
@@ -578,7 +577,7 @@ CType *Parser_type_name(Parser *parser)
     if (decl->decl_type == CONCRETE)
     {
         Error_report_error(parser->error_reporter, PARSER, line_number, position,
-                           "Type names must not have an identifier", "");
+                           "Type names must not have an identifier");
         THROW_ERROR(parser);
     }
     return decl->type;

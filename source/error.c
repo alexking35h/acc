@@ -2,15 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-void Error_report_error(ErrorReporter *, ErrorType, int, int, const char *, const char *)
+void Error_report_error(ErrorReporter *, ErrorType, int, int, const char *)
     __attribute__((weak));
 
 typedef struct ErrorReport {
     ErrorType type;
     int line_number;
     int line_position;
-    char * title;
-    char * description;   
+    char * msg;
 
     struct ErrorReport * next;
 } ErrorReport;
@@ -38,8 +37,7 @@ void Error_report_error(
     ErrorType type,
     int line_number,
     int line_position,
-    const char * title,
-    const char * description)
+    const char * msg) 
 {
     // Find the right position in the list. Ordered as follows:
     // 1. By line-number ascending.
@@ -70,14 +68,8 @@ void Error_report_error(
     (*prev)->line_number = line_number;
     (*prev)->line_position = line_position;
     (*prev)->type = type;
-
-    (*prev)->title = malloc(strlen(title));
-    strcpy((*prev)->title, title);
-
-    if(description) {
-        (*prev)->description = malloc(strlen(description));
-        strcpy((*prev)->description, description);
-    } 
+    (*prev)->msg = malloc(strlen(msg));
+    strcpy((*prev)->msg, msg);
 }
 
 int Error_get_errors(
@@ -85,8 +77,7 @@ int Error_get_errors(
     ErrorType *type,
     int * line_number,
     int * line_position,
-    char ** title,
-    char ** description,
+    char ** msg,
     _Bool beginning
 ) {
     if(beginning)
@@ -100,8 +91,7 @@ int Error_get_errors(
     *type = n->type;
     *line_number = n->line_number;
     *line_position = n->line_position;
-    *title = n->title;
-    *description = n->description;
+    *msg = n->msg;
 
     error_reporter->iterate_position = n->next;
     return 1;

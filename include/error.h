@@ -63,8 +63,7 @@ int Error_get_errors(
     ErrorType *type,
     int * line_number,
     int * line_position,
-    char ** title,
-    char ** description,
+    char ** msg,
     _Bool beginning
 );
 
@@ -77,9 +76,8 @@ int Error_get_errors(
  *  ErrorType error_type
  *  int line_number
  *  int line_position
- *  char * title
- *  char * description
+ *  char * msg
  */
-void Error_report_error(ErrorReporter *, ErrorType, int, int, const char *, const char *);
+void Error_report_error(ErrorReporter *, ErrorType, int, int, const char *);
 
 #endif

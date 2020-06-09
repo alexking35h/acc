@@ -170,14 +170,28 @@ static DeclAstNode * compiler_parse(AccCompiler * compiler) {
 }
 
 static void compiler_analysis(AccCompiler * compiler, DeclAstNode * ast_root) {
-    // analysis_ast_walk(compiler->error_reporter, ast_root, NULL, NULL);
+    SymbolTable * global = symbol_table_create(NULL);
+    analysis_ast_walk(compiler->error_reporter, ast_root, NULL, NULL, global);
 }
 
-static void print_error_json(ErrorType type, int line, int pos, char * title, char *desc) {
-
+static void print_error_json(ErrorType type, int line, int pos, char * msg) {
+    printf("\n    {\"error_type\":");
+    switch(type) {
+        case SCANNER:
+            printf("\"SCANNER\"");
+            break;
+        case PARSER:
+            printf("\"PARSER\"");
+            break;
+        case ANALYSIS:
+            printf("\"ANALYSIS\"");
+            break;
+    }
+    printf(", \"line_number\": %d", line);
+    printf(", \"message\": \"%s\"}", msg);
 }
 
-static void print_error_commandline(ErrorType type, const char * line, int line_number, int pos, char * title, char *desc) {
+static void print_error_commandline(ErrorType type, const char * line, int line_number, int pos, char * msg) {
     int line_len = strchr(line, '\n') - line;
     char * line_cpy = malloc(line_len+1);
     strncpy(line_cpy, line, line_len);
@@ -197,10 +211,7 @@ static void print_error_commandline(ErrorType type, const char * line, int line_
             break;
     }
 
-    printf("\nError: %s\n", title);
-    if(desc) {
-        printf("%s", desc);
-    }
+    printf("\nError: %s\n", msg);
 
     // Print out the source line, and arrow.
     printf(" > %s\n", line_cpy);
@@ -214,8 +225,11 @@ static void compiler_print_errors(AccCompiler *compiler, _Bool json) {
     ErrorType type;
     int line_number;
     int line_position;
-    char * title;
-    char * description;
+    char * msg;
+
+    if(json) {
+        printf("{\n  \"errors\":\n  [");
+    }
 
     for(;;errors++) {
         if(!Error_get_errors(
@@ -223,21 +237,23 @@ static void compiler_print_errors(AccCompiler *compiler, _Bool json) {
             &type,
             &line_number,
             &line_position,
-            &title,
-            &description,
+            &msg,
             errors == 0
         )) break;
 
         if(json) {
-            print_error_json(type, line_number, line_position, title, description);
+            if(errors) printf(",");
+            print_error_json(type, line_number, line_position, msg);
         } else {
             const char * line = Scanner_get_line(compiler->scanner, line_number-1);
-            print_error_commandline(type, line, line_number, line_position, title, description);
+            print_error_commandline(type, line, line_number, line_position, msg);
         }
     }
     
     if(!json) {
         printf("%d errors reported in total.\n", errors);
+    } else {
+        printf("\n  ]\n}\n");
     }
 }
 

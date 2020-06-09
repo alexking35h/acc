@@ -84,7 +84,7 @@ Token *Parser_consume_token(Parser *parser, TokenType token_type)
                  Token_str(tok->type));
 
         Error_report_error(parser->error_reporter, PARSER, tok->line_number,
-                           tok->line_position, err_msg, "");
+                           tok->line_position, err_msg);
         THROW_ERROR(parser);
     }
     return tok;
