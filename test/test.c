@@ -105,28 +105,27 @@ _Bool test_parse_compare_ast_set(AstTestSet test_set[], TestParserType test_type
  * Mock Error_report_error function
  */
 void Error_report_error(ErrorReporter *error_reporter, ErrorType error_type,
-                        int line_number, int line_position, const char *title,
-                        const char *description)
+                        int line_number, int line_position, const char *msg)
 {
     function_called();
     assert_true(error_reporter == MOCK_ERROR_REPORTER);
     check_expected(error_type);
     check_expected(line_number);
     check_expected(line_position);
-    check_expected(title);
+    check_expected(msg);
 }
 
 /*
  * Helper function for declaring expected errors.
  */
 void expect_report_error(ErrorType error_type, int expect_line, int expect_line_position,
-                         char *expect_error_title)
+                         char *expect_error_msg)
 {
     expect_function_call(Error_report_error);
     expect_value(Error_report_error, error_type, error_type);
     expect_value(Error_report_error, line_number, expect_line);
     expect_value(Error_report_error, line_position, expect_line_position);
-    expect_string(Error_report_error, title, expect_error_title);
+    expect_string(Error_report_error, msg, expect_error_msg);
 }
 
 /* Test symbol table Implementation */
