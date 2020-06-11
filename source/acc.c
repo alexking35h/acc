@@ -10,6 +10,7 @@
 #include "pretty_print.h"
 #include "scanner.h"
 #include "symbol.h"
+#include "ir.h"
 
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0
@@ -323,6 +324,12 @@ int main(int argc, char **argv)
     {
         goto tidyup;
     }
+
+    // Compiler to IR
+    IrProgram * ir_program = Ir_generate(ast_root);
+
+    printf("Program IR:\n");
+    printf("%s\n", Ir_to_str(ir_program));
 
 tidyup:
     compiler_destroy(compiler);
