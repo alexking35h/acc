@@ -80,11 +80,11 @@ DeclAstNode *Parser_declaration(Parser *parser)
 
     CType *type = declaration_specifiers(parser);
 
-    if (match(SEMICOLON))
-    {
-        return DECL(CONCRETE, .line_number = line_number, .line_position = line_position,
-                    .type = type);
-    }
+    // if (match(SEMICOLON))
+    // {
+    //     return DECL(CONCRETE, .line_number = line_number, .line_position = line_position,
+    //                 .type = type);
+    // }
     DeclAstNode *decl = init_declarator_list(parser, type);
 
     // If the ctype is a function, check for a compound statement after

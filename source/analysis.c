@@ -534,33 +534,27 @@ static void walk_decl_object(ErrorReporter *error, DeclAstNode *node, SymbolTabl
  */
 static void walk_decl(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab, _Bool tu)
 {
-    if (!tu && CTYPE_IS_FUNCTION(node->type))
-    {
+    if(CTYPE_IS_FUNCTION(node->type) && !tu) {
         // Check if we're trying to define a function within a function.
         ERROR_STR(err, "Cannot have nested functions ('", NULL, node->identifier->lexeme,
-                  NULL, "'). Try Rust?");
+                NULL, "'). Try Rust?");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
-        return;
-    }
-    if (symbol_table_get(tab, node->identifier->lexeme, false))
+    } else if (symbol_table_get(tab, node->identifier->lexeme, false))
     {
         // Check if there is already a symbol table entry for this
         // identifier within the current scope.
         ERROR_STR(err, "Previously declared identifier '", NULL, node->identifier->lexeme,
                   NULL, "'");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
-        return;
-    }
-    node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
-    node->symbol->type = node->type;
+    } else {
+        node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
+        node->symbol->type = node->type;
 
-    if (CTYPE_IS_FUNCTION(node->type))
-    {
-        walk_decl_function(error, node, tab);
-    }
-    else
-    {
-        walk_decl_object(error, node, tab);
+        if(CTYPE_IS_FUNCTION(node->type)) {
+            walk_decl_function(error, node, tab);
+        } else {
+            walk_decl_object(error, node, tab);
+        }
     }
 
     if (node->next)

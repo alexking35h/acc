@@ -1,27 +1,26 @@
 /*
- * This C source file contains a number of errors which should
- * be picked up by acc's frontend. This includes:
- * 1. Scanner errors
- * 2. Parser errors
- * 3. Context-sensitive errors
+ * This C source files contains a number of grammar errors,
+ * which should be picked up by acc's frontend.
  * 
- * This is read by the regression test suite (see regression_test.py),
- * and compared against the acc's output.
+ * This is read by the regression test suite (see regression_test.py), and compared
+ * with acc's output.
  */
 
-// !error SCANNER "Invalid character in input: '$'"
-$
-
-// !error SCANNER "Unterminated string literal"
-char* a = "I forgot to add a closing quote...
-// !error PARSER "Expected expression, got 'int'"
-int a;
+// !error PARSER "Invalid type"
+char int a;
 
 // !error PARSER "Invalid type"
-static register int a;
+long short int b;
+
+// !error PARSER "Invalid type"
+static register int c;
 
 // !error PARSER "Expected expression, got '/'"
 int a = /;
+
+// Note: we need two semicolons, because acc will try to synchronise on the next one.
+// !error PARSER "Missing identifier in declaration"
+int int;;
 
 void undeclared_identifier() {
     // !error ANALYSIS "Undeclared identifier 'q'"
