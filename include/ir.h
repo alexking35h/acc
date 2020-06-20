@@ -1,7 +1,5 @@
-#ifndef __IR_H__
-#define __IR_H__
-
-#include "ast.h"
+#ifndef __IR___
+#define __IR___
 
 typedef struct IrBasicBlock IrBasicBlock;
 
@@ -46,6 +44,11 @@ typedef enum IrOpcode
 
 typedef struct IrRegister
 {
+    enum {
+        REGISTER_VALUE,
+        REGISTER_ADDRESS
+    } type;
+    
     int index;
 } IrRegister;
 
@@ -53,22 +56,22 @@ typedef struct IrInstruction
 {
     IrOpcode op;
 
-    IrRegister dest;
+    IrRegister * dest;
 
     struct {
-        IrRegister reg;
+        IrRegister * reg;
         IrBasicBlock *jump;
     } left;
 
     struct {
-        IrRegister reg;
+        IrRegister * reg;
         IrBasicBlock *jump;
     } right;
 
     struct
     {
         int value;
-        int local_ofset;
+        int local_offset;
     } immediate;
 
     struct IrInstruction *next;
@@ -86,6 +89,7 @@ typedef struct IrObject
 
     int size;
     int alignment;
+    int index;
 
     struct IrObject *next;
 } IrObject;
@@ -104,11 +108,6 @@ typedef struct IrProgram
     IrObject *globals;
     IrFunction *functions;
 } IrProgram;
-
-/*
- * Generate the IR representation for the given program
- */
-IrProgram *Ir_generate(DeclAstNode *);
 
 /*
  * Generate string-representation of the IR.

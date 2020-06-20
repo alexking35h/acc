@@ -91,7 +91,7 @@ static ExprAstNode *primary_expression(Parser *parser)
     }
     else if (next->type == CONSTANT)
     {
-        return EXPR_PRIMARY(next->pos, .constant = next);
+        return EXPR_PRIMARY(next->pos, .constant=next->literal.const_value);
     }
     else if (next->type == STRING_LITERAL)
     {

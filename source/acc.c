@@ -11,6 +11,7 @@
 #include "scanner.h"
 #include "symbol.h"
 #include "ir.h"
+#include "ir_gen.h"
 
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0
