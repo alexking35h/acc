@@ -23,7 +23,10 @@ typedef struct Symbol_t
     char *name;
     CType *type;
 
-    IrObject * ir_object;
+    struct {
+        IrObject * object;
+        IrRegister * regster;
+    } ir;
 
     struct Symbol_t *next;
 } Symbol;
