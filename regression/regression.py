@@ -82,11 +82,16 @@ class Acc:
     def compile(self, source_path):
         args = [
             self._path,
+            "-c",
             "-j",
             source_path
         ]
         output = subprocess.run(args, capture_output=True).stdout
-        json_errors = json.loads(output)['errors']
+
+        if output.strip():
+            json_errors = json.loads(output)['errors']
+        else:
+            json_errors = list()
 
         return set(list((AccError(**e) for e in json_errors)))
 

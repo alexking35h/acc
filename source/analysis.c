@@ -77,7 +77,7 @@ static const OpRequirements binary_op_requirements[] = {
     // arithmetic.
     {MINUS, true, true, true, NULL},
     {MINUS, false, true, false, NULL},
-    {MINUS, false, false, true, NULL},
+    {MINUS, false, false, true, &int_type},
 
     // '*' - both operands must be arithmetic
     {STAR, true, true, true, NULL},
@@ -87,6 +87,10 @@ static const OpRequirements binary_op_requirements[] = {
 
     // '%' - both operands must be arithmetic
     {PERCENT, true, true, true, NULL},
+
+    // '<<', '>>' - both operands must be arithmetic.
+    {LEFT_OP, true, true, true, NULL},
+    {RIGHT_OP, true, true, true, NULL},
 
     // <, <=, >, >= - both operands must be arithmetic, or both pointers to compatible
     // types
@@ -249,6 +253,13 @@ static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolT
         return NULL;
     }
     node->primary.symbol = sym;
+
+    if(node->primary.symbol->type->type == TYPE_ARRAY) {
+        CType * ptr_type = calloc(1, sizeof(CType));
+        ptr_type->type = TYPE_POINTER;
+        ptr_type->derived.type = node->primary.symbol->type->derived.type;
+        return ptr_type;
+    }
     return node->primary.symbol->type;
 }
 

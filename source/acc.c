@@ -43,6 +43,7 @@ typedef struct CommandLineArgs_t
 {
     const char *source_file;
     _Bool json;
+    _Bool check_only;
 } CommandLineArgs;
 
 typedef struct AccCompiler_t
@@ -61,6 +62,7 @@ static void help(const char *exe_path)
     printf("  -v version information\n");
     printf("  -h help\n");
     printf("  -j json output\n");
+    printf("  -c check only (do not compile)");
     printf("\n");
     printf("[FILE] is a file path to the C source file which will be compiled\n");
     printf("Returns 0 if no errors were reported\n");
@@ -93,8 +95,9 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
 {
     int c = 0;
     args->json = false;
+    args->check_only = false;
 
-    while ((c = getopt(argc, argv, "vhj")) != -1)
+    while ((c = getopt(argc, argv, "vhjc")) != -1)
     {
         switch (c)
         {
@@ -106,6 +109,9 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
             return false;
         case 'j':
             args->json = true;
+            break;
+        case 'c':
+            args->check_only = true;
             break;
         }
     }
@@ -310,6 +316,10 @@ int main(int argc, char **argv)
     {
         compiler_print_errors(compiler, args.json);
         err = 1;
+        goto tidyup;
+    }
+
+    if(args.check_only) {
         goto tidyup;
     }
 
