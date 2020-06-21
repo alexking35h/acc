@@ -35,28 +35,22 @@ static void Ir_to_str_reg(CharBuffer * buffer, IrRegister * reg) {
 static void Ir_to_str_instruction(CharBuffer * buffer, IrInstruction * instr) {
     SNPRINTF(buffer, "    %s, ", Ir_to_str_op(instr->op));
 
-    if(instr->dest)
-
     if(instr->dest) {
         Ir_to_str_reg(buffer, instr->dest);
     }
 
-    if(instr->left.reg) {
-        Ir_to_str_reg(buffer, instr->left.reg);
-    } else if (instr->left.jump) {
-        SNPRINTF(buffer, "%s, ", instr->left.jump->label);
-    }
-    
-    if(instr->right.reg) {
-        Ir_to_str_reg(buffer, instr->right.reg);
-    } else if (instr->right.jump) {
-        SNPRINTF(buffer, "%s, ", instr->right.jump->label);
+    if(instr->left) {
+        Ir_to_str_reg(buffer, instr->left);
     }
 
-    if (instr->immediate.value) {
+    if(instr->right) {
+        Ir_to_str_reg(buffer, instr->right);
+    }
+
+    if(instr->immediate.type == IMMEDIATE_VALUE) {
         SNPRINTF(buffer, "%d, ", instr->immediate.value);
-    } else if (instr->immediate.local_offset) {
-        SNPRINTF(buffer, "%d, ", instr->immediate.local_offset);
+    } else if (instr->immediate.type == IMMEDIATE_OBJECT) {
+        SNPRINTF(buffer, "@%s, ", instr->immediate.object->name);
     }
     SNPRINTF(buffer, "\n");
 }
@@ -80,13 +74,13 @@ void Ir_to_str_function(CharBuffer * buffer, IrFunction * function) {
         for(IrInstruction * instr = queue[block_head]->head; NULL != instr; instr = instr->next) {
             Ir_to_str_instruction(buffer, instr);
 
-            // Check for other blocks we need to follow
-            if(instr->left.jump) {
-                queue[block_tail++ % 64] = instr->left.jump;
-            }
-            if (instr->right.jump) {
-                queue[block_tail++ % 64] = instr->right.jump;
-            }
+            // // Check for other blocks we need to follow
+            // if(instr->left.jump) {
+            //     queue[block_tail++ % 64] = instr->left.jump;
+            // }
+            // if (instr->right.jump) {
+            //     queue[block_tail++ % 64] = instr->right.jump;
+            // }
         }
         block_head++;
     }

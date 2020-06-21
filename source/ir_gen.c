@@ -15,6 +15,7 @@ typedef struct IrGenerator {
 } IrGenerator;
 
 static IrRegister * walk_expr(IrGenerator *, ExprAstNode *);
+void walk_stmt(IrGenerator * irgen, StmtAstNode *node);
 
 /*
  * Helper functions
@@ -63,6 +64,31 @@ static void emit(IrGenerator * irgen, IrInstruction instr) {
 }
 
 IrRegister * walk_expr_binary(IrGenerator * irgen, ExprAstNode * node) {
+    IrRegister * dest = get_register(irgen);
+    IrRegister * left = walk_expr(irgen, node->binary.left);
+    IrRegister * right = walk_expr(irgen, node->binary.right);
+
+    switch (node->binary.op->type) {
+        case PLUS:
+            EMIT(irgen, ADD, .dest=dest, .left=left, .right=right);
+            return dest;
+
+        case MINUS:
+            EMIT(irgen, SUB, .dest=dest, .left=left, .right=right);
+            return dest;
+
+        case STAR:
+            EMIT(irgen, MUL, .dest=dest, .left=left, .right=right);
+            return dest;
+
+        case SLASH:
+            EMIT(irgen, DIV, .dest=dest, .left=left, .right=right);
+            break;
+
+        case PERCENT:
+            EMIT(irgen, MOD, .dest=dest, .left=left, .right=right);
+            break;
+    }
 
 }
 IrRegister * walk_expr_unary(IrGenerator * irgen, ExprAstNode * node) {
@@ -71,13 +97,29 @@ IrRegister * walk_expr_unary(IrGenerator * irgen, ExprAstNode * node) {
 IrRegister * walk_expr_primary(IrGenerator * irgen, ExprAstNode * node) {
     if(node->primary.constant) {
         IrRegister * reg = get_register(irgen);
-        EMIT(irgen, LOADI, .dest=reg, .immediate.value=node->primary.constant);
+        EMIT(
+            irgen,
+            LOADI,
+            .dest=reg,
+            .immediate.type=IMMEDIATE_VALUE,
+            .immediate.value=node->primary.constant->literal.const_value
+        );
         return reg;
     } else if (node->primary.identifier) {
-        IrObject * obj = node->primary.symbol->ir_object;
-        IrRegister * reg = get_register(irgen);
-        EMIT(irgen, LOADI, .dest=reg, .immediate.local_offset=obj->index);
-        return reg;
+        Symbol * symbol = node->primary.symbol;
+        if(symbol->ir.regster) {
+            return symbol->ir.regster;
+        } else {
+            IrRegister * reg = get_register(irgen);
+            EMIT(
+                irgen,
+                LOADI,
+                .dest=reg,
+                .immediate.type=IMMEDIATE_OBJECT,
+                .immediate.object=symbol->ir.object
+            );
+            return reg;
+        }
     }
 }
 IrRegister * walk_expr_postfix(IrGenerator * irgen, ExprAstNode * node) {
@@ -92,10 +134,10 @@ IrRegister * walk_expr_tertiary(IrGenerator * irgen, ExprAstNode * node) {
 IrRegister * walk_expr_assign(IrGenerator * irgen, ExprAstNode * node) {
     IrRegister * dest = walk_expr(irgen, node->assign.left);
 
-    if(0 && dest->type == REGISTER_VALUE) {
+    if(dest->type == REGISTER_VALUE) {
         // `dest` is the actual register for this object.
         IrRegister * src = walk_expr(irgen, node->assign.right);
-        EMIT(irgen, MOV, .dest=dest, .left.reg=src);
+        EMIT(irgen, MOV, .dest=dest, .left=src);
     } else {
         // `dest` holds the address for this object in memory.
         IrRegister * src = walk_expr(irgen, node->assign.right);
@@ -139,10 +181,17 @@ void walk_decl_function(IrGenerator * irgen, DeclAstNode * node) {
 }
 
 void walk_decl_object(IrGenerator * irgen, DeclAstNode * node) {
-    if(irgen->current_function) {
-        node->symbol->ir_object = allocate_local(irgen, 1, 1, node->identifier->lexeme);
+    if(!irgen->current_function) {
+        // Global functions are always created as obejcts.
+        node->symbol->ir.object = allocate_global(irgen, 1, 1, node->identifier->lexeme);
     } else {
-        node->symbol->ir_object = allocate_global(irgen, 1, 1, node->identifier->lexeme);
+        if(CTYPE_IS_SCALAR(node->type)) {
+            IrRegister * reg = get_register(irgen);
+            reg->type = REGISTER_VALUE;
+            node->symbol->ir.regster = reg;
+        } else {
+            node->symbol->ir.object = allocate_local(irgen, 1, 1, node->identifier->lexeme);
+        }
     }
 }
 

@@ -2,6 +2,7 @@
 #define __IR___
 
 typedef struct IrBasicBlock IrBasicBlock;
+typedef struct IrObject IrObject;
 
 typedef enum IrOpcode
 {
@@ -56,23 +57,22 @@ typedef struct IrInstruction
 {
     IrOpcode op;
 
+    // Add, Sub, Mul, Div, Mod, Mov, Store, Load
     IrRegister * dest;
+    IrRegister *left;
+    IrRegister *right;
 
     struct {
-        IrRegister * reg;
-        IrBasicBlock *jump;
-    } left;
-
-    struct {
-        IrRegister * reg;
-        IrBasicBlock *jump;
-    } right;
-
-    struct
-    {
+        enum {
+            IMMEDIATE_VALUE = 1,
+            IMMEDIATE_OBJECT
+        } type;
+        IrObject * object;
         int value;
-        int local_offset;
     } immediate;
+
+    IrBasicBlock * jump_true;
+    IrBasicBlock * jump_false;
 
     struct IrInstruction *next;
 } IrInstruction;
