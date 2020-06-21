@@ -2,28 +2,11 @@
 #include "ast.h"
 #include "symbol.h"
 #include "token.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/*
- * Concatenate a sequence of strings into a single string. Also,
- * every 2nd pointer is free'd (must be dyncamically allocated).
- *
- * E.g.:
- * > ERROR_STR(error_str, "Hello, ", NULL, "World!");
- */
-#define ERROR_STR(error_string, ...)                                                     \
-    char error_string[250] = "";                                                         \
-    char *ptr[] = {__VA_ARGS__, NULL, NULL}, **p = ptr;                                  \
-    int l = 0;                                                                           \
-    for (; *p;)                                                                          \
-    {                                                                                    \
-        l += snprintf(error_string + l, 250 - l, "%s", *(p++));                          \
-        l += snprintf(error_string + l, 250 - l, "%s", *p ? *p : "");                    \
-        free(*(p++));                                                                    \
-    }
 
 /*
  * Walk Expression AST Nodes. Parsing expressions often requires getting type
@@ -247,8 +230,7 @@ static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolT
     Symbol *sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
     if (sym == NULL)
     {
-        ERROR_STR(err, "Undeclared identifier '", NULL, node->primary.identifier->lexeme,
-                  NULL, "'");
+        char * err = STR_CONCAT("Undeclared identifier '", node->primary.identifier->lexeme, "'");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
         return NULL;
     }
@@ -279,7 +261,7 @@ static void walk_argument_list(ErrorReporter *error, ParameterListItem *params,
 
         if (!check_assign_cast(&arguments->argument, param_type, arg_type))
         {
-            ERROR_STR(err, "Incompatible argument type. Cannot pass type '",
+            char * err = STR_CONCAT("Incompatible argument type. Cannot pass type '",
                       ctype_str(arg_type), "' to type '", ctype_str(param_type), "'");
             Error_report_error(error, ANALYSIS, arguments->argument->line_number,
                                arguments->argument->line_position, err);
@@ -370,8 +352,8 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
         }
     }
 err : {
-    ERROR_STR(err, "Invalid operand type to binary operator '", NULL,
-              node->binary.op->lexeme, NULL, "'");
+    char * err = STR_CONCAT("Invalid operand type to binary operator '",
+              node->binary.op->lexeme, "'");
     Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
 }
     return NULL;
@@ -413,8 +395,8 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
         // Test that the operand is of type 'basic' (section 6.5.3.1)
         if (!CTYPE_IS_BASIC(ctype))
         {
-            ERROR_STR(err, "Invalid operand to unary operator '", NULL,
-                      node->unary.op->lexeme, NULL, "'");
+            char * err = STR_CONCAT("Invalid operand to unary operator '",
+                      node->unary.op->lexeme, "'");
             Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
                                err);
         }
@@ -476,7 +458,7 @@ static CType *walk_expr_assign(ErrorReporter *error, ExprAstNode *node, SymbolTa
 
     if (!check_assign_cast(&node->assign.right, left, right))
     {
-        ERROR_STR(err, "Incompatible assignment. Cannot assign type '", ctype_str(right),
+        char * err = STR_CONCAT("Incompatible assignment. Cannot assign type '", ctype_str(right),
                   "' to type '", ctype_str(left), "'");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
     }
@@ -528,7 +510,7 @@ static void walk_decl_object(ErrorReporter *error, DeclAstNode *node, SymbolTabl
 
         if (!check_assign_cast(&node->initializer, node->type, type))
         {
-            ERROR_STR(err, "Invalid initializer value. Cannot assign type '",
+            char * err = STR_CONCAT("Invalid initializer value. Cannot assign type '",
                       ctype_str(type), "' to type '", ctype_str(node->type), "'");
             Error_report_error(error, ANALYSIS, node->initializer->line_number,
                                node->initializer->line_position, err);
@@ -547,15 +529,15 @@ static void walk_decl(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab,
 {
     if(CTYPE_IS_FUNCTION(node->type) && !tu) {
         // Check if we're trying to define a function within a function.
-        ERROR_STR(err, "Cannot have nested functions ('", NULL, node->identifier->lexeme,
-                NULL, "'). Try Rust?");
+        char * err = STR_CONCAT("Cannot have nested functions ('", node->identifier->lexeme,
+                "'). Try Rust?");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
     } else if (symbol_table_get(tab, node->identifier->lexeme, false))
     {
         // Check if there is already a symbol table entry for this
         // identifier within the current scope.
-        ERROR_STR(err, "Previously declared identifier '", NULL, node->identifier->lexeme,
-                  NULL, "'");
+        char * err = STR_CONCAT("Previously declared identifier '", node->identifier->lexeme,
+                  "'");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
     } else {
         node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
