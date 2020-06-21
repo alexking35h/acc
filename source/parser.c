@@ -107,7 +107,7 @@ void Parser_advance_token(Parser *parser)
  */
 Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme)
 {
-    Token *token = Scanner_create_token(parser->scanner);
+    Token *token = calloc(1, sizeof(Token));
 
     token->type = type;
     token->line_number = -1;

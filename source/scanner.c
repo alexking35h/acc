@@ -23,25 +23,11 @@
 #define ADVANCE(scanner) (scanner->current++)
 
 /*
- * Tokens are allocated in blocks of TOKEN_BUFFER_SIZE,
- * and stored in a linked list so that new tokens can be
- * created on-demand.
- */
-typedef struct TokenList_t
-{
-    // Linked-list pointer
-    struct TokenList_t *next;
-
-    Token tokens[TOKEN_BUFFER_SIZE];
-} TokenList;
-
-/*
  * Scanner class
  * This struct encapsulates all state required by the scanner.
  */
 typedef struct Scanner_t
 {
-
     ErrorReporter *error_reporter;
 
     // Source file
@@ -51,11 +37,6 @@ typedef struct Scanner_t
     int current;
     int line_number;
     int line_start_position;
-
-    // Allocated tokens
-    TokenList *token_list;
-    Token *next_token;
-    int token_count;
 
     // Line position pointers.
     int line_positions_size;
@@ -86,28 +67,6 @@ static void store_line_position(Scanner *scanner)
     }
     scanner->line_positions[scanner->line_positions_next++] =
         scanner->source + scanner->current;
-}
-
-Token *Scanner_create_token(Scanner *scanner)
-{
-    if ((++scanner->token_count == TOKEN_BUFFER_SIZE) != 0)
-    {
-        return scanner->next_token++;
-    }
-    else
-    {
-        // Allocate more space for tokens.
-        TokenList *token_list = scanner->token_list;
-        while (token_list->next)
-        {
-            token_list = token_list->next;
-        }
-        token_list->next = (TokenList *)calloc(1, sizeof(TokenList));
-        scanner->next_token = token_list->next->tokens;
-        scanner->token_count = 0;
-
-        return scanner->next_token;
-    }
 }
 
 static bool match_character(Scanner *scanner, const char *expected)
@@ -472,11 +431,6 @@ Scanner *Scanner_init(char const *source, ErrorReporter *error_reporter)
     scanner->line_number = 1;
     scanner->line_start_position = 0;
 
-    // Allocate the first block of tokens.
-    scanner->token_list = (TokenList *)calloc(1, sizeof(TokenList));
-    scanner->token_count = 0;
-    scanner->next_token = scanner->token_list->tokens;
-
     // Allocate space for the line positions array.
     scanner->line_positions = calloc(5, sizeof(char *));
     scanner->line_positions_size = 5;
@@ -517,7 +471,7 @@ Token *Scanner_get_next(Scanner *scanner)
             break;
     }
 
-    Token *token = Scanner_create_token(scanner);
+    Token * token = calloc(1, sizeof(Token));
     token->type = token_type;
     token->line_number = token_line_number;
     token->line_position = token_position - scanner->line_start_position;
@@ -540,15 +494,6 @@ Token *Scanner_get_next(Scanner *scanner)
  */
 void Scanner_destroy(Scanner *scanner)
 {
-    // Free up tokens.
-    TokenList *token_list = scanner->token_list;
-    while (token_list)
-    {
-        TokenList *p = token_list->next;
-        free(token_list);
-        token_list = p;
-    }
-
     // Free up scanner.
     free(scanner);
 }
