@@ -123,15 +123,15 @@ static void pp_primary(ExprAstNode *node, StringBuffer *buf)
 
 static void pp_postfix(ExprAstNode *node, StringBuffer *buf)
 {
-    if (node->postfix.op)
-    {
+    if(node->postfix.op == POSTFIX_INC_OP) {
         pp_printf(buf, "PF ");
-
         pp_expr(node->postfix.left, buf);
-        pp_printf(buf, node->postfix.op->type == INC_OP ? ", ++" : ", --");
-    }
-    else
-    {
+        pp_printf(buf, ", ++");
+    } else if(node->postfix.op == POSTFIX_DEC_OP) {
+        pp_printf(buf, "PF ");
+        pp_expr(node->postfix.left, buf);
+        pp_printf(buf, ", --");
+    } else {
         pp_printf(buf, "F ");
         pp_expr(node->postfix.left, buf);
 

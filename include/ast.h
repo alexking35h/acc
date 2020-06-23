@@ -61,6 +61,12 @@ typedef enum {
     UNARY_DEC_OP
 } UnaryExprOp;
 
+typedef enum {
+    POSTFIX_CALL,
+    POSTFIX_INC_OP,
+    POSTFIX_DEC_OP
+} PostfixExprOp;
+
 typedef struct ExprAstNode_t
 {
     enum
@@ -106,7 +112,7 @@ typedef struct ExprAstNode_t
         // Postfix
         struct
         {
-            Token *op;
+            PostfixExprOp op;
             struct ExprAstNode_t *index_expression;
             struct ExprAstNode_t *left;
             struct ArgumentListItem_t *args;

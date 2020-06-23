@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "parser.h": "c"
+        "parser.h": "c",
+        "ios": "c"
     }
 }

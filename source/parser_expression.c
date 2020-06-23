@@ -125,16 +125,14 @@ static ExprAstNode *postfix_expression(Parser *parser)
             ExprAstNode *index = Parser_expression(parser);
             consume(RIGHT_SQUARE);
             expr = desugar_array(parser, expr, index);
-        }
-        else if ((token = match(INC_OP, DEC_OP)))
-        {
-            expr = EXPR_POSTFIX(token->line_number, token->line_position, .op = token,
-                                .left = expr);
-        }
-        else if ((token = match(LEFT_PAREN)))
+        } else if(token=match(INC_OP)) {
+            expr = EXPR_POSTFIX(token->line_number, token->line_position, .op=POSTFIX_INC_OP, .left=expr);
+        } else if(token=match(DEC_OP)) {
+            expr = EXPR_POSTFIX(token->line_number, token->line_position, .op=POSTFIX_DEC_OP, .left=expr);
+        } else if (token=match(LEFT_PAREN))
         {
             // Function call.
-            expr = EXPR_POSTFIX(expr->line_number, expr->line_position, .left = expr,
+            expr = EXPR_POSTFIX(expr->line_number, expr->line_position, .left = expr, .op=POSTFIX_CALL,
                                 .args = argument_expression_list(parser));
             consume(RIGHT_PAREN);
         }
