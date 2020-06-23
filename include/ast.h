@@ -28,6 +28,27 @@ typedef struct ArgumentListItem_t
     struct ArgumentListItem_t *next;
 } ArgumentListItem;
 
+typedef enum {
+    BINARY_MUL,
+    BINARY_DIV,
+    BINARY_MOD,
+    BINARY_ADD,
+    BINARY_SUB,
+    BINARY_SLL,
+    BINARY_SLR,
+    BINARY_LT,
+    BINARY_GT,
+    BINARY_LE,
+    BINARY_GE,
+    BINARY_EQ,
+    BINARY_NE,
+    BINARY_AND,
+    BINARY_OR,
+    BINARY_XOR,
+    BINARY_AND_OP,
+    BINARY_OR_OP
+} BinaryExprOp;
+
 typedef struct ExprAstNode_t
 {
 
@@ -50,8 +71,8 @@ typedef struct ExprAstNode_t
         // Binary
         struct
         {
+            BinaryExprOp op;
             struct ExprAstNode_t *left;
-            Token *op;
             struct ExprAstNode_t *right;
         } binary;
 

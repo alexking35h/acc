@@ -129,13 +129,13 @@ static void arithmetic_operators(void **state)
     // arithmetic type.
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int * _char"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '*'");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int * _ptr"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '/'");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int / _ptr"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '%'");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int % _ptr"),
                            test_symbol_table);
 
@@ -148,7 +148,7 @@ static void arithmetic_operators(void **state)
                            test_symbol_table);
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int + _char"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '+'");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr + _ptr"),
                            test_symbol_table);
 
@@ -161,12 +161,12 @@ static void arithmetic_operators(void **state)
                            test_symbol_table);
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr - _int"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '-'");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr - _ptr_ptr"),
                            test_symbol_table);
 
     // 6.5.7 (bitwise shift operators) Each of the operands shall have integer type
-    expect_report_error(ANALYSIS, 1, 6, "Invalid operand type to binary operator '<<'");
+    expect_report_error(ANALYSIS, 1, 6, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("\"abc\" << 3"),
                            test_symbol_table);
 }
@@ -193,7 +193,7 @@ static void comparison_operators(void **state)
                            test_symbol_table);
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr >= _ptr"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '<'");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr < _char"),
                            test_symbol_table);
 
@@ -207,14 +207,14 @@ static void comparison_operators(void **state)
                            test_symbol_table);
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr != _ptr"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '!='");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr != _int"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '!='");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr != _ptr_ptr"),
                            test_symbol_table);
 
-    expect_report_error(ANALYSIS, 1, 10, "Invalid operand type to binary operator '=='");
+    expect_report_error(ANALYSIS, 1, 10, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_function == _ptr"),
                            test_symbol_table);
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("&_function && 98"),
@@ -227,13 +227,13 @@ static void bitwise_operators(void **state)
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER,
                            parse_expr("_int & _char | _long_int ^ _int"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '&'");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int & _ptr"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator '|'");
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int | _ptr"),
                            test_symbol_table);
-    expect_report_error(ANALYSIS, 1, 9, "Invalid operand type to binary operator '^'");
+    expect_report_error(ANALYSIS, 1, 9, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr_ptr ^ _long_int"),
                            test_symbol_table);
 }

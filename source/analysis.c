@@ -34,7 +34,7 @@ static CType char_ptr_type = {TYPE_POINTER, .derived.type = &char_type};
 // walk_expr_binary().
 typedef struct OpRequirements
 {
-    TokenType op;
+    BinaryExprOp op;
 
     // Left/right types must be basic.
     _Bool left_basic;
@@ -52,63 +52,62 @@ typedef struct OpRequirements
 static const OpRequirements binary_op_requirements[] = {
 
     // '+': both operands arithmetic, or one is pointer.
-    {PLUS, true, true, true, NULL},
-    {PLUS, true, false, false, NULL},
-    {PLUS, false, true, false, NULL},
+    {BINARY_ADD, true, true, true, NULL},
+    {BINARY_ADD, true, false, false, NULL},
+    {BINARY_ADD, false, true, false, NULL},
 
     // '-' both operands can be arithmetic, pointer, or left is pointer, right is
     // arithmetic.
-    {MINUS, true, true, true, NULL},
-    {MINUS, false, true, false, NULL},
-    {MINUS, false, false, true, &int_type},
+    {BINARY_SUB, true, true, true, NULL},
+    {BINARY_SUB, false, true, false, NULL},
+    {BINARY_SUB, false, false, true, &int_type},
 
     // '*' - both operands must be arithmetic
-    {STAR, true, true, true, NULL},
+    {BINARY_MUL, true, true, true, NULL},
 
     // '/' - both operands must be arithmetic
-    {SLASH, true, true, true, NULL},
+    {BINARY_DIV, true, true, true, NULL},
 
     // '%' - both operands must be arithmetic
-    {PERCENT, true, true, true, NULL},
+    {BINARY_MOD, true, true, true, NULL},
 
     // '<<', '>>' - both operands must be arithmetic.
-    {LEFT_OP, true, true, true, NULL},
-    {RIGHT_OP, true, true, true, NULL},
+    {BINARY_SLL, true, true, true, NULL},
+    {BINARY_SLR, true, true, true, NULL},
 
     // <, <=, >, >= - both operands must be arithmetic, or both pointers to compatible
     // types
-    {LESS_THAN, true, true, true, &int_type},
-    {LESS_THAN, false, false, true, &int_type},
-    {LE_OP, true, true, true, &int_type},
-    {LE_OP, false, false, true, &int_type},
-    {GREATER_THAN, true, true, true, &int_type},
-    {GREATER_THAN, false, false, true, &int_type},
-    {GE_OP, true, true, true, &int_type},
-    {GE_OP, false, false, true, &int_type},
+    {BINARY_LT, true, true, true, &int_type},
+    {BINARY_LT, false, false, true, &int_type},
+    {BINARY_LE, true, true, true, &int_type},
+    {BINARY_LE, false, false, true, &int_type},
+    {BINARY_GT, true, true, true, &int_type},
+    {BINARY_GT, false, false, true, &int_type},
+    {BINARY_GE, true, true, true, &int_type},
+    {BINARY_GE, false, false, true, &int_type},
 
     // ==, != - both operands must be arithmetic, or both are pointers to compatible
     // types.
-    {EQ_OP, true, true, true, &int_type},
-    {EQ_OP, false, false, false, &int_type},
-    {NE_OP, true, true, true, &int_type},
-    {NE_OP, false, false, true, &int_type},
+    {BINARY_EQ, true, true, true, &int_type},
+    {BINARY_EQ, false, false, false, &int_type},
+    {BINARY_NE, true, true, true, &int_type},
+    {BINARY_NE, false, false, true, &int_type},
 
     // &, |, ^ - both operands must be arithmetic.
-    {AMPERSAND, true, true, true, NULL},
-    {BAR, true, true, true, NULL},
-    {CARET, true, true, true, NULL},
+    {BINARY_AND, true, true, true, NULL},
+    {BINARY_OR, true, true, true, NULL},
+    {BINARY_XOR, true, true, true, NULL},
 
     // &&, || - both operands must be scalar (arithmetic and pointer)
-    {AND_OP, true, true, false, &int_type},
-    {AND_OP, true, false, false, &int_type},
-    {AND_OP, false, true, false, &int_type},
-    {AND_OP, false, false, false, &int_type},
-    {OR_OP, true, true, false, &int_type},
-    {OR_OP, true, false, false, &int_type},
-    {OR_OP, false, true, false, &int_type},
-    {OR_OP, false, false, false, &int_type},
-
-    {NAT, false, false, NULL}};
+    {BINARY_AND_OP, true, true, false, &int_type},
+    {BINARY_AND_OP, true, false, false, &int_type},
+    {BINARY_AND_OP, false, true, false, &int_type},
+    {BINARY_AND_OP, false, false, false, &int_type},
+    {BINARY_OR_OP, true, true, false, &int_type},
+    {BINARY_OR_OP, true, false, false, &int_type},
+    {BINARY_OR_OP, false, true, false, &int_type},
+    {BINARY_OR_OP, false, false, false, &int_type},
+};
 
 static ExprAstNode *create_cast(ExprAstNode *node, CType *type)
 {
@@ -316,9 +315,10 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
     if (!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right))
         goto err;
 
-    for (OpRequirements const *req = binary_op_requirements; req->op != NAT; req++)
+    for(int i = 0;i < sizeof(binary_op_requirements)/sizeof(binary_op_requirements[0]);i++)
     {
-        if (req->op != node->binary.op->type)
+        OpRequirements *req = &binary_op_requirements[i];
+        if (req->op != node->binary.op)
             continue;
 
         if ((req->left_basic && !CTYPE_IS_BASIC(left)) ||
@@ -352,9 +352,7 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
         }
     }
 err : {
-    char * err = STR_CONCAT("Invalid operand type to binary operator '",
-              node->binary.op->lexeme, "'");
-    Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
+    Error_report_error(error, ANALYSIS, node->line_number, node->line_position, "Invalid operand type to binary operator");
 }
     return NULL;
 }

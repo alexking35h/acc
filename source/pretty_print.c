@@ -147,7 +147,63 @@ static void pp_binary(ExprAstNode *node, StringBuffer *buf)
 {
     pp_printf(buf, "B ");
     pp_expr(node->binary.left, buf);
-    pp_printf(buf, ", %s, ", node->binary.op->lexeme);
+
+    switch(node->binary.op) {
+    case BINARY_MUL:
+        pp_printf(buf, ", *, ");
+        break;
+    case BINARY_DIV:
+        pp_printf(buf, ", /, ");
+        break;
+    case BINARY_MOD:
+        pp_printf(buf, ", %%, ");        
+        break;
+    case BINARY_ADD:
+        pp_printf(buf, ", +, ");
+        break;
+    case BINARY_SUB:
+        pp_printf(buf, ", -, ");
+        break;
+    case BINARY_SLL:
+        pp_printf(buf, ", <<, ");
+        break;
+    case BINARY_SLR:
+        pp_printf(buf, ", >>, ");
+        break;
+    case BINARY_LT:
+        pp_printf(buf, ", <, ");
+        break;
+    case BINARY_GT:
+        pp_printf(buf, ", >, ");
+        break;
+    case BINARY_LE:
+        pp_printf(buf, ", <=, ");
+        break;
+    case BINARY_GE:
+        pp_printf(buf, ", >=, ");
+        break;
+    case BINARY_EQ:
+        pp_printf(buf, ", ==, ");
+        break;
+    case BINARY_NE:
+        pp_printf(buf, ", !=, ");
+        break;
+    case BINARY_AND:
+        pp_printf(buf, ", &, ");
+        break;
+    case BINARY_OR:
+        pp_printf(buf, ", |, ");
+        break;
+    case BINARY_XOR:
+        pp_printf(buf, ", ^, ");
+        break;
+    case BINARY_AND_OP:
+        pp_printf(buf, ", &&, ");
+        break;
+    case BINARY_OR_OP:
+        pp_printf(buf, ", ||, ");
+        break;
+    }
     pp_expr(node->binary.right, buf);
 }
 
