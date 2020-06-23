@@ -68,11 +68,10 @@ static ExprAstNode *desugar_assign(Parser *parser, ExprAstNode *expr, BinaryExpr
 
 static ExprAstNode *desugar_array(Parser *parser, ExprAstNode *base, ExprAstNode *index)
 {
-    Token *op_star = Parser_create_fake_token(parser, STAR, "*");
     ExprAstNode *binary_op =
         EXPR_BINARY(base->line_number, -1, .left = base, .op = BINARY_ADD, .right = index);
     ExprAstNode *ptr_op =
-        EXPR_UNARY(base->line_number, -1, .op = op_star, .right = binary_op);
+        EXPR_UNARY(base->line_number, -1, .op = UNARY_DEREFERENCE, .right = binary_op);
     return ptr_op;
 }
 
@@ -159,22 +158,41 @@ static ArgumentListItem *argument_expression_list(Parser *parser)
 static ExprAstNode *unary_expression(Parser *parser)
 {
     Token *token;
-
-    if ((token = match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF)))
+    if ((token = match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF, INC_OP, DEC_OP)))
     {
-        return EXPR_UNARY(token->line_number, token->line_position, .op = token,
+        UnaryExprOp op;
+        switch(token->type) {
+            case AMPERSAND:
+                op = UNARY_ADDRESS_OF;
+                break;
+            case STAR:
+                op = UNARY_DEREFERENCE;
+                break;
+            case PLUS:
+                op = UNARY_PLUS;
+                break;
+            case MINUS:
+                op = UNARY_MINUS;
+                break;
+            case TILDE:
+                op = UNARY_BITWISE_NOT;
+                break;
+            case BANG:
+                op = UNARY_LOGICAL_NOT;
+                break;
+            case SIZEOF:
+                op = UNARY_SIZEOF;
+                break;
+            case INC_OP:
+                op = UNARY_INC_OP;
+                break;
+            case DEC_OP:
+                op = UNARY_DEC_OP;
+                break;
+        }
+        return EXPR_UNARY(token->line_number, token->line_position, .op = op,
                           .right = unary_expression(parser));
     }
-    else if ((token = match(INC_OP, DEC_OP)))
-    {
-        ExprAstNode *expr = unary_expression(parser);
-        Token *constant_token = Parser_create_fake_token(parser, CONSTANT, "1");
-        ExprAstNode *constant_node = EXPR_PRIMARY(
-            token->line_number, token->line_position, .constant = constant_token);
-
-        return desugar_assign(parser, expr, token->type == INC_OP ? BINARY_ADD : BINARY_SUB, constant_node);
-    }
-
     return postfix_expression(parser);
 }
 

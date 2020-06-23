@@ -49,9 +49,20 @@ typedef enum {
     BINARY_OR_OP
 } BinaryExprOp;
 
+typedef enum {
+    UNARY_ADDRESS_OF,
+    UNARY_DEREFERENCE,
+    UNARY_PLUS,
+    UNARY_MINUS,
+    UNARY_BITWISE_NOT,
+    UNARY_LOGICAL_NOT,
+    UNARY_SIZEOF,
+    UNARY_INC_OP,
+    UNARY_DEC_OP
+} UnaryExprOp;
+
 typedef struct ExprAstNode_t
 {
-
     enum
     {
         BINARY,
@@ -79,7 +90,7 @@ typedef struct ExprAstNode_t
         // Unary
         struct
         {
-            Token *op;
+            UnaryExprOp op;
             struct ExprAstNode_t *right;
         } unary;
 

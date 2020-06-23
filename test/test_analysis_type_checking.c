@@ -117,7 +117,7 @@ static void unary_operators(void **state)
     // 6.5.3.3 Unary arithmetic operators
     // 6.5.3.3 (1) The operand of the + or - operator shall have arithmetic type;
     // of the '~' operator, integer type; of the '!' operator, scalar type.
-    expect_report_error(ANALYSIS, 1, 0, "Invalid operand to unary operator '!'");
+    expect_report_error(ANALYSIS, 1, 0, "Invalid operand to unary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("!_ptr"), test_symbol_table);
 }
 

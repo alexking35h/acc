@@ -209,7 +209,35 @@ static void pp_binary(ExprAstNode *node, StringBuffer *buf)
 
 static void pp_unary(ExprAstNode *node, StringBuffer *buf)
 {
-    pp_printf(buf, "U %s, ", node->unary.op->lexeme);
+    switch(node->unary.op) {
+        case UNARY_ADDRESS_OF:
+            pp_printf(buf, "U &, ");
+            break;
+        case UNARY_BITWISE_NOT:
+            pp_printf(buf, "U ~, ");
+            break;
+        case UNARY_DEREFERENCE:
+            pp_printf(buf, "U *, ");
+            break;
+        case UNARY_LOGICAL_NOT:
+            pp_printf(buf, "U !, ");
+            break;
+        case UNARY_MINUS:
+            pp_printf(buf, "U -, ");
+            break;
+        case UNARY_PLUS:
+            pp_printf(buf, "U +, ");
+            break;
+        case UNARY_SIZEOF:
+            pp_printf(buf, "U sizeof, ");
+            break;
+        case UNARY_INC_OP:
+            pp_printf(buf, "U ++, ");
+            break;
+        case UNARY_DEC_OP:
+            pp_printf(buf, "U --, ");
+            break;
+    }
     pp_expr(node->unary.right, buf);
 }
 

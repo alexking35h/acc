@@ -18,7 +18,7 @@ static void expression_statement(void **state)
     AstTestSet tests[] = {
         {"{x;}", "{B {E (P x)}}"},
         {"{a=1;}", "{B {E (A (P a), (P 1))}}"},
-        {"{++a;}", "{B {E (A (P a), (B (P a), +, (P 1)))}}"},
+        {"{++a;}", "{B {E (U ++, (P a))}}"},
         {"{(unsigned int)a+1;}", "{B {E (B (C [unsigned int], (P a)), +, (P 1))}}"},
         {"{a[0];}", "{B {E (U *, (B (P a), +, (P 0)))}}"},
 

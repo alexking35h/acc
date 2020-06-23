@@ -365,7 +365,7 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
     if (!ctype)
         return NULL;
 
-    if (node->unary.op->type == STAR)
+    if(node->unary.op == UNARY_DEREFERENCE)
     {
         // Pointer dereference.
         if (ctype->type != TYPE_POINTER)
@@ -378,7 +378,7 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
         // Return the CType we're dereferencing.
         return ctype->derived.type;
     }
-    else if (node->unary.op->type == AMPERSAND)
+    else if (node->unary.op == UNARY_ADDRESS_OF)
     {
         // Address-of operator.
         CType *addr_of = calloc(1, sizeof(CType));
@@ -393,10 +393,8 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
         // Test that the operand is of type 'basic' (section 6.5.3.1)
         if (!CTYPE_IS_BASIC(ctype))
         {
-            char * err = STR_CONCAT("Invalid operand to unary operator '",
-                      node->unary.op->lexeme, "'");
             Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
-                               err);
+                               "Invalid operand to unary operator");
         }
         return ctype;
     }

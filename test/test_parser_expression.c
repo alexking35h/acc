@@ -52,8 +52,8 @@ static void postfix_expressions(void **state)
 static void unary_expressions(void **state)
 {
     // Test unary expressions
-    AstTestSet tests[] = {{"++a", "(A (P a), (B (P a), +, (P 1)))"},
-                          {"--b", "(A (P b), (B (P b), -, (P 1)))"},
+    AstTestSet tests[] = {{"++a", "(U ++, (P a))"},
+                          {"--b", "(U --, (P b))"},
                           {"&Q", "(U &, (P Q))"},
                           {"*a", "(U *, (P a))"},
                           {"+1", "(U +, (P 1))"},
