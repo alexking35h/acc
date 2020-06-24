@@ -53,7 +53,8 @@ void Error_report_error(ErrorReporter *error_reporter, ErrorType type, int line_
         {
             continue;
         }
-        else {
+        else
+        {
             break;
         }
     }

@@ -125,7 +125,7 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
     return true;
 }
 
-static const char *read_source(const char *path)
+static char *read_source(const char *path)
 {
     FILE *f = fopen(path, "r");
     if (!f)
@@ -319,7 +319,8 @@ int main(int argc, char **argv)
         goto tidyup;
     }
 
-    if(args.check_only) {
+    if (args.check_only)
+    {
         goto tidyup;
     }
 

@@ -1,6 +1,6 @@
 #include "token.h"
 
-const char *Token_str(TokenType type)
+char *Token_str(TokenType type)
 {
     switch (type)
     {

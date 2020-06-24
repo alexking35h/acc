@@ -28,7 +28,19 @@ typedef struct ArgumentListItem_t
     struct ArgumentListItem_t *next;
 } ArgumentListItem;
 
-typedef enum {
+typedef enum
+{
+    BINARY,
+    UNARY,
+    PRIMARY,
+    POSTFIX,
+    CAST,
+    TERTIARY,
+    ASSIGN
+} ExprOp;
+
+typedef enum
+{
     BINARY_MUL,
     BINARY_DIV,
     BINARY_MOD,
@@ -49,7 +61,8 @@ typedef enum {
     BINARY_OR_OP
 } BinaryExprOp;
 
-typedef enum {
+typedef enum
+{
     UNARY_ADDRESS_OF,
     UNARY_DEREFERENCE,
     UNARY_PLUS,
@@ -61,7 +74,8 @@ typedef enum {
     UNARY_DEC_OP
 } UnaryExprOp;
 
-typedef enum {
+typedef enum
+{
     POSTFIX_CALL,
     POSTFIX_INC_OP,
     POSTFIX_DEC_OP
@@ -69,23 +83,12 @@ typedef enum {
 
 typedef struct ExprAstNode_t
 {
-    enum
-    {
-        BINARY,
-        UNARY,
-        PRIMARY,
-        POSTFIX,
-        CAST,
-        TERTIARY,
-        ASSIGN,
-    } type;
-
+    ExprOp type;
     int line_number;
     int line_position;
 
     // Anonymous union for each node sub-type.
     union {
-        // Binary
         struct
         {
             BinaryExprOp op;
@@ -93,23 +96,12 @@ typedef struct ExprAstNode_t
             struct ExprAstNode_t *right;
         } binary;
 
-        // Unary
         struct
         {
             UnaryExprOp op;
             struct ExprAstNode_t *right;
         } unary;
 
-        // Primary
-        struct
-        {
-            Token *identifier;
-            Token *constant;
-            Token *string_literal;
-            Symbol *symbol;
-        } primary;
-
-        // Postfix
         struct
         {
             PostfixExprOp op;
@@ -117,6 +109,14 @@ typedef struct ExprAstNode_t
             struct ExprAstNode_t *left;
             struct ArgumentListItem_t *args;
         } postfix;
+
+        struct
+        {
+            Token *identifier;
+            Token *constant;
+            Token *string_literal;
+            Symbol *symbol;
+        } primary;
 
         // Cast
         struct

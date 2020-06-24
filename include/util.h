@@ -6,9 +6,9 @@
 /*
  * Concatenate a sequence of null-terminated strings into a single string.
  * The final pointer in the list must be NULLL.
- * 
+ *
  * The returned string is allocated from the heap.
  */
-char * str_concat(char**);
+char *str_concat(char **);
 
 #endif

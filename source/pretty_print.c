@@ -123,15 +123,20 @@ static void pp_primary(ExprAstNode *node, StringBuffer *buf)
 
 static void pp_postfix(ExprAstNode *node, StringBuffer *buf)
 {
-    if(node->postfix.op == POSTFIX_INC_OP) {
+    if (node->postfix.op == POSTFIX_INC_OP)
+    {
         pp_printf(buf, "PF ");
         pp_expr(node->postfix.left, buf);
         pp_printf(buf, ", ++");
-    } else if(node->postfix.op == POSTFIX_DEC_OP) {
+    }
+    else if (node->postfix.op == POSTFIX_DEC_OP)
+    {
         pp_printf(buf, "PF ");
         pp_expr(node->postfix.left, buf);
         pp_printf(buf, ", --");
-    } else {
+    }
+    else
+    {
         pp_printf(buf, "F ");
         pp_expr(node->postfix.left, buf);
 
@@ -148,7 +153,8 @@ static void pp_binary(ExprAstNode *node, StringBuffer *buf)
     pp_printf(buf, "B ");
     pp_expr(node->binary.left, buf);
 
-    switch(node->binary.op) {
+    switch (node->binary.op)
+    {
     case BINARY_MUL:
         pp_printf(buf, ", *, ");
         break;
@@ -156,7 +162,7 @@ static void pp_binary(ExprAstNode *node, StringBuffer *buf)
         pp_printf(buf, ", /, ");
         break;
     case BINARY_MOD:
-        pp_printf(buf, ", %%, ");        
+        pp_printf(buf, ", %%, ");
         break;
     case BINARY_ADD:
         pp_printf(buf, ", +, ");
@@ -209,34 +215,35 @@ static void pp_binary(ExprAstNode *node, StringBuffer *buf)
 
 static void pp_unary(ExprAstNode *node, StringBuffer *buf)
 {
-    switch(node->unary.op) {
-        case UNARY_ADDRESS_OF:
-            pp_printf(buf, "U &, ");
-            break;
-        case UNARY_BITWISE_NOT:
-            pp_printf(buf, "U ~, ");
-            break;
-        case UNARY_DEREFERENCE:
-            pp_printf(buf, "U *, ");
-            break;
-        case UNARY_LOGICAL_NOT:
-            pp_printf(buf, "U !, ");
-            break;
-        case UNARY_MINUS:
-            pp_printf(buf, "U -, ");
-            break;
-        case UNARY_PLUS:
-            pp_printf(buf, "U +, ");
-            break;
-        case UNARY_SIZEOF:
-            pp_printf(buf, "U sizeof, ");
-            break;
-        case UNARY_INC_OP:
-            pp_printf(buf, "U ++, ");
-            break;
-        case UNARY_DEC_OP:
-            pp_printf(buf, "U --, ");
-            break;
+    switch (node->unary.op)
+    {
+    case UNARY_ADDRESS_OF:
+        pp_printf(buf, "U &, ");
+        break;
+    case UNARY_BITWISE_NOT:
+        pp_printf(buf, "U ~, ");
+        break;
+    case UNARY_DEREFERENCE:
+        pp_printf(buf, "U *, ");
+        break;
+    case UNARY_LOGICAL_NOT:
+        pp_printf(buf, "U !, ");
+        break;
+    case UNARY_MINUS:
+        pp_printf(buf, "U -, ");
+        break;
+    case UNARY_PLUS:
+        pp_printf(buf, "U +, ");
+        break;
+    case UNARY_SIZEOF:
+        pp_printf(buf, "U sizeof, ");
+        break;
+    case UNARY_INC_OP:
+        pp_printf(buf, "U ++, ");
+        break;
+    case UNARY_DEC_OP:
+        pp_printf(buf, "U --, ");
+        break;
     }
     pp_expr(node->unary.right, buf);
 }

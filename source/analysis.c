@@ -229,14 +229,16 @@ static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolT
     Symbol *sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);
     if (sym == NULL)
     {
-        char * err = STR_CONCAT("Undeclared identifier '", node->primary.identifier->lexeme, "'");
+        char *err =
+            STR_CONCAT("Undeclared identifier '", node->primary.identifier->lexeme, "'");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
         return NULL;
     }
     node->primary.symbol = sym;
 
-    if(node->primary.symbol->type->type == TYPE_ARRAY) {
-        CType * ptr_type = calloc(1, sizeof(CType));
+    if (node->primary.symbol->type->type == TYPE_ARRAY)
+    {
+        CType *ptr_type = calloc(1, sizeof(CType));
         ptr_type->type = TYPE_POINTER;
         ptr_type->derived.type = node->primary.symbol->type->derived.type;
         return ptr_type;
@@ -260,8 +262,9 @@ static void walk_argument_list(ErrorReporter *error, ParameterListItem *params,
 
         if (!check_assign_cast(&arguments->argument, param_type, arg_type))
         {
-            char * err = STR_CONCAT("Incompatible argument type. Cannot pass type '",
-                      ctype_str(arg_type), "' to type '", ctype_str(param_type), "'");
+            char *err = STR_CONCAT("Incompatible argument type. Cannot pass type '",
+                                   ctype_str(arg_type), "' to type '",
+                                   ctype_str(param_type), "'");
             Error_report_error(error, ANALYSIS, arguments->argument->line_number,
                                arguments->argument->line_position, err);
         }
@@ -315,9 +318,10 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
     if (!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right))
         goto err;
 
-    for(int i = 0;i < sizeof(binary_op_requirements)/sizeof(binary_op_requirements[0]);i++)
+    for (int i = 0;
+         i < sizeof(binary_op_requirements) / sizeof(binary_op_requirements[0]); i++)
     {
-        OpRequirements *req = &binary_op_requirements[i];
+        const OpRequirements *req = &binary_op_requirements[i];
         if (req->op != node->binary.op)
             continue;
 
@@ -352,7 +356,8 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
         }
     }
 err : {
-    Error_report_error(error, ANALYSIS, node->line_number, node->line_position, "Invalid operand type to binary operator");
+    Error_report_error(error, ANALYSIS, node->line_number, node->line_position,
+                       "Invalid operand type to binary operator");
 }
     return NULL;
 }
@@ -365,7 +370,7 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
     if (!ctype)
         return NULL;
 
-    if(node->unary.op == UNARY_DEREFERENCE)
+    if (node->unary.op == UNARY_DEREFERENCE)
     {
         // Pointer dereference.
         if (ctype->type != TYPE_POINTER)
@@ -454,8 +459,8 @@ static CType *walk_expr_assign(ErrorReporter *error, ExprAstNode *node, SymbolTa
 
     if (!check_assign_cast(&node->assign.right, left, right))
     {
-        char * err = STR_CONCAT("Incompatible assignment. Cannot assign type '", ctype_str(right),
-                  "' to type '", ctype_str(left), "'");
+        char *err = STR_CONCAT("Incompatible assignment. Cannot assign type '",
+                               ctype_str(right), "' to type '", ctype_str(left), "'");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
     }
     return left;
@@ -506,8 +511,9 @@ static void walk_decl_object(ErrorReporter *error, DeclAstNode *node, SymbolTabl
 
         if (!check_assign_cast(&node->initializer, node->type, type))
         {
-            char * err = STR_CONCAT("Invalid initializer value. Cannot assign type '",
-                      ctype_str(type), "' to type '", ctype_str(node->type), "'");
+            char *err =
+                STR_CONCAT("Invalid initializer value. Cannot assign type '",
+                           ctype_str(type), "' to type '", ctype_str(node->type), "'");
             Error_report_error(error, ANALYSIS, node->initializer->line_number,
                                node->initializer->line_position, err);
         }
@@ -523,25 +529,32 @@ static void walk_decl_object(ErrorReporter *error, DeclAstNode *node, SymbolTabl
  */
 static void walk_decl(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab, _Bool tu)
 {
-    if(CTYPE_IS_FUNCTION(node->type) && !tu) {
+    if (CTYPE_IS_FUNCTION(node->type) && !tu)
+    {
         // Check if we're trying to define a function within a function.
-        char * err = STR_CONCAT("Cannot have nested functions ('", node->identifier->lexeme,
-                "'). Try Rust?");
+        char *err = STR_CONCAT("Cannot have nested functions ('",
+                               node->identifier->lexeme, "'). Try Rust?");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
-    } else if (symbol_table_get(tab, node->identifier->lexeme, false))
+    }
+    else if (symbol_table_get(tab, node->identifier->lexeme, false))
     {
         // Check if there is already a symbol table entry for this
         // identifier within the current scope.
-        char * err = STR_CONCAT("Previously declared identifier '", node->identifier->lexeme,
-                  "'");
+        char *err =
+            STR_CONCAT("Previously declared identifier '", node->identifier->lexeme, "'");
         Error_report_error(error, ANALYSIS, node->line_number, node->line_position, err);
-    } else {
+    }
+    else
+    {
         node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
         node->symbol->type = node->type;
 
-        if(CTYPE_IS_FUNCTION(node->type)) {
+        if (CTYPE_IS_FUNCTION(node->type))
+        {
             walk_decl_function(error, node, tab);
-        } else {
+        }
+        else
+        {
             walk_decl_object(error, node, tab);
         }
     }

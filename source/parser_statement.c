@@ -76,7 +76,7 @@ static StmtAstNode *statement(Parser *parser)
 //      * CASE constant_expression ':' statement
 //      * DEFAULT ':' statement
 //      */
-// 
+//
 //     return NULL;
 // }
 
@@ -129,7 +129,7 @@ static StmtAstNode *expression_statement(Parser *parser)
 //      * IF '(' expression ')' statement
 //      * SWITCH '(' expression ')' statement
 //      */
-// 
+//
 //     return NULL;
 // }
 

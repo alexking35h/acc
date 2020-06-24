@@ -1,4 +1,4 @@
-/* 
+/*
  * Recursive Descent Parser implementation (expression)
  *
  * The recursive descent parser is implemented as a set of mutually recursive
@@ -13,6 +13,7 @@
 #include "ast.h"
 #include "parser.h"
 #include "token.h"
+#include "util.h"
 
 #define EXPR_BINARY(l, p, ...)                                                           \
     Ast_create_expr_node((ExprAstNode){BINARY, l, p, .binary = {__VA_ARGS__}})
@@ -32,8 +33,6 @@
 #define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
 #define consume(t) Parser_consume_token(parser, t)
 #define peek() Parser_peek_token(parser)
-
-#define static
 
 static ExprAstNode *primary_expression(Parser *);
 static ExprAstNode *postfix_expression(Parser *);
@@ -68,8 +67,8 @@ static ExprAstNode *desugar_assign(Parser *parser, ExprAstNode *expr, BinaryExpr
 
 static ExprAstNode *desugar_array(Parser *parser, ExprAstNode *base, ExprAstNode *index)
 {
-    ExprAstNode *binary_op =
-        EXPR_BINARY(base->line_number, -1, .left = base, .op = BINARY_ADD, .right = index);
+    ExprAstNode *binary_op = EXPR_BINARY(base->line_number, -1, .left = base,
+                                         .op = BINARY_ADD, .right = index);
     ExprAstNode *ptr_op =
         EXPR_UNARY(base->line_number, -1, .op = UNARY_DEREFERENCE, .right = binary_op);
     return ptr_op;
@@ -81,14 +80,11 @@ static ExprAstNode *primary_expression(Parser *parser)
 
     if (!next)
     {
-        char err_str[100];
-        snprintf(err_str, 100, "Expected expression, got '%s'", Token_str(peek()->type));
+        char *err_str =
+            STR_CONCAT("Expected expression, got '", Token_str(peek()->type), "'");
         Error_report_error(parser->error_reporter, PARSER, peek()->line_number,
                            peek()->line_position, err_str);
-
         THROW_ERROR(parser);
-
-        return NULL;
     }
     int l = next->line_number, p = next->line_position;
 
@@ -118,27 +114,28 @@ static ExprAstNode *postfix_expression(Parser *parser)
     ExprAstNode *expr = primary_expression(parser);
     Token *token;
 
-    while (true)
+    while ((token = match(LEFT_SQUARE, LEFT_PAREN, INC_OP, DEC_OP)))
     {
-        if (match(LEFT_SQUARE))
+        if (token->type == LEFT_SQUARE)
         {
             ExprAstNode *index = Parser_expression(parser);
             consume(RIGHT_SQUARE);
             expr = desugar_array(parser, expr, index);
-        } else if(token=match(INC_OP)) {
-            expr = EXPR_POSTFIX(token->line_number, token->line_position, .op=POSTFIX_INC_OP, .left=expr);
-        } else if(token=match(DEC_OP)) {
-            expr = EXPR_POSTFIX(token->line_number, token->line_position, .op=POSTFIX_DEC_OP, .left=expr);
-        } else if (token=match(LEFT_PAREN))
+        }
+        else if (token->type == LEFT_PAREN)
         {
             // Function call.
-            expr = EXPR_POSTFIX(expr->line_number, expr->line_position, .left = expr, .op=POSTFIX_CALL,
+            expr = EXPR_POSTFIX(expr->line_number, expr->line_position, .left = expr,
+                                .op = POSTFIX_CALL,
                                 .args = argument_expression_list(parser));
             consume(RIGHT_PAREN);
         }
         else
         {
-            break;
+            expr = EXPR_POSTFIX(token->line_number, token->line_position,
+                                .op = token->type == INC_OP ? POSTFIX_INC_OP
+                                                            : POSTFIX_DEC_OP,
+                                .left = expr);
         }
     }
     return expr;
@@ -155,38 +152,40 @@ static ArgumentListItem *argument_expression_list(Parser *parser)
 }
 static ExprAstNode *unary_expression(Parser *parser)
 {
-    Token *token;
-    if ((token = match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF, INC_OP, DEC_OP)))
+    Token *token =
+        match(AMPERSAND, STAR, PLUS, MINUS, TILDE, BANG, SIZEOF, INC_OP, DEC_OP);
+    if (token)
     {
         UnaryExprOp op;
-        switch(token->type) {
-            case AMPERSAND:
-                op = UNARY_ADDRESS_OF;
-                break;
-            case STAR:
-                op = UNARY_DEREFERENCE;
-                break;
-            case PLUS:
-                op = UNARY_PLUS;
-                break;
-            case MINUS:
-                op = UNARY_MINUS;
-                break;
-            case TILDE:
-                op = UNARY_BITWISE_NOT;
-                break;
-            case BANG:
-                op = UNARY_LOGICAL_NOT;
-                break;
-            case SIZEOF:
-                op = UNARY_SIZEOF;
-                break;
-            case INC_OP:
-                op = UNARY_INC_OP;
-                break;
-            case DEC_OP:
-                op = UNARY_DEC_OP;
-                break;
+        switch (token->type)
+        {
+        case AMPERSAND:
+            op = UNARY_ADDRESS_OF;
+            break;
+        case STAR:
+            op = UNARY_DEREFERENCE;
+            break;
+        case PLUS:
+            op = UNARY_PLUS;
+            break;
+        case MINUS:
+            op = UNARY_MINUS;
+            break;
+        case TILDE:
+            op = UNARY_BITWISE_NOT;
+            break;
+        case BANG:
+            op = UNARY_LOGICAL_NOT;
+            break;
+        case SIZEOF:
+            op = UNARY_SIZEOF;
+            break;
+        case INC_OP:
+            op = UNARY_INC_OP;
+            break;
+        case DEC_OP:
+            op = UNARY_DEC_OP;
+            break;
         }
         return EXPR_UNARY(token->line_number, token->line_position, .op = op,
                           .right = unary_expression(parser));
@@ -231,18 +230,24 @@ static ExprAstNode *multiplicative_expression(Parser *parser)
     ExprAstNode *expr = cast_expression(parser);
     Token *operator;
 
-    while(operator=match(STAR, SLASH, PERCENT)) {
+    while ((operator= match(STAR, SLASH, PERCENT)))
+    {
         ExprAstNode *right = cast_expression(parser);
 
-        if(operator->type == STAR) {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr, .op=BINARY_MUL,
-                    .right = right);
-        } else if(operator->type == SLASH) {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr, .op=BINARY_DIV,
-                           .right = right);
-        } else {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr, .op=BINARY_MOD,
-                    .right = right);
+        if (operator->type == STAR)
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_MUL, .right = right);
+        }
+        else if (operator->type == SLASH)
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_DIV, .right = right);
+        }
+        else
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_MOD, .right = right);
         }
     }
     return expr;
@@ -252,14 +257,19 @@ static ExprAstNode *additive_expression(Parser *parser)
     ExprAstNode *expr = multiplicative_expression(parser);
     Token *operator;
 
-    while (operator=match(PLUS, MINUS))
+    while ((operator= match(PLUS, MINUS)))
     {
         ExprAstNode *right = multiplicative_expression(parser);
 
-        if(operator->type == PLUS) {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left=expr, .op=BINARY_ADD, .right=right);
-        } else {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left=expr, .op=BINARY_SUB, .right=right);
+        if (operator->type == PLUS)
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_ADD, .right = right);
+        }
+        else
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_SUB, .right = right);
         }
     }
     return expr;
@@ -269,15 +279,18 @@ static ExprAstNode *shift_expression(Parser *parser)
     ExprAstNode *expr = additive_expression(parser);
     Token *operator;
 
-    while (operator=match(LEFT_OP, RIGHT_OP))
+    while ((operator= match(LEFT_OP, RIGHT_OP)))
     {
         ExprAstNode *right = additive_expression(parser);
-        if(operator->type == LEFT_OP) {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
-                           .op = BINARY_SLL, .right = right);
-        } else {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
-                           .op = BINARY_SLR, .right = right);
+        if (operator->type == LEFT_OP)
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_SLL, .right = right);
+        }
+        else
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_SLR, .right = right);
         }
     }
     return expr;
@@ -287,19 +300,28 @@ static ExprAstNode *relational_expression(Parser *parser)
     ExprAstNode *expr = shift_expression(parser);
     Token *operator;
 
-    while (operator=match(LESS_THAN, GREATER_THAN, LE_OP, GE_OP)) {
+    while ((operator= match(LESS_THAN, GREATER_THAN, LE_OP, GE_OP)))
+    {
         ExprAstNode *right = shift_expression(parser);
-        if(operator->type == LESS_THAN) {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
-                            .op = BINARY_LT, .right = right);
-        } else if(operator->type == GREATER_THAN) {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
-                            .op = BINARY_GT, .right = right);
-        } else if(operator->type == LE_OP) {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
-                .op = BINARY_LE, .right = right);
-        } else {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr, .op=BINARY_GE, .right=right);
+        if (operator->type == LESS_THAN)
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_LT, .right = right);
+        }
+        else if (operator->type == GREATER_THAN)
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_GT, .right = right);
+        }
+        else if (operator->type == LE_OP)
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_LE, .right = right);
+        }
+        else
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_GE, .right = right);
         }
     }
     return expr;
@@ -309,15 +331,18 @@ static ExprAstNode *equality_expression(Parser *parser)
     ExprAstNode *expr = relational_expression(parser);
     Token *operator;
 
-    while (operator = match(EQ_OP, NE_OP)) 
+    while ((operator= match(EQ_OP, NE_OP)))
     {
         ExprAstNode *right = relational_expression(parser);
-        if(operator->type == EQ_OP) {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
-                            .op = BINARY_EQ, .right = right);
-        } else {
-            expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
-                            .op = BINARY_NE, .right = right);
+        if (operator->type == EQ_OP)
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_EQ, .right = right);
+        }
+        else
+        {
+            expr = EXPR_BINARY(operator->line_number, operator->line_position,
+                               .left = expr, .op = BINARY_NE, .right = right);
         }
     }
     return expr;
@@ -325,9 +350,9 @@ static ExprAstNode *equality_expression(Parser *parser)
 static ExprAstNode *and_expression(Parser *parser)
 {
     ExprAstNode *expr = equality_expression(parser);
-    Token * operator;
+    Token *operator;
 
-    while (operator=match(AMPERSAND)) 
+    while ((operator= match(AMPERSAND)))
     {
         ExprAstNode *right = equality_expression(parser);
         expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
@@ -340,7 +365,7 @@ static ExprAstNode *exclusive_or_expression(Parser *parser)
     ExprAstNode *expr = and_expression(parser);
     Token *operator;
 
-    while(operator=match(CARET)) 
+    while ((operator= match(CARET)))
     {
         ExprAstNode *right = and_expression(parser);
         expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
@@ -353,7 +378,7 @@ static ExprAstNode *inclusive_or_expression(Parser *parser)
     ExprAstNode *expr = exclusive_or_expression(parser);
     Token *operator;
 
-    while (operator=match(BAR))
+    while ((operator= match(BAR)))
     {
         ExprAstNode *right = exclusive_or_expression(parser);
         expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
@@ -366,7 +391,7 @@ static ExprAstNode *logical_and_expression(Parser *parser)
     ExprAstNode *expr = inclusive_or_expression(parser);
     Token *operator;
 
-    while (operator=match(AND_OP))
+    while ((operator= match(AND_OP)))
     {
         ExprAstNode *right = inclusive_or_expression(parser);
         expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
@@ -379,7 +404,7 @@ static ExprAstNode *logical_or_expression(Parser *parser)
     ExprAstNode *expr = logical_and_expression(parser);
     Token *operator;
 
-    while (operator=match(OR_OP))
+    while ((operator= match(OR_OP)))
     {
         ExprAstNode *right = logical_and_expression(parser);
         expr = EXPR_BINARY(operator->line_number, operator->line_position, .left = expr,
@@ -389,11 +414,7 @@ static ExprAstNode *logical_or_expression(Parser *parser)
 }
 
 static ExprAstNode *conditional_expression(Parser *parser)
-{ // @DONE
-    /*
-     * logical_or_expression
-     * logical_or_expression '?' expression ':' conditional_expression
-     */
+{
     ExprAstNode *expr = logical_or_expression(parser);
     Token *question = match(QUESTION);
     if (!question)
@@ -409,12 +430,7 @@ static ExprAstNode *conditional_expression(Parser *parser)
 }
 
 ExprAstNode *Parser_assignment_expression(Parser *parser)
-{ // @DONE
-    /*
-     * conditional_expression
-     * unary_expression assignment_operator Parser_assignment_expression
-     */
-
+{
     // The FIRST sets for the grammar rules 'conditional_expression' and
     // 'unary_expression' are not disjoint. To sidestep this,
     // 'Parser_assignment_expression is parsed as: : conditional_expression |
@@ -488,10 +504,6 @@ ExprAstNode *Parser_assignment_expression(Parser *parser)
 }
 
 ExprAstNode *Parser_expression(Parser *parser)
-{ // @DONE
-    /*
-     * Parser_assignment_expression
-     * expression ',' Parser_assignment_expression // @TODO
-     */
+{
     return Parser_assignment_expression(parser);
 }

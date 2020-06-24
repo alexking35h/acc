@@ -471,7 +471,7 @@ Token *Scanner_get_next(Scanner *scanner)
             break;
     }
 
-    Token * token = calloc(1, sizeof(Token));
+    Token *token = calloc(1, sizeof(Token));
     token->type = token_type;
     token->line_number = token_line_number;
     token->line_position = token_position - scanner->line_start_position;

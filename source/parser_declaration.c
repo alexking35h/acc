@@ -82,7 +82,8 @@ DeclAstNode *Parser_declaration(Parser *parser)
 
     // if (match(SEMICOLON))
     // {
-    //     return DECL(CONCRETE, .line_number = line_number, .line_position = line_position,
+    //     return DECL(CONCRETE, .line_number = line_number, .line_position =
+    //     line_position,
     //                 .type = type);
     // }
     DeclAstNode *decl = init_declarator_list(parser, type);
