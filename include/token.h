@@ -119,7 +119,8 @@ typedef enum TokenType_t
 } TokenType;
 
 /* Token position */
-typedef struct Position_t {
+typedef struct Position_t
+{
     int line;
     int position;
 } Position;

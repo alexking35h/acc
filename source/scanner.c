@@ -152,7 +152,8 @@ static bool consume_string(Scanner *scanner)
         if (END_OF_FILE(scanner))
         {
             Position pos = {scanner->line_number, string_line_position};
-            Error_report_error(scanner->error_reporter, SCANNER, pos, "Unterminated string literal");
+            Error_report_error(scanner->error_reporter, SCANNER, pos,
+                               "Unterminated string literal");
             return false;
         }
 
@@ -166,7 +167,8 @@ static bool consume_string(Scanner *scanner)
         if (focus == '\n')
         {
             Position pos = {scanner->line_number, string_line_position};
-            Error_report_error(scanner->error_reporter, SCANNER, pos, "Unterminated string literal");
+            Error_report_error(scanner->error_reporter, SCANNER, pos,
+                               "Unterminated string literal");
             scanner->line_number++;
             scanner->line_start_position = scanner->current;
             store_line_position(scanner);
@@ -404,7 +406,8 @@ static TokenType get_next_token_type(Scanner *scanner)
     char error_string[50];
     snprintf(error_string, 50, "Invalid character in input: '%c'", focus);
 
-    Position pos = {scanner->line_number, scanner->current - scanner->line_start_position - 1};
+    Position pos = {scanner->line_number,
+                    scanner->current - scanner->line_start_position - 1};
     Error_report_error(scanner->error_reporter, SCANNER, pos, error_string);
 
     return 0;

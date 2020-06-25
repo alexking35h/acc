@@ -387,7 +387,7 @@ static DeclAstNode *direct_declarator(Parser *parser, CType *ctype)
     if ((tok = match(IDENTIFIER)))
     {
         ctype = direct_declarator_end(parser, ctype);
-        return DECL(CONCRETE, .pos=tok->pos, .identifier = tok, .type = ctype);
+        return DECL(CONCRETE, .pos = tok->pos, .identifier = tok, .type = ctype);
     }
     else if (match(LEFT_PAREN))
     {

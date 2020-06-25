@@ -351,7 +351,8 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
         }
     }
 err : {
-    Error_report_error(error, ANALYSIS, node->pos, "Invalid operand type to binary operator");
+    Error_report_error(error, ANALYSIS, node->pos,
+                       "Invalid operand type to binary operator");
 }
     return NULL;
 }
@@ -391,7 +392,8 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
         // Test that the operand is of type 'basic' (section 6.5.3.1)
         if (!CTYPE_IS_BASIC(ctype))
         {
-            Error_report_error(error, ANALYSIS, node->pos, "Invalid operand to unary operator");
+            Error_report_error(error, ANALYSIS, node->pos,
+                               "Invalid operand to unary operator");
         }
         return ctype;
     }
@@ -418,7 +420,8 @@ static CType *walk_expr_tertiary(ErrorReporter *error, ExprAstNode *node,
     }
 
     // Error occurred - the types are not the same.
-    Error_report_error(error, ANALYSIS, node->pos, "Invalid types in tertiary expression");
+    Error_report_error(error, ANALYSIS, node->pos,
+                       "Invalid types in tertiary expression");
     return NULL;
 }
 

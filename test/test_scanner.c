@@ -21,8 +21,7 @@
 #define MOCK_ERROR_REPORTER (ErrorReporter *)0x1234
 
 void __wrap_Error_report_error(ErrorReporter *error_reporter, ErrorType error_type,
-                               Position pos, const char *title,
-                               const char *description)
+                               Position pos, const char *title, const char *description)
 {
     int line_number = pos.line;
     int line_position = pos.position;

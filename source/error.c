@@ -37,7 +37,8 @@ void Error_destroy(ErrorReporter *error_reporter)
     free(error_reporter);
 }
 
-void Error_report_error(ErrorReporter *error_reporter, ErrorType type, Position position, const char *msg)
+void Error_report_error(ErrorReporter *error_reporter, ErrorType type, Position position,
+                        const char *msg)
 {
     // Find the right position in the list. Ordered as follows:
     // 1. By line-number ascending.

@@ -12,16 +12,18 @@
 #include "parser.h"
 #include "token.h"
 
-#define STMT_EXPR(p, ...)                                                                   \
+#define STMT_EXPR(p, ...)                                                                \
     Ast_create_stmt_node((StmtAstNode){.type = EXPR, p, .expr = {__VA_ARGS__}})
-#define STMT_DECL(p, ...)                                                                   \
+#define STMT_DECL(p, ...)                                                                \
     Ast_create_stmt_node((StmtAstNode){.type = DECL, p, .decl = {__VA_ARGS__}})
-#define STMT_BLOCK(p, ...)                                                                  \
+#define STMT_BLOCK(p, ...)                                                               \
     Ast_create_stmt_node((StmtAstNode){.type = BLOCK, p, .block = {__VA_ARGS__}})
-#define STMT_WHILE(p, ...)                                                                  \
-    Ast_create_stmt_node((StmtAstNode){.type = WHILE_LOOP, p, .while_loop = {__VA_ARGS__}})
-#define STMT_RETURN(p, ...)                                                                 \
-    Ast_create_stmt_node((StmtAstNode){.type = RETURN_JUMP, p, .return_jump = {__VA_ARGS__}})
+#define STMT_WHILE(p, ...)                                                               \
+    Ast_create_stmt_node(                                                                \
+        (StmtAstNode){.type = WHILE_LOOP, p, .while_loop = {__VA_ARGS__}})
+#define STMT_RETURN(p, ...)                                                              \
+    Ast_create_stmt_node(                                                                \
+        (StmtAstNode){.type = RETURN_JUMP, p, .return_jump = {__VA_ARGS__}})
 
 #define consume(t) Parser_consume_token(parser, t)
 #define peek(t) Parser_peek_token(parser)
@@ -84,7 +86,7 @@ StmtAstNode *Parser_compound_statement(Parser *parser)
 {
     StmtAstNode *stmt, *head = NULL, **curr = &stmt;
 
-    Token * brace = consume(LEFT_BRACE);
+    Token *brace = consume(LEFT_BRACE);
     while (!match(RIGHT_BRACE))
     {
         if (CATCH_ERROR(parser))
@@ -102,8 +104,8 @@ StmtAstNode *Parser_compound_statement(Parser *parser)
 
         if (is_decl(peek()->type))
         {
-            DeclAstNode * decl = Parser_declaration(parser);
-            *curr = STMT_DECL(decl->pos, .decl=decl);
+            DeclAstNode *decl = Parser_declaration(parser);
+            *curr = STMT_DECL(decl->pos, .decl = decl);
         }
         else
         {
@@ -118,8 +120,8 @@ StmtAstNode *Parser_compound_statement(Parser *parser)
 
 static StmtAstNode *expression_statement(Parser *parser)
 {
-    ExprAstNode * expr = Parser_expression(parser);
-    StmtAstNode *stmt = STMT_EXPR(expr->pos, .expr=expr);
+    ExprAstNode *expr = Parser_expression(parser);
+    StmtAstNode *stmt = STMT_EXPR(expr->pos, .expr = expr);
     consume(SEMICOLON);
     return stmt;
 }
@@ -156,13 +158,13 @@ StmtAstNode *return_statement(Parser *parser)
     Token *tok;
     consume(RETURN);
 
-    if ((tok=match(SEMICOLON)))
+    if ((tok = match(SEMICOLON)))
     {
         stmt = STMT_RETURN(tok->pos);
     }
     else
     {
-        ExprAstNode * expr = Parser_expression(parser);
+        ExprAstNode *expr = Parser_expression(parser);
         stmt = STMT_RETURN(expr->pos, .value = expr);
         consume(SEMICOLON);
     }
