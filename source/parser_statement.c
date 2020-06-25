@@ -12,16 +12,16 @@
 #include "parser.h"
 #include "token.h"
 
-#define STMT_EXPR(...)                                                                   \
-    Ast_create_stmt_node((StmtAstNode){.type = EXPR, .expr = {__VA_ARGS__}})
-#define STMT_DECL(...)                                                                   \
-    Ast_create_stmt_node((StmtAstNode){.type = DECL, .decl = {__VA_ARGS__}})
-#define STMT_BLOCK(...)                                                                  \
-    Ast_create_stmt_node((StmtAstNode){.type = BLOCK, .block = {__VA_ARGS__}})
-#define STMT_WHILE(...)                                                                  \
-    Ast_create_stmt_node((StmtAstNode){.type = WHILE_LOOP, .while_loop = {__VA_ARGS__}})
-#define STMT_RETURN(...)                                                                 \
-    Ast_create_stmt_node((StmtAstNode){.type = RETURN_JUMP, .return_jump = {__VA_ARGS__}})
+#define STMT_EXPR(p, ...)                                                                   \
+    Ast_create_stmt_node((StmtAstNode){.type = EXPR, p, .expr = {__VA_ARGS__}})
+#define STMT_DECL(p, ...)                                                                   \
+    Ast_create_stmt_node((StmtAstNode){.type = DECL, p, .decl = {__VA_ARGS__}})
+#define STMT_BLOCK(p, ...)                                                                  \
+    Ast_create_stmt_node((StmtAstNode){.type = BLOCK, p, .block = {__VA_ARGS__}})
+#define STMT_WHILE(p, ...)                                                                  \
+    Ast_create_stmt_node((StmtAstNode){.type = WHILE_LOOP, p, .while_loop = {__VA_ARGS__}})
+#define STMT_RETURN(p, ...)                                                                 \
+    Ast_create_stmt_node((StmtAstNode){.type = RETURN_JUMP, p, .return_jump = {__VA_ARGS__}})
 
 #define consume(t) Parser_consume_token(parser, t)
 #define peek(t) Parser_peek_token(parser)
@@ -84,7 +84,7 @@ StmtAstNode *Parser_compound_statement(Parser *parser)
 {
     StmtAstNode *stmt, *head = NULL, **curr = &stmt;
 
-    consume(LEFT_BRACE);
+    Token * brace = consume(LEFT_BRACE);
     while (!match(RIGHT_BRACE))
     {
         if (CATCH_ERROR(parser))
@@ -102,7 +102,8 @@ StmtAstNode *Parser_compound_statement(Parser *parser)
 
         if (is_decl(peek()->type))
         {
-            *curr = STMT_DECL(.decl = Parser_declaration(parser));
+            DeclAstNode * decl = Parser_declaration(parser);
+            *curr = STMT_DECL(decl->pos, .decl=decl);
         }
         else
         {
@@ -112,12 +113,13 @@ StmtAstNode *Parser_compound_statement(Parser *parser)
             head = *curr;
         curr = &((*curr)->next);
     }
-    return STMT_BLOCK(.head = head);
+    return STMT_BLOCK(brace->pos, .head = head);
 }
 
 static StmtAstNode *expression_statement(Parser *parser)
 {
-    StmtAstNode *stmt = STMT_EXPR(.expr = Parser_expression(parser));
+    ExprAstNode * expr = Parser_expression(parser);
+    StmtAstNode *stmt = STMT_EXPR(expr->pos, .expr=expr);
     consume(SEMICOLON);
     return stmt;
 }
@@ -142,7 +144,7 @@ StmtAstNode *iteration_statement(Parser *parser)
         consume(RIGHT_PAREN);
         StmtAstNode *block = statement(parser);
 
-        return STMT_WHILE(.expr = expr, .block = block);
+        return STMT_WHILE(expr->pos, .expr = expr, .block = block);
     }
 
     return NULL;
@@ -151,15 +153,17 @@ StmtAstNode *iteration_statement(Parser *parser)
 StmtAstNode *return_statement(Parser *parser)
 {
     StmtAstNode *stmt;
+    Token *tok;
     consume(RETURN);
 
-    if (match(SEMICOLON))
+    if ((tok=match(SEMICOLON)))
     {
-        stmt = STMT_RETURN();
+        stmt = STMT_RETURN(tok->pos);
     }
     else
     {
-        stmt = STMT_RETURN(.value = Parser_expression(parser));
+        ExprAstNode * expr = Parser_expression(parser);
+        stmt = STMT_RETURN(expr->pos, .value = expr);
         consume(SEMICOLON);
     }
 

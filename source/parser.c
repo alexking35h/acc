@@ -83,8 +83,7 @@ Token *Parser_consume_token(Parser *parser, TokenType token_type)
         snprintf(err_msg, 80, "Expecting '%s', got '%s'", Token_str(token_type),
                  Token_str(tok->type));
 
-        Error_report_error(parser->error_reporter, PARSER, tok->line_number,
-                           tok->line_position, err_msg);
+        Error_report_error(parser->error_reporter, PARSER, tok->pos, err_msg);
         THROW_ERROR(parser);
     }
     return tok;
@@ -97,24 +96,6 @@ void Parser_advance_token(Parser *parser)
 {
     parser->next_token[parser->next_token_index] = Scanner_get_next(parser->scanner);
     parser->next_token_index = (parser->next_token_index + 1) % 2;
-}
-
-/*
- * Create a new token, for the purposes of desugauring syntax.
- *
- * This function allocates a new token (using the Scanner_create_token
- * function), and initializes it.
- */
-Token *Parser_create_fake_token(Parser *parser, TokenType type, char *lexeme)
-{
-    Token *token = calloc(1, sizeof(Token));
-
-    token->type = type;
-    token->line_number = -1;
-    token->lexeme = calloc(1, strlen(lexeme) + 1);
-    strcpy(token->lexeme, lexeme);
-
-    return token;
 }
 
 void Parser_sync_token(Parser *parser, TokenType types[])

@@ -3,7 +3,7 @@ GIT_COMMIT=$(shell git describe --always)
 GIT_REPO=$(shell git remote get-url origin)
 
 # Compiler flags
-CFLAGS=-Wno-switch-Wall -Iinclude $(shell pkg-config --libs --cflags cmocka) -g -DGIT_COMMIT=\"$(GIT_COMMIT)\" -DGIT_REPO=\"$(GIT_REPO)\"
+CFLAGS=-Wno-switch -Wall -Iinclude $(shell pkg-config --libs --cflags cmocka) -g -DGIT_COMMIT=\"$(GIT_COMMIT)\" -DGIT_REPO=\"$(GIT_REPO)\"
 LDFLAGS=
 CC=gcc
 

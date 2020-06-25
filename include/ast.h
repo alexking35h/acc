@@ -84,8 +84,7 @@ typedef enum
 typedef struct ExprAstNode_t
 {
     ExprOp type;
-    int line_number;
-    int line_position;
+    Position pos;
 
     // Anonymous union for each node sub-type.
     union {
@@ -156,8 +155,7 @@ typedef struct DeclAstNode_t
         ABSTRACT
     } decl_type;
 
-    int line_number;
-    int line_position;
+    Position pos;
 
     CType *type;
     Token *identifier;
@@ -185,8 +183,7 @@ typedef struct StmtAstNode_t
         RETURN_JUMP
     } type;
 
-    int line_number;
-    int line_position;
+    Position pos;
 
     union {
         // Declaration

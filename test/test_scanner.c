@@ -21,9 +21,11 @@
 #define MOCK_ERROR_REPORTER (ErrorReporter *)0x1234
 
 void __wrap_Error_report_error(ErrorReporter *error_reporter, ErrorType error_type,
-                               int line_number, int line_position, const char *title,
+                               Position pos, const char *title,
                                const char *description)
 {
+    int line_number = pos.line;
+    int line_position = pos.position;
     function_called();
     assert_true(error_reporter == MOCK_ERROR_REPORTER);
     assert_true(error_type == SCANNER);
@@ -44,8 +46,8 @@ static void whitespace(void **state)
 
     Token *eof_token = Scanner_get_next(scanner);
     assert_int_equal(eof_token->type, END_OF_FILE);
-    assert_int_equal(eof_token->line_number, 2);
-    assert_int_equal(eof_token->line_position, 4);
+    assert_int_equal(eof_token->pos.line, 2);
+    assert_int_equal(eof_token->pos.position, 4);
 
     Scanner_destroy(scanner);
 }
@@ -67,8 +69,8 @@ static void single_character(void **state)
     {
         Token *token = Scanner_get_next(scanner);
         assert_int_equal(token->type, expected_tokens[i]);
-        assert_int_equal(token->line_number, 1);
-        assert_int_equal(token->line_position, i);
+        assert_int_equal(token->pos.line, 1);
+        assert_int_equal(token->pos.position, i);
     }
 }
 
@@ -87,8 +89,8 @@ static void assignments(void **state)
     {
         Token *token = Scanner_get_next(scanner);
         assert_int_equal(token->type, expected_tokens[i]);
-        assert_int_equal(token->line_position, expected_positions[i]);
-        assert_int_equal(token->line_number, 1);
+        assert_int_equal(token->pos.position, expected_positions[i]);
+        assert_int_equal(token->pos.line, 1);
     }
 }
 
@@ -104,8 +106,8 @@ static void operators(void **state)
     {
         Token *token = Scanner_get_next(scanner);
         assert_true(expected_tokens[i] == token->type);
-        assert_int_equal(token->line_number, 1);
-        assert_int_equal(token->line_position, i * 3);
+        assert_int_equal(token->pos.line, 1);
+        assert_int_equal(token->pos.position, i * 3);
     }
 }
 
@@ -116,18 +118,18 @@ static void comment(void **state)
 
     Token *token = Scanner_get_next(scanner);
     assert_int_equal(token->type, COLON);
-    assert_int_equal(token->line_number, 1);
-    assert_int_equal(token->line_position, 0);
+    assert_int_equal(token->pos.line, 1);
+    assert_int_equal(token->pos.position, 0);
 
     token = Scanner_get_next(scanner);
     assert_int_equal(token->type, SEMICOLON);
-    assert_int_equal(token->line_number, 2);
-    assert_int_equal(token->line_position, 0);
+    assert_int_equal(token->pos.line, 2);
+    assert_int_equal(token->pos.position, 0);
 
     token = Scanner_get_next(scanner);
     assert_int_equal(token->type, BANG);
-    assert_int_equal(token->line_number, 5);
-    assert_int_equal(token->line_position, 0);
+    assert_int_equal(token->pos.line, 5);
+    assert_int_equal(token->pos.position, 0);
 }
 
 static void string_literal(void **state)
@@ -137,14 +139,14 @@ static void string_literal(void **state)
 
     Token *string_token = Scanner_get_next(scanner);
     assert_int_equal(string_token->type, STRING_LITERAL);
-    assert_int_equal(string_token->line_number, 1);
-    assert_int_equal(string_token->line_position, 1);
+    assert_int_equal(string_token->pos.line, 1);
+    assert_int_equal(string_token->pos.position, 1);
     assert_string_equal(string_token->lexeme, "\"qwertyuiop\"");
 
     string_token = Scanner_get_next(scanner);
     assert_int_equal(string_token->type, STRING_LITERAL);
-    assert_int_equal(string_token->line_number, 1);
-    assert_int_equal(string_token->line_position, 14);
+    assert_int_equal(string_token->pos.line, 1);
+    assert_int_equal(string_token->pos.position, 14);
     assert_string_equal(string_token->lexeme, "\"qwert\\\"yuiop\\\t\"");
 }
 
@@ -158,8 +160,8 @@ static void hex_literal(void **state)
     {
         Token *number_token = Scanner_get_next(scanner);
         assert_int_equal(number_token->type, CONSTANT);
-        assert_int_equal(number_token->line_number, 1);
-        assert_int_equal(number_token->line_position, i * 9);
+        assert_int_equal(number_token->pos.line, 1);
+        assert_int_equal(number_token->pos.position, i * 9);
         assert_true(strncmp(number_token->lexeme, source + (i * 9), 8) == 0);
     }
 }
@@ -185,7 +187,7 @@ static void keyword(void **state)
         Token *token = Scanner_get_next(scanner);
         assert_true(token->type == keyword_tokens[i]);
         assert_int_equal(token->type, keyword_tokens[i]);
-        assert_int_equal(token->line_number, 1);
+        assert_int_equal(token->pos.line, 1);
     }
 }
 

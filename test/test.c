@@ -104,9 +104,11 @@ _Bool test_parse_compare_ast_set(AstTestSet test_set[], TestParserType test_type
 /*
  * Mock Error_report_error function
  */
-void Error_report_error(ErrorReporter *error_reporter, ErrorType error_type,
-                        int line_number, int line_position, const char *msg)
+void Error_report_error(ErrorReporter *error_reporter, ErrorType error_type, Position pos, const char *msg)
 {
+    int line_number = pos.line;
+    int line_position = pos.position;
+
     function_called();
     assert_true(error_reporter == MOCK_ERROR_REPORTER);
     check_expected(error_type);

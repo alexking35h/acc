@@ -19,6 +19,8 @@
 
 #include <stdbool.h>
 
+#include "token.h"
+
 typedef enum ErrorType_t
 {
     SCANNER,
@@ -72,6 +74,6 @@ int Error_get_errors(ErrorReporter *error_reporter, ErrorType *type, int *line_n
  *  int line_position
  *  char * msg
  */
-void Error_report_error(ErrorReporter *, ErrorType, int, int, const char *);
+void Error_report_error(ErrorReporter *, ErrorType, Position, const char *);
 
 #endif

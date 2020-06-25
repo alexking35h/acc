@@ -151,8 +151,8 @@ static bool consume_string(Scanner *scanner)
     {
         if (END_OF_FILE(scanner))
         {
-            Error_report_error(scanner->error_reporter, SCANNER, scanner->line_number,
-                               string_line_position, "Unterminated string literal");
+            Position pos = {scanner->line_number, string_line_position};
+            Error_report_error(scanner->error_reporter, SCANNER, pos, "Unterminated string literal");
             return false;
         }
 
@@ -165,8 +165,8 @@ static bool consume_string(Scanner *scanner)
         // Reach end of line (before end of string).
         if (focus == '\n')
         {
-            Error_report_error(scanner->error_reporter, SCANNER, scanner->line_number,
-                               string_line_position, "Unterminated string literal");
+            Position pos = {scanner->line_number, string_line_position};
+            Error_report_error(scanner->error_reporter, SCANNER, pos, "Unterminated string literal");
             scanner->line_number++;
             scanner->line_start_position = scanner->current;
             store_line_position(scanner);
@@ -403,8 +403,9 @@ static TokenType get_next_token_type(Scanner *scanner)
 
     char error_string[50];
     snprintf(error_string, 50, "Invalid character in input: '%c'", focus);
-    Error_report_error(scanner->error_reporter, SCANNER, scanner->line_number,
-                       scanner->current - scanner->line_start_position - 1, error_string);
+
+    Position pos = {scanner->line_number, scanner->current - scanner->line_start_position - 1};
+    Error_report_error(scanner->error_reporter, SCANNER, pos, error_string);
 
     return 0;
 }
@@ -473,8 +474,8 @@ Token *Scanner_get_next(Scanner *scanner)
 
     Token *token = calloc(1, sizeof(Token));
     token->type = token_type;
-    token->line_number = token_line_number;
-    token->line_position = token_position - scanner->line_start_position;
+    token->pos.line = token_line_number;
+    token->pos.position = token_position - scanner->line_start_position;
 
     // Make a copy of the lexeme.
     int token_len = scanner->current - token_position;

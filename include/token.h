@@ -118,15 +118,19 @@ typedef enum TokenType_t
     END_OF_FILE
 } TokenType;
 
+/* Token position */
+typedef struct Position_t {
+    int line;
+    int position;
+} Position;
+
 /* Token struct */
 typedef struct Token_t
 {
     /* Type of this token */
     TokenType type;
 
-    /* Position of the Token in the input */
-    int line_number;
-    int line_position;
+    Position pos;
 
     /* Token lexeme. Null-terminated string */
     char *lexeme;

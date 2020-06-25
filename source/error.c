@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void Error_report_error(ErrorReporter *, ErrorType, int, int, const char *)
+void Error_report_error(ErrorReporter *, ErrorType, Position, const char *)
     __attribute__((weak));
 
 typedef struct ErrorReport
@@ -37,8 +37,7 @@ void Error_destroy(ErrorReporter *error_reporter)
     free(error_reporter);
 }
 
-void Error_report_error(ErrorReporter *error_reporter, ErrorType type, int line_number,
-                        int line_position, const char *msg)
+void Error_report_error(ErrorReporter *error_reporter, ErrorType type, Position position, const char *msg)
 {
     // Find the right position in the list. Ordered as follows:
     // 1. By line-number ascending.
@@ -48,8 +47,8 @@ void Error_report_error(ErrorReporter *error_reporter, ErrorType type, int line_
     for (; *prev; prev = &((*prev)->next))
     {
 
-        if (((*prev)->line_number < line_number) ||
-            ((*prev)->line_position < line_position) || ((*prev)->type < type))
+        if (((*prev)->line_number < position.line) ||
+            ((*prev)->line_position < position.position) || ((*prev)->type < type))
         {
             continue;
         }
@@ -65,8 +64,8 @@ void Error_report_error(ErrorReporter *error_reporter, ErrorType type, int line_
     (*prev)->next = next;
 
     // Store error information.
-    (*prev)->line_number = line_number;
-    (*prev)->line_position = line_position;
+    (*prev)->line_number = position.line;
+    (*prev)->line_position = position.position;
     (*prev)->type = type;
     (*prev)->msg = malloc(strlen(msg));
     strcpy((*prev)->msg, msg);
