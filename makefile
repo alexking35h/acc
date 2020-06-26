@@ -3,7 +3,7 @@ GIT_COMMIT=$(shell git describe --always)
 GIT_REPO=$(shell git remote get-url origin)
 
 # Compiler flags
-CFLAGS=-Wno-switch -Wall -Iinclude $(shell pkg-config --libs --cflags cmocka) -g -DGIT_COMMIT=\"$(GIT_COMMIT)\" -DGIT_REPO=\"$(GIT_REPO)\"
+CFLAGS=-Wno-switch -Wall --coverage -Iinclude $(shell pkg-config --libs --cflags cmocka) -g -DGIT_COMMIT=\"$(GIT_COMMIT)\" -DGIT_REPO=\"$(GIT_REPO)\"
 LDFLAGS=
 CC=gcc
 
@@ -32,6 +32,7 @@ ACC_EXE=$(BUILD_DIR)/acc
 RUN_TESTS=$(addprefix run_, $(TEST_EXE))
 
 test: $(RUN_TESTS)
+	gcov -o build source/*.c -i |sed -n 's/.*uted:\([0-9][0-9]*\).*of \([0-9][0-9]*\)/\1 \2/p' | awk '{t+=$$2;a+=(.01*$$1*$$2)}END{printf "\n** Test coverage: %f0.2%% **\n\n",100*a/t}'
 
 $(RUN_TESTS): run_%:%
 	./$<
@@ -65,6 +66,7 @@ build/test_analysis_declarations: $(ACC_OBJECTS) build/test_analysis_declaration
 
 regression_test: build/acc
 	python3 regression/regression.py --acc $^ regression/*.c
+	gcov -o build source/*.c -i |sed -n 's/.*uted:\([0-9][0-9]*\).*of \([0-9][0-9]*\)/\1 \2/p' | awk '{t+=$$2;a+=(.01*$$1*$$2)}END{printf "\n** Test coverage: %f0.2%% **\n\n",100*a/t}'
 
 build/acc: $(ACC_OBJECTS) | build
 	$(CC) $^ -o $@ $(CFLAGS)
