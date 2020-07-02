@@ -62,6 +62,7 @@ static void postfix_operators(void **state)
     // Section 6.5.2:
     // - array subscripting
     // - function call
+    // - ++ and -- operators
 
     // 6.5.2.1 (1): A postfix expression followed by an expression in square brackets
     // is a subscripted designation of an element of an array object. The definition
@@ -82,7 +83,7 @@ static void postfix_operators(void **state)
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr(" _function(_int, _int)"),
                            test_symbol_table);
 
-    // 6.5.2.2 (2): (In a functionc all) Each argument shall have a type such that its
+    // 6.5.2.2 (2): (In a function call) Each argument shall have a type such that its
     // value may be assigned to an object with the unqualified version of the type of its
     // corresponding parameter.
     expect_report_error(ANALYSIS, 1, 10,
@@ -95,6 +96,24 @@ static void postfix_operators(void **state)
     expect_report_error(ANALYSIS, 1, 0, "Not a function");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int(2,3)"),
                            test_symbol_table);
+
+    // 6.5.2.4 (postfix increment operators) The operator shall have real or pointer type,
+    // and shall be a modifiable l-value.
+    expect_report_error(ANALYSIS, 1, 9, "Invalid operand type to postfix operator");
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_function++"), test_symbol_table);
+    expect_report_error(ANALYSIS, 1, 0, "Invalid lvalue");
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("3++"), test_symbol_table);
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int++"), test_symbol_table);
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr++"), test_symbol_table);
+
+    // 6.5.2.4 (postfix increment operators) The operator shall have real or pointer type,
+    // and shall be a modifiable l-value.
+    expect_report_error(ANALYSIS, 1, 9, "Invalid operand type to postfix operator");
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_function--"), test_symbol_table);
+    expect_report_error(ANALYSIS, 1, 0, "Invalid lvalue");
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("3--"), test_symbol_table);
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int--"), test_symbol_table);
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr--"), test_symbol_table);
 }
 
 static void unary_operators(void **state)

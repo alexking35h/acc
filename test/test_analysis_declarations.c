@@ -153,7 +153,7 @@ void previously_declared(void **state)
 
 void nested_function(void **state)
 {
-    Symbol t1, t2;
+    Symbol t1;
     SymbolTable *fun_symbol_table = (SymbolTable *)0x5678;
 
     expect_get(MOCK_SYMBOL_TABLE, "outer", false, NULL);
@@ -162,9 +162,6 @@ void nested_function(void **state)
     expect_function_call(__wrap_symbol_table_create);
     expect_value(__wrap_symbol_table_create, parent, MOCK_SYMBOL_TABLE);
     will_return(__wrap_symbol_table_create, fun_symbol_table);
-
-    // expect_get(fun_symbol_table, "inner", false, NULL);
-    // expect_put(fun_symbol_table, "inner", &t2);
 
     expect_report_error(ANALYSIS, 2, 4,
                         "Cannot have nested functions ('inner'). Try Rust?");

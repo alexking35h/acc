@@ -285,18 +285,29 @@ static void walk_argument_list(ErrorReporter *error, ParameterListItem *params,
 static CType *walk_expr_postfix(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,
                                 _Bool need_lvalue)
 {
-    CType *pf = walk_expr(error, node->postfix.left, tab, false);
-    if (!pf)
-        return NULL;
+    if(node->postfix.op == POSTFIX_CALL) {
+        CType *pf = walk_expr(error, node->postfix.left, tab, false);
+        if (!pf)
+            return NULL;
 
-    // The only implemented postfix expression is a function call.
-    if (!CTYPE_IS_FUNCTION(pf))
-    {
-        Error_report_error(error, ANALYSIS, node->pos, "Not a function");
-        return NULL;
+        if (!CTYPE_IS_FUNCTION(pf))
+        {
+            Error_report_error(error, ANALYSIS, node->pos, "Not a function");
+            return NULL;
+        }
+        walk_argument_list(error, pf->derived.params, node, tab);
+        return pf->derived.type;
+    } else {
+        // ++ and -- postfix operators require real or pointer type, with modifiable l-value. (6.5.2.4)
+        CType *pf = walk_expr(error, node->postfix.left, tab, true);
+        if(!pf) 
+            return NULL;
+
+        if(!CTYPE_IS_SCALAR(pf)) {
+            Error_report_error(error, ANALYSIS, node->pos, "Invalid operand type to postfix operator");
+        }
+        return pf;
     }
-    walk_argument_list(error, pf->derived.params, node, tab);
-    return pf->derived.type;
 }
 
 static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,

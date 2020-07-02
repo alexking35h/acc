@@ -13,7 +13,6 @@
 #include "scanner.h"
 #include "test.h"
 
-#define MOCK_ERROR_REPORTER (ErrorReporter *)0x1234
 #define COUNT(x) ((sizeof(x)) / (sizeof(x[0])))
 
 static void initialize_parser(void **state)
