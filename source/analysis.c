@@ -586,7 +586,8 @@ static void walk_stmt_decl(ErrorReporter *error, StmtAstNode *node, SymbolTable 
 
 static void walk_stmt_block(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
-    if(node->block.head) {
+    if (node->block.head)
+    {
         walk_stmt(error, node->block.head, tab);
     }
 }

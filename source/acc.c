@@ -6,12 +6,12 @@
 
 #include "analysis.h"
 #include "error.h"
+#include "ir.h"
+#include "ir_gen.h"
 #include "parser.h"
 #include "pretty_print.h"
 #include "scanner.h"
 #include "symbol.h"
-#include "ir.h"
-#include "ir_gen.h"
 
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0
@@ -327,7 +327,7 @@ int main(int argc, char **argv)
     }
 
     // Compiler to IR
-    IrProgram * ir_program = Ir_generate(ast_root);
+    IrProgram *ir_program = Ir_generate(ast_root);
 
     printf("Program IR:\n");
     printf("%s\n", Ir_to_str(ir_program));

@@ -160,10 +160,8 @@ typedef struct DeclAstNode_t
     CType *type;
     Token *identifier;
 
-    union {
-        struct ExprAstNode_t *initializer;
-        struct StmtAstNode_t *body;
-    };
+    struct ExprAstNode_t *initializer;
+    struct StmtAstNode_t *body;
 
     // Symbol table entry for this declaration (set during context-analysis).
     Symbol *symbol;
