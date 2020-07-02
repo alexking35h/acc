@@ -100,7 +100,8 @@ static void postfix_operators(void **state)
     // 6.5.2.4 (postfix increment operators) The operator shall have real or pointer type,
     // and shall be a modifiable l-value.
     expect_report_error(ANALYSIS, 1, 9, "Invalid operand type to postfix operator");
-    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_function++"), test_symbol_table);
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_function++"),
+                           test_symbol_table);
     expect_report_error(ANALYSIS, 1, 0, "Invalid lvalue");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("3++"), test_symbol_table);
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int++"), test_symbol_table);
@@ -109,7 +110,8 @@ static void postfix_operators(void **state)
     // 6.5.2.4 (postfix increment operators) The operator shall have real or pointer type,
     // and shall be a modifiable l-value.
     expect_report_error(ANALYSIS, 1, 9, "Invalid operand type to postfix operator");
-    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_function--"), test_symbol_table);
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_function--"),
+                           test_symbol_table);
     expect_report_error(ANALYSIS, 1, 0, "Invalid lvalue");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("3--"), test_symbol_table);
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int--"), test_symbol_table);

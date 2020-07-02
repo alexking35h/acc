@@ -142,6 +142,26 @@ void automatic_allocation(void **state)
     analysis_ast_walk_decl(MOCK_ERROR_REPORTER, decl, MOCK_SYMBOL_TABLE);
 }
 
+void argument_allocation(void **state)
+{
+    // Function parameters listed in the definition should be added to the
+    // function's symbol table.
+    Symbol t1, t2, t3;
+    SymbolTable *fun_symbol_table = (SymbolTable *)0x5678;
+
+    expect_get(MOCK_SYMBOL_TABLE, "myfunction", false, NULL);
+    expect_put(MOCK_SYMBOL_TABLE, "myfunction", &t1);
+
+    expect_function_call(__wrap_symbol_table_create);
+    expect_value(__wrap_symbol_table_create, parent, MOCK_SYMBOL_TABLE);
+    will_return(__wrap_symbol_table_create, fun_symbol_table);
+
+    expect_put(fun_symbol_table, "param1", &t2);
+    expect_put(fun_symbol_table, "param2", &t3);
+    DeclAstNode *decl = parse_decl("void myfunction(int param1, char * param2){}");
+    analysis_ast_walk_decl(MOCK_ERROR_REPORTER, decl, MOCK_SYMBOL_TABLE);
+}
+
 void previously_declared(void **state)
 {
     Symbol t1;
@@ -176,6 +196,7 @@ int main(void)
                                        cmocka_unit_test(array_type),
                                        cmocka_unit_test(ptr_type),
                                        cmocka_unit_test(automatic_allocation),
+                                       cmocka_unit_test(argument_allocation),
                                        cmocka_unit_test(previously_declared),
                                        cmocka_unit_test(nested_function)};
     return cmocka_run_group_tests(tests, NULL, NULL);

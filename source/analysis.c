@@ -285,7 +285,8 @@ static void walk_argument_list(ErrorReporter *error, ParameterListItem *params,
 static CType *walk_expr_postfix(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,
                                 _Bool need_lvalue)
 {
-    if(node->postfix.op == POSTFIX_CALL) {
+    if (node->postfix.op == POSTFIX_CALL)
+    {
         CType *pf = walk_expr(error, node->postfix.left, tab, false);
         if (!pf)
             return NULL;
@@ -297,14 +298,19 @@ static CType *walk_expr_postfix(ErrorReporter *error, ExprAstNode *node, SymbolT
         }
         walk_argument_list(error, pf->derived.params, node, tab);
         return pf->derived.type;
-    } else {
-        // ++ and -- postfix operators require real or pointer type, with modifiable l-value. (6.5.2.4)
+    }
+    else
+    {
+        // ++ and -- postfix operators require real or pointer type, with modifiable
+        // l-value. (6.5.2.4)
         CType *pf = walk_expr(error, node->postfix.left, tab, true);
-        if(!pf) 
+        if (!pf)
             return NULL;
 
-        if(!CTYPE_IS_SCALAR(pf)) {
-            Error_report_error(error, ANALYSIS, node->pos, "Invalid operand type to postfix operator");
+        if (!CTYPE_IS_SCALAR(pf))
+        {
+            Error_report_error(error, ANALYSIS, node->pos,
+                               "Invalid operand type to postfix operator");
         }
         return pf;
     }
@@ -501,7 +507,16 @@ static void walk_decl_function(ErrorReporter *error, DeclAstNode *node, SymbolTa
 {
     if (node->body)
     {
-        walk_stmt(error, node->body, symbol_table_create(tab));
+        SymbolTable *ft = symbol_table_create(tab);
+
+        // Add entries to the function's symbol table for each parameter in the
+        // declaration.
+        for (ParameterListItem *param = node->type->derived.params; param != NULL;
+             param = param->next)
+        {
+            symbol_table_put(ft, param->name->lexeme, param->type);
+        }
+        walk_stmt(error, node->body, ft);
     }
 }
 
@@ -586,6 +601,11 @@ static void walk_stmt_ret(ErrorReporter *error, StmtAstNode *node, SymbolTable *
 
 static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
+    if (!node)
+    {
+        return;
+    }
+
     switch (node->type)
     {
     case DECL:
