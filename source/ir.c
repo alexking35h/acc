@@ -9,186 +9,180 @@ typedef struct CharBuffer
     char *end;
 } CharBuffer;
 
-#define SNPRINTF(cb, ...)                                                           \
-    cb->pos += snprintf(cb->pos, cb->end - cb->pos, __VA_ARGS__)
+#define SNPRINTF(cb, ...) cb->pos += snprintf(cb->pos, cb->end - cb->pos, __VA_ARGS__)
 
 static char *opcode_str(IrOpcode op)
 {
     switch (op)
     {
-    case ADD:
+    case IR_ADD:
         return "add";
-    case SUB:
+    case IR_SUB:
         return "sub";
-    case MUL:
+    case IR_MUL:
         return "mul";
-    case DIV:
+    case IR_DIV:
         return "div";
-    case MOD:
+    case IR_MOD:
         return "mod";
-    case SLL:
+    case IR_SLL:
         return "sll";
-    case SLR:
+    case IR_SLR:
         return "slr";
-    case OR:
+    case IR_OR:
         return "or";
-    case AND:
+    case IR_AND:
         return "and";
-    case MOV:
+    case IR_NOT:
+        return "not";
+    case IR_EQ:
+        return "eq";
+    case IR_LT:
+        return "lt";
+    case IR_LE:
+        return "le";
+    case IR_MOV:
         return "mov";
-    case STORE:
+    case IR_STORE:
         return "store";
-    case LOAD:
+    case IR_LOAD:
         return "load";
-    case LOADI:
+    case IR_LOADI:
         return "loadi";
-    case TYPE_CAST:
-        return "cast";
-    case COMPARE:
-        return "cmp";
-    case BRANCH:
-        return "branch";
-    case JUMP:
+    case IR_LOADA:
+        return "loada";
+    case IR_BRANCHZ:
+        return "branchz";
+    case IR_JUMP:
         return "jmp";
-    case CALL:
+    case IR_CALL:
         return "call";
-    case RET:
+    case IR_RETURN:
         return "ret";
+    }
+    return NULL;
+}
+
+static void reg(CharBuffer *buf, IrRegister *reg)
+{
+    switch (reg->type)
+    {
+    case REG_ARGUMENT:
+        SNPRINTF(buf, "a%d", reg->index);
+        break;
+    case REG_RETURN:
+        SNPRINTF(buf, "r%d", reg->index);
+        break;
+    case REG_ANY:
+        SNPRINTF(buf, "t%d", reg->index);
     }
 }
 
 static void instruction_arithmetic(CharBuffer *buf, IrInstruction *instr)
 {
-    switch (instr->op)
-    {
-    case ADD:
-    case SUB:
-    case MUL:
-    case DIV:
-    case MOD:
-    case SLL:
-    case SLR:
-    case OR:
-    case AND:
-        SNPRINTF(buf, "  %s r%d, r%d, r%d\n", opcode_str(instr->op), instr->dest->index,
-                 instr->left->index, instr->right->index);
-        break;
+    SNPRINTF(buf, "    %s ", opcode_str(instr->op));
+    reg(buf, instr->dest);
+    SNPRINTF(buf, ", ");
+    reg(buf, instr->left);
+    SNPRINTF(buf, ", ");
+    reg(buf, instr->right);
+    SNPRINTF(buf, "\n");
+}
 
-    case MOV:
-    case STORE:
-    case LOAD:
-        SNPRINTF(buf, "  %s r%d, r%d\n", opcode_str(instr->op), instr->dest->index,
-                 instr->left->index);
-        break;
+static void instruction_move(CharBuffer *buf, IrInstruction *instr)
+{
+    SNPRINTF(buf, "    %s ", opcode_str(instr->op));
+    reg(buf, instr->dest);
+    SNPRINTF(buf, ", ");
+    reg(buf, instr->left);
+    SNPRINTF(buf, "\n");
+}
+
+static void instruction_load(CharBuffer *buf, IrInstruction *instr)
+{
+    SNPRINTF(buf, "    %s ", opcode_str(instr->op));
+    reg(buf, instr->dest);
+    if (instr->op == IR_LOADI)
+    {
+        SNPRINTF(buf, ", !%d\n", instr->value);
+    }
+    else
+    {
+        SNPRINTF(buf, ", @%s\n", instr->object->name);
     }
 }
 
-static void instruction_immediate(CharBuffer *buf, IrInstruction *instr)
+static void instruction_mem(CharBuffer *buf, IrInstruction *instr)
 {
-    switch (instr->immediate.type)
+    SNPRINTF(buf, "    %s ", opcode_str(instr->op));
+    if (instr->op == IR_LOAD)
     {
-    case IMMEDIATE_VALUE:
-        SNPRINTF(buf, "  %s r%d, !%d\n", opcode_str(instr->op), instr->dest->index,
-                 instr->immediate.value);
-        break;
-    case IMMEDIATE_OBJECT:
-        SNPRINTF(buf, "  %s r%d, @%s\n", opcode_str(instr->op), instr->dest->index,
-                 instr->immediate.object->name);
-        break;
+        reg(buf, instr->dest);
+        SNPRINTF(buf, ", ");
+        reg(buf, instr->left);
     }
-}
-
-static void instruction_cast(CharBuffer *buf, IrInstruction *instr)
-{
-    // @TODO
+    else
+    {
+        reg(buf, instr->left);
+        SNPRINTF(buf, ", ");
+        reg(buf, instr->right);
+    }
+    SNPRINTF(buf, "\n");
 }
 
 static void instruction_jump(CharBuffer *buf, IrInstruction *instr)
 {
-    SNPRINTF(buf, "  %s %s", opcode_str(instr->op), instr->jump_true->label);
-    if (instr->op == BRANCH)
-    {
-        SNPRINTF(buf, ", %s\n", instr->jump_false->label);
-    }
-    else 
-    {
-        SNPRINTF(buf, "\n");
-    }
-}
-
-static void instruction_call(CharBuffer *buf, IrInstruction *instr)
-{
-    // @TODO
-}
-
-static void instruction_return(CharBuffer *buf, IrInstruction *instr)
-{
-    // @TODO
+    SNPRINTF(buf, "    %s %s\n", opcode_str(instr->op), instr->jump->label);
 }
 
 static void instruction(CharBuffer *buf, IrInstruction *instr)
 {
     switch (instr->op)
     {
-    case ADD:
-    case SUB:
-    case MUL:
-    case DIV:
-    case MOD:
-    case SLL:
-    case SLR:
-    case OR:
-    case AND:
-    case COMPARE:
-    case STORE:
-    case LOAD:
+    case IR_ADD:
+    case IR_SUB:
+    case IR_MUL:
+    case IR_DIV:
+    case IR_MOD:
+    case IR_SLL:
+    case IR_SLR:
+    case IR_OR:
+    case IR_AND:
+    case IR_NOT:
+    case IR_EQ:
+    case IR_LT:
+    case IR_LE:
         instruction_arithmetic(buf, instr);
         break;
 
-    case LOADI:
-        instruction_immediate(buf, instr);
+    case IR_MOV:
+        instruction_move(buf, instr);
         break;
 
-    case TYPE_CAST:
-        instruction_cast(buf, instr);
+    case IR_LOADI:
+    case IR_LOADA:
+        instruction_load(buf, instr);
         break;
 
-    case BRANCH:
-    case JUMP:
+    case IR_LOAD:
+    case IR_STORE:
+        instruction_mem(buf, instr);
+
+    case IR_BRANCHZ:
+    case IR_JUMP:
+    case IR_CALL:
+    case IR_RETURN:
         instruction_jump(buf, instr);
-
-    case CALL:
-        instruction_call(buf, instr);
-        break;
-
-    case RET:
-        instruction_return(buf, instr);
-        break;
     }
 }
 
-static void basic_block_graph(CharBuffer *buf, IrBasicBlock *block)
+static void basic_block(CharBuffer *buf, IrBasicBlock *block)
 {
-    IrBasicBlock *todo[32] = {block};
-    int head = 0, tail = 31;
+    SNPRINTF(buf, "  .bb %s\n", block->label);
 
-    while ((head % 32) != (tail % 32))
+    for (IrInstruction *instr = block->head; instr != NULL; instr = instr->next)
     {
-        IrBasicBlock *bb = todo[head];
-        for (IrInstruction *instr = bb->head; instr; instr = instr->next)
-        {
-            instruction(buf, instr);
-
-            if (instr->jump_false)
-            {
-                todo[(head++) % 32] = instr->jump_false;
-            }
-            if (instr->jump_true)
-            {
-                todo[(head++) % 32] = instr->jump_true;
-            }
-        }
-        tail++;
+        instruction(buf, instr);
     }
 }
 
@@ -207,13 +201,14 @@ static void function(CharBuffer *buf, IrFunction *func)
         object(buf, obj, "  .local");
     }
 
-    // Print out all blocks.
-    basic_block_graph(buf, func->entry);
+    for (IrBasicBlock *block = func->entry; block != NULL; block = block->next)
+    {
+        basic_block(buf, block);
+    }
 }
 
 static void program(CharBuffer *buf, IrProgram *prog)
 {
-
     // Print out all global variables.
     for (IrObject *obj = prog->globals; obj != NULL; obj = obj->next)
     {

@@ -4,8 +4,6 @@
 #include "ir.h"
 #include "ir_gen.h"
 
-#define EMIT(irgen, ...) emit(irgen, (IrInstruction){__VA_ARGS__})
-
 typedef struct IrGenerator
 {
     IrProgram *program;
@@ -18,145 +16,115 @@ typedef struct IrGenerator
     int register_counter;
 } IrGenerator;
 
+static IrRegister *allocate_register(IrGenerator *irgen, IrRegType type)
+{
+    abort();
+}
+static IrObject *allocate_local(IrGenerator *irgen)
+{
+    abort();
+}
+static IrObject *allocate_global(IrGenerator *irgen)
+{
+    abort();
+}
+
 static IrRegister *walk_expr(IrGenerator *, ExprAstNode *);
 void walk_stmt(IrGenerator *irgen, StmtAstNode *node);
 
-/*
- * Helper functions
- */
-static IrRegister *get_register(IrGenerator *irgen)
-{
-    IrRegister *reg = calloc(1, sizeof(IrRegister));
-    reg->index = irgen->register_counter++;
-    return reg;
-}
-static IrObject *allocate_local(IrGenerator *irgen, int size, int align, char *name)
-{
-    IrObject *new = calloc(1, sizeof(IrObject));
-    new->name = name;
-    new->size = 1;
-    new->alignment = 1;
-    new->index = irgen->current_function_local_index++;
-
-    IrObject **ptr;
-    for (ptr = &(irgen->current_function->locals); *ptr; ptr = &(*ptr)->next)
-        ;
-    *ptr = new;
-
-    return new;
-}
-static IrObject *allocate_global(IrGenerator *irgen, int size, int align, char *name)
-{
-    IrObject *new = calloc(1, sizeof(IrObject));
-    new->name = name;
-    new->size = 1;
-    new->alignment = 1;
-
-    IrObject **ptr;
-    for (ptr = &(irgen->program->globals); *ptr; ptr = &(*ptr)->next)
-        ;
-    *ptr = new;
-
-    return new;
-}
-static IrBasicBlock *new_basic_block(IrGenerator *irgen)
-{
-    return calloc(1, sizeof(IrBasicBlock));
-}
-static void emit(IrGenerator *irgen, IrInstruction instr)
-{
-    IrInstruction *new = calloc(1, sizeof(IrInstruction));
-    memcpy(new, &instr, sizeof(IrInstruction));
-
-    IrInstruction **ptr;
-    for (ptr = &(irgen->current_basic_block->head); *ptr; ptr = &(*ptr)->next)
-        ;
-    *ptr = new;
-}
-
 IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
 {
-    IrRegister *dest = get_register(irgen);
-    IrRegister *left = walk_expr(irgen, node->binary.left);
-    IrRegister *right = walk_expr(irgen, node->binary.right);
-
-    switch(node->binary.op) {
-        case BINARY_ADD:
-            EMIT(irgen, ADD, .dest=dest, .left=left, .right=right);
-            break;
-        case BINARY_MUL:
-            EMIT(irgen, MUL, .dest=dest, .left=left, .right=right);
-            break;
-        case BINARY_DIV:
-            EMIT(irgen, DIV, .dest=dest, .left=left, .right=right);
-            break;
-        case BINARY_MOD:
-            EMIT(irgen, MOD, .dest=dest, .left=left, .right=right);
-            break;
-        case BINARY_SUB:
-            EMIT(irgen, SUB, .dest=dest, .left=left, .right=right);
-            break;
-        case BINARY_SLL:
-            EMIT(irgen, SLL, .dest=dest, .left=left, .right=right);
-            break;
-        case BINARY_SLR:
-            EMIT(irgen, SLR, .dest=dest, .left=left, .right=right);
-            break;
-        case BINARY_OR:
-            EMIT(irgen, OR, .dest=dest, .left=left, .right=right);
-            break;
-        case BINARY_AND:
-            EMIT(irgen, AND, .dest=dest, .left=left, .right=right);
-            break;
-        case BINARY_LT:
-        case BINARY_GT:
-        case BINARY_LE:
-        case BINARY_GE:
-        case BINARY_EQ:
-        case BINARY_NE:
-        case BINARY_XOR:
-        case BINARY_AND_OP:
-        case BINARY_OR_OP:
-            break;
+    switch (node->binary.op)
+    {
+    case BINARY_ADD:
+        abort();
+        break;
+    case BINARY_SUB:
+        abort();
+        break;
+    case BINARY_MUL:
+        abort();
+        break;
+    case BINARY_DIV:
+        abort();
+        break;
+    case BINARY_MOD:
+        abort();
+        break;
+    case BINARY_SLL:
+        abort();
+        break;
+    case BINARY_SLR:
+        abort();
+        break;
+    case BINARY_LT:
+        abort();
+        break;
+    case BINARY_GT:
+        abort();
+        break;
+    case BINARY_LE:
+        abort();
+        break;
+    case BINARY_GE:
+        abort();
+        break;
+    case BINARY_EQ:
+        abort();
+        break;
+    case BINARY_NE:
+        abort();
+        break;
+    case BINARY_AND:
+        abort();
+        break;
+    case BINARY_OR:
+        abort();
+        break;
+    case BINARY_XOR:
+        abort();
+        break;
+    case BINARY_AND_OP:
+        abort();
+        break;
+    case BINARY_OR_OP:
+        abort();
+        break;
     }
-    return dest;
+    return NULL;
 }
 
 IrRegister *walk_expr_unary(IrGenerator *irgen, ExprAstNode *node)
 {
-    switch(node->unary.op) {
-        case UNARY_ADDRESS_OF:
-            return walk_expr(irgen, node->unary.right);
-        case UNARY_DEREFERENCE:
-            {
-                IrRegister * loc = walk_expr(irgen, node->unary.right);
-                IrRegister * dest = get_register(irgen);
-                dest->type = REGISTER_ADDRESS;
-                EMIT(irgen, LOAD, .dest=dest, .left=loc);
-                return dest;
-            }
-        case UNARY_PLUS:
-        case UNARY_MINUS:
-        case UNARY_BITWISE_NOT:
-        case UNARY_LOGICAL_NOT:
-        case UNARY_SIZEOF:
-        case UNARY_INC_OP:
-            {
-                IrRegister * imm = get_register(irgen);
-                IrRegister * operand = walk_expr(irgen, node->unary.right);
-                EMIT(irgen, LOADI, .dest=imm, .immediate.type=IMMEDIATE_VALUE, .immediate.value=1);
-                EMIT(irgen, ADD, .dest=operand, .left=imm, .right=operand);
-                return operand;
-            }
-        case UNARY_DEC_OP:
-            {
-                IrRegister * imm = get_register(irgen);
-                IrRegister * operand = walk_expr(irgen, node->unary.right);
-                EMIT(irgen, LOADI, .dest=imm, .immediate.type=IMMEDIATE_VALUE, .immediate.value=1);
-                EMIT(irgen, SUB, .dest=operand, .left=imm, .right=operand);
-                return operand;
-            }
-            break;
+    switch (node->unary.op)
+    {
+    case UNARY_ADDRESS_OF:
+        abort();
+        break;
+    case UNARY_DEREFERENCE:
+        abort();
+        break;
+    case UNARY_PLUS:
+        abort();
+        break;
+    case UNARY_MINUS:
+        abort();
+        break;
+    case UNARY_BITWISE_NOT:
+        abort();
+        break;
+    case UNARY_LOGICAL_NOT:
+        abort();
+        break;
+    case UNARY_SIZEOF:
+        abort();
+        break;
+    case UNARY_INC_OP:
+        abort();
+        break;
+    case UNARY_DEC_OP:
+        abort();
+        break;
     }
     return NULL;
 }
@@ -165,80 +133,58 @@ IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
 {
     if (node->primary.constant)
     {
-        IrRegister *reg = get_register(irgen);
-        EMIT(irgen, LOADI, .dest = reg, .immediate.type = IMMEDIATE_VALUE,
-             .immediate.value = node->primary.constant->literal.const_value);
-        return reg;
+        abort();
     }
     else if (node->primary.identifier)
     {
-        Symbol *symbol = node->primary.symbol;
-        if (symbol->ir.regster)
-        {
-            return symbol->ir.regster;
-        }
-        else
-        {
-            IrRegister *reg = get_register(irgen);
-            EMIT(irgen, LOADI, .dest = reg, .immediate.type = IMMEDIATE_OBJECT,
-                 .immediate.object = symbol->ir.object);
-            return reg;
-        }
+        abort();
+    }
+    else if (node->primary.string_literal)
+    {
+        abort();
+    }
+    else if (node->primary.symbol)
+    {
+        abort();
+    }
+    else
+    {
+        abort();
     }
     return NULL;
 }
 
 IrRegister *walk_expr_postfix(IrGenerator *irgen, ExprAstNode *node)
-{    
-    switch(node->postfix.op) {
-        case POSTFIX_CALL:
-        case POSTFIX_INC_OP:
-        {
-            IrRegister * operand = walk_expr(irgen, node->postfix.left);
-            IrRegister * imm = get_register(irgen), * dest = get_register(irgen);
-            EMIT(irgen, LOADI, .dest=imm, .immediate.type=IMMEDIATE_VALUE, .immediate.value=1);
-            EMIT(irgen, MOV, .dest=dest, .left=operand);
-            EMIT(irgen, ADD, .dest=dest, .left=dest, .right=imm);
-            return operand;
-        }
-        case POSTFIX_DEC_OP:
-        {
-            IrRegister * operand = walk_expr(irgen, node->postfix.left);
-            IrRegister * imm = get_register(irgen), * dest = get_register(irgen);
-            EMIT(irgen, LOADI, .dest=imm, .immediate.type=IMMEDIATE_VALUE, .immediate.value=1);
-            EMIT(irgen, MOV, .dest=dest, .left=operand);
-            EMIT(irgen, SUB, .dest=dest, .left=dest, .right=imm);
-            return operand;
-        }
+{
+    switch (node->postfix.op)
+    {
+    case POSTFIX_CALL:
+        abort();
+        break;
+    case POSTFIX_INC_OP:
+        abort();
+        break;
+    case POSTFIX_DEC_OP:
+        abort();
+        break;
     }
     return NULL;
 }
 
 IrRegister *walk_expr_cast(IrGenerator *irgen, ExprAstNode *node)
 {
+    abort();
     return NULL;
 }
 
 IrRegister *walk_expr_tertiary(IrGenerator *irgen, ExprAstNode *node)
 {
+    abort();
     return NULL;
 }
 IrRegister *walk_expr_assign(IrGenerator *irgen, ExprAstNode *node)
 {
-    IrRegister *dest = walk_expr(irgen, node->assign.left);
-
-    if (dest->type == REGISTER_VALUE)
-    {
-        // `dest` is the actual register for this object.
-        IrRegister *src = walk_expr(irgen, node->assign.right);
-        EMIT(irgen, MOV, .dest = dest, .left = src);
-    }
-    else
-    {
-        // `dest` holds the address for this object in memory.
-        IrRegister *src = walk_expr(irgen, node->assign.right);
-        EMIT(irgen, STORE, .left = dest, .dest = src);
-    }
+    abort();
     return NULL;
 }
 
@@ -266,51 +212,20 @@ IrRegister *walk_expr(IrGenerator *irgen, ExprAstNode *node)
 
 void walk_decl_function(IrGenerator *irgen, DeclAstNode *node)
 {
-    IrFunction *func = calloc(1, sizeof(IrFunction));
-
-    func->name = node->identifier->lexeme;
-    func->entry = new_basic_block(irgen);
-
-    func->next = irgen->program->functions;
-    irgen->program->functions = func;
-
-    irgen->current_function = func;
-    irgen->current_basic_block = func->entry;
-
-    irgen->register_counter = 0;
-
-    // Create new registers for the parameters.
-    for(ExprAstNode * param = node->type->derived.params->)
-
-    walk_stmt(irgen, node->body);
-
-    irgen->current_function = NULL;
+    abort();
 }
 
 void walk_decl_object(IrGenerator *irgen, DeclAstNode *node)
 {
     if (!irgen->current_function)
     {
-        node->symbol->ir.object = allocate_global(irgen, 1, 1, node->identifier->lexeme);
+        // Global
+        abort();
     }
     else
     {
-        if (CTYPE_IS_SCALAR(node->type))
-        {
-            IrRegister *reg = get_register(irgen);
-            reg->type = REGISTER_VALUE;
-            node->symbol->ir.regster = reg;
-
-            if(node->initializer) {
-                IrRegister * init_reg = walk_expr(irgen, node->initializer);
-                EMIT(irgen, MOV, .dest=reg, .left=init_reg);
-            }
-        }
-        else
-        {
-            node->symbol->ir.object =
-                allocate_local(irgen, 1, 1, node->identifier->lexeme);
-        }
+        // Local
+        abort();
     }
 }
 
@@ -335,10 +250,12 @@ void walk_decl(IrGenerator *irgen, DeclAstNode *node)
 
 void walk_stmt_while(IrGenerator *irgen, StmtAstNode *node)
 {
+    abort();
 }
 
 void walk_stmt_return(IrGenerator *irgen, StmtAstNode *node)
 {
+    abort();
 }
 
 void walk_stmt(IrGenerator *irgen, StmtAstNode *node)

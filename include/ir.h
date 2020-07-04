@@ -8,78 +8,81 @@ typedef enum IrOpcode
 {
     // Arithmetic instructions
     // dest = left OP right
-    ADD, SUB, MUL, DIV, MOD,
+    IR_ADD,
+    IR_SUB,
+    IR_MUL,
+    IR_DIV,
+    IR_MOD,
+    IR_SLL,
+    IR_SLR,
+    IR_OR,
+    IR_AND,
+    IR_NOT,
 
-    // Bitwise operations.
-    // dest = left OR right
-    SLL, SLR, OR, AND,
+    // Comparison - equal, less than, less than or equal
+    // dest = 1 if left OP right, else 0
+    IR_EQ,
+    IR_LT,
+    IR_LE,
 
-    // Move operation
-    // dest = left
-    MOV,
+    // Move instruction. dest = left
+    IR_MOV,
 
-    // Store
-    // memory @ left = dest register.
-    STORE,
+    // Store instruction memory @ left = right
+    IR_STORE,
 
-    // Load
-    // load memory @ left into dest register.
-    LOAD,
+    // Load instruction dest = memory @ left
+    IR_LOAD,
 
-    // Load-immediate. Immediate can be integer, or local-offset.
-    // dest = immediate value
-    LOADI,
+    // Load-immediate (integer)
+    IR_LOADI,
 
-    // Cast
-    // dest = cast (left)
-    TYPE_CAST,
+    // Load-address (of an object)
+    IR_LOADA,
 
-    // Compare: compare left, right registers
-    // Branch true/false after last comparison
-    // Unconditional jump
-    COMPARE, BRANCH, JUMP,
+    // Branch-if-zero: true/false arms.
+    // Unconditional jump.
+    IR_BRANCHZ,
+    IR_JUMP,
 
-    // Call & return
-    // Call takes any number of argument registers, which are set in the context of the
-    // callee.
-    // Return stores the state of the 'R' register.
-    CALL, RET,
+    // Call & Return
+    IR_CALL,
+    IR_RETURN
 
 } IrOpcode;
 
+typedef enum
+{
+    REG_ARGUMENT,
+    REG_RETURN,
+    REG_ANY
+} IrRegType;
+
 typedef struct IrRegister
 {
-    enum
-    {
-        REGISTER_VALUE,
-        REGISTER_ADDRESS
-    } type;
-
     int index;
+    IrRegType type;
+
 } IrRegister;
 
 typedef struct IrInstruction
 {
     IrOpcode op;
 
-    // Add, Sub, Mul, Div, Mod, Mov, Store, Load
     IrRegister *dest;
     IrRegister *left;
     IrRegister *right;
 
-    // Loadi
-    struct
-    {
-        enum
-        {
-            IMMEDIATE_VALUE = 1,
-            IMMEDIATE_OBJECT
-        } type;
-        IrObject *object;
-        int value;
-    } immediate;
+    // Loadi instruction
+    int value;
 
-    IrBasicBlock *jump_true;
+    // Loada instruction
+    IrObject *object;
+
+    union {
+        IrBasicBlock *jump;
+        IrBasicBlock *jump_true;
+    };
     IrBasicBlock *jump_false;
 
     struct IrInstruction *next;
@@ -89,6 +92,7 @@ typedef struct IrBasicBlock
 {
     char *label;
     IrInstruction *head;
+    IrBasicBlock *next;
 } IrBasicBlock;
 
 typedef struct IrObject

@@ -41,11 +41,11 @@ typedef enum
 
 typedef enum
 {
+    BINARY_ADD,
+    BINARY_SUB,
     BINARY_MUL,
     BINARY_DIV,
     BINARY_MOD,
-    BINARY_ADD,
-    BINARY_SUB,
     BINARY_SLL,
     BINARY_SLR,
     BINARY_LT,
