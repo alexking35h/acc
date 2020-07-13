@@ -329,7 +329,6 @@ int main(int argc, char **argv)
     // Compiler to IR
     IrProgram *ir_program = Ir_generate(ast_root);
 
-    printf("Program IR:\n");
     printf("%s\n", Ir_to_str(ir_program));
 
 tidyup:

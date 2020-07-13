@@ -327,6 +327,8 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
     CType *right = walk_expr(error, node->binary.right, tab, false);
 
     // The only valid operands to binary operators are scalar (pointer/basic)
+    if(!left || !right)
+        goto err;
     if (!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right))
         goto err;
 
@@ -584,17 +586,20 @@ static void walk_stmt_decl(ErrorReporter *error, StmtAstNode *node, SymbolTable 
     walk_decl(error, node->decl.decl, tab, false);
 }
 
-static void walk_stmt_block(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
-{
-    if (node->block.head)
-    {
-        walk_stmt(error, node->block.head, tab);
-    }
-}
-
 static void walk_stmt_expr(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
     walk_expr(error, node->expr.expr, tab, false);
+}
+
+static void walk_stmt_block(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
+{
+    walk_stmt(error, node->block.head, tab);
+}
+
+static void walk_stmt_while(ErrorReporter *error, StmtAstNode *node, SymbolTable * tab) 
+{
+    walk_expr(error, node->while_loop.expr, tab, false);
+    walk_stmt(error, node->while_loop.block, tab);
 }
 
 static void walk_stmt_ret(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
@@ -615,20 +620,23 @@ static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
         walk_stmt_decl(error, node, tab);
         break;
 
+    case EXPR:
+        walk_stmt_expr(error, node, tab);
+        break;
+
     case BLOCK:
         walk_stmt_block(error, node, tab);
         break;
-
-    case EXPR:
-        walk_stmt_expr(error, node, tab);
+    
+    case WHILE_LOOP:
+        walk_stmt_while(error, node, tab);
         break;
 
     case RETURN_JUMP:
         walk_stmt_ret(error, node, tab);
         break;
     }
-    if (node->next)
-        walk_stmt(error, node->next, tab);
+    walk_stmt(error, node->next, tab);
 }
 
 /*

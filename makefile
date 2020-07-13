@@ -64,6 +64,9 @@ build/test_analysis_conversions: $(ACC_OBJECTS) build/test_analysis_conversions.
 build/test_analysis_declarations: $(ACC_OBJECTS) build/test_analysis_declarations.o build/test.o
 	$(CC) $^ -o $@ $(CFLAGS) -Wl,--wrap=symbol_table_get -Wl,--wrap=symbol_table_put -Wl,--wrap=symbol_table_create
 
+build/test_arch: $(ACC_OBJECTS) build/test_arch.o
+	$(CC) $^ -o $@ $(CFLAGS)
+
 regression_test: build/acc
 	python3 regression/regression.py --acc $^ regression/*.c
 	gcov -o build source/*.c -i |sed -n 's/.*uted:\([0-9][0-9]*\).*of \([0-9][0-9]*\)/\1 \2/p' | awk '{t+=$$2;a+=(.01*$$1*$$2)}END{printf "\n** Test coverage: %f0.2%% **\n\n",100*a/t}'

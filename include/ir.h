@@ -1,6 +1,8 @@
 #ifndef __IR___
 #define __IR___
 
+#include <stdbool.h>
+
 typedef struct IrBasicBlock IrBasicBlock;
 typedef struct IrObject IrObject;
 
@@ -37,8 +39,9 @@ typedef enum IrOpcode
     // Load-immediate (integer)
     IR_LOADI,
 
-    // Load-address (of an object)
-    IR_LOADA,
+    // Stack operations (function preamble/postable)
+    IR_STACK,
+    IR_UNSTACK,
 
     // Branch-if-zero: true/false arms.
     // Unconditional jump.
@@ -47,8 +50,9 @@ typedef enum IrOpcode
 
     // Call & Return
     IR_CALL,
-    IR_RETURN
+    IR_RETURN,
 
+    IR_NOP
 } IrOpcode;
 
 typedef enum
@@ -65,6 +69,19 @@ typedef struct IrRegister
 
 } IrRegister;
 
+typedef struct IrObject
+{
+    enum {
+        LOCAL,
+        GLOBAL
+    } storage;
+
+    int offset;
+    int size;
+    int align;
+    bool sign;
+} IrObject;
+
 typedef struct IrInstruction
 {
     IrOpcode op;
@@ -76,48 +93,43 @@ typedef struct IrInstruction
     // Loadi instruction
     int value;
 
-    // Loada instruction
-    IrObject *object;
-
     union {
         IrBasicBlock *jump;
         IrBasicBlock *jump_true;
     };
     IrBasicBlock *jump_false;
 
+    char * function_name;
+
     struct IrInstruction *next;
 } IrInstruction;
 
 typedef struct IrBasicBlock
 {
-    char *label;
-    IrInstruction *head;
+    int index;
+    IrInstruction *head, *tail;
     IrBasicBlock *next;
 } IrBasicBlock;
-
-typedef struct IrObject
-{
-    char *name;
-
-    int size;
-    int alignment;
-    int index;
-
-    struct IrObject *next;
-} IrObject;
 
 typedef struct IrFunction
 {
     char *name;
-    IrObject *locals;
-    IrBasicBlock *entry;
+    int stack_size;
+    IrBasicBlock *head, *tail;
 
     struct IrFunction *next;
 } IrFunction;
 
 typedef struct IrProgram
 {
-    IrObject *globals;
+    int bss_size;
+
+    struct {
+        int any;
+        int arg;
+        int ret;
+    } register_count;
+
     IrFunction *functions;
 } IrProgram;
 
