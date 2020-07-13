@@ -93,12 +93,14 @@ typedef struct ExprAstNode_t
             BinaryExprOp op;
             struct ExprAstNode_t *left;
             struct ExprAstNode_t *right;
+            int ptr_scale_left, ptr_scale_right;
         } binary;
 
         struct
         {
             UnaryExprOp op;
             struct ExprAstNode_t *right;
+            int ptr_scale;
         } unary;
 
         struct
@@ -107,6 +109,7 @@ typedef struct ExprAstNode_t
             struct ExprAstNode_t *index_expression;
             struct ExprAstNode_t *left;
             struct ArgumentListItem_t *args;
+            int ptr_scale;
         } postfix;
 
         struct

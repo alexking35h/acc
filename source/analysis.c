@@ -3,6 +3,7 @@
 #include "symbol.h"
 #include "token.h"
 #include "util.h"
+#include "arch.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -307,7 +308,10 @@ static CType *walk_expr_postfix(ErrorReporter *error, ExprAstNode *node, SymbolT
         if (!pf)
             return NULL;
 
-        if (!CTYPE_IS_SCALAR(pf))
+        if(CTYPE_IS_POINTER(pf))
+        {
+            node->postfix.ptr_scale = arch_get_size(pf->derived.type);
+        } else if (!CTYPE_IS_SCALAR(pf))
         {
             Error_report_error(error, ANALYSIS, node->pos,
                                "Invalid operand type to postfix operator");
@@ -331,6 +335,25 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
         goto err;
     if (!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right))
         goto err;
+
+    if(node->binary.op == BINARY_ADD || node->binary.op == BINARY_SUB)
+    {
+        if(CTYPE_IS_POINTER(left))
+        {
+            node->binary.ptr_scale_right = arch_get_size(left->derived.type);
+        } else if(CTYPE_IS_POINTER(right))
+        {
+            node->binary.ptr_scale_left = arch_get_size(right->derived.type);
+        }
+    }
+
+    if(CTYPE_IS_POINTER(left))
+    {
+        node->binary.ptr_scale_right = arch_get_size(left->derived.type);
+    } else if (CTYPE_IS_POINTER(right))
+    {
+        node->binary.ptr_scale_left = arch_get_size(right->derived.type);
+    }
 
     for (int i = 0;
          i < sizeof(binary_op_requirements) / sizeof(binary_op_requirements[0]); i++)
@@ -405,17 +428,25 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
 
         return addr_of;
     }
+    else if(node->unary.op == UNARY_INC_OP || node->unary.op == UNARY_DEC_OP)
+    {
+        // Set the ptr_scale field accordingly if the operand is a pointer.
+        if(CTYPE_IS_POINTER(ctype))
+        {
+            node->unary.ptr_scale = arch_get_size(ctype->derived.type);
+            return ctype;
+        } else if(CTYPE_IS_BASIC(ctype))
+        {
+            return ctype;
+        }
+    }
     else
     {
-        // '-', '+', '~', or '!' operators.
-        // Test that the operand is of type 'basic' (section 6.5.3.1)
-        if (!CTYPE_IS_BASIC(ctype))
-        {
-            Error_report_error(error, ANALYSIS, node->pos,
-                               "Invalid operand to unary operator");
-        }
-        return ctype;
+        if(CTYPE_IS_BASIC(ctype)) return ctype;
     }
+    Error_report_error(error, ANALYSIS, node->pos,
+                        "Invalid operand to unary operator");
+    return NULL;
 }
 
 static CType *walk_expr_tertiary(ErrorReporter *error, ExprAstNode *node,

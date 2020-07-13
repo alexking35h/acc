@@ -135,6 +135,7 @@ void expect_report_error(ErrorType error_type, int expect_line, int expect_line_
 SymbolTable *test_symbol_table;
 
 static CType _int_type = {.type = TYPE_BASIC, .basic.type_specifier = TYPE_SIGNED_INT};
+static CType _short_type = {.type = TYPE_BASIC, .basic.type_specifier = TYPE_SIGNED_SHORT_INT};
 static CType _long_int_type = {.type = TYPE_BASIC,
                                .basic.type_specifier = TYPE_SIGNED_LONG_INT};
 static CType _char_type = {.type = TYPE_BASIC,
@@ -145,6 +146,8 @@ static CType _function_type = {.type = TYPE_FUNCTION,
                                .derived.type = &_int_type,
                                .derived.params =
                                    &((ParameterListItem){NULL, &_int_type, NULL})};
+static CType _short_ptr_type = {.type=TYPE_POINTER, .derived.type=&_short_type};
+static CType _char_ptr_type = {.type=TYPE_POINTER, .derived.type=&_char_type};
 
 Symbol *_int;
 Symbol *_long_int;
@@ -152,6 +155,8 @@ Symbol *_char;
 Symbol *_ptr;
 Symbol *_ptr_ptr;
 Symbol *_function;
+Symbol *_short_ptr;
+Symbol *_char_ptr;
 
 void test_symbol_table_setup()
 {
@@ -162,6 +167,8 @@ void test_symbol_table_setup()
     _ptr = symbol_table_put(test_symbol_table, "_ptr", &_ptr_type);
     _ptr_ptr = symbol_table_put(test_symbol_table, "_ptr_ptr", &_ptr_ptr_type);
     _function = symbol_table_put(test_symbol_table, "_function", &_function_type);
+    _short_ptr = symbol_table_put(test_symbol_table, "_short_ptr", &_short_ptr_type);
+    _char_ptr = symbol_table_put(test_symbol_table, "_char_ptr", &_char_ptr_type);
 }
 
 void test_symbol_table_teardown()
