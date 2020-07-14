@@ -111,13 +111,14 @@ static IrObject * bss_allocate(IrProgram * program, Symbol * symbol)
 static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
 {
     IrOpcode op;
+    bool post_op_negate = false;
     switch (node->binary.op)
     {
     case BINARY_ADD:
         op = IR_ADD;
         break;
     case BINARY_SUB:
-        abort();
+        op = IR_SUB;
         break;
     case BINARY_MUL:
         abort();
@@ -135,10 +136,11 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
         abort();
         break;
     case BINARY_LT:
-        abort();
+        op = IR_LT;
         break;
     case BINARY_GT:
-        abort();
+        op = IR_LE;
+        post_op_negate = true;
         break;
     case BINARY_LE:
         abort();
@@ -150,7 +152,8 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
         op = IR_EQ;
         break;
     case BINARY_NE:
-        abort();
+        op = IR_EQ;
+        post_op_negate = true;
         break;
     case BINARY_AND:
         abort();
@@ -173,6 +176,10 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
     IrRegister * right = walk_expr(irgen, node->binary.right);
     EMIT_INSTR(irgen, op, .dest=dest, .left=left, .right=right);
 
+    if(post_op_negate)
+    {
+        EMIT_INSTR(irgen, IR_NOT, .dest=dest, .left=dest);
+    }
     return dest;
 }
 
@@ -275,8 +282,15 @@ static IrRegister *walk_expr_tertiary(IrGenerator *irgen, ExprAstNode *node)
 }
 static IrRegister *walk_expr_assign(IrGenerator *irgen, ExprAstNode *node)
 {
-    abort();
-    return NULL;
+    if(node->assign.left->type == UNARY_DEREFERENCE)
+    {
+        abort();
+    } else {
+        IrRegister * dest = walk_expr(irgen, node->assign.left);
+        IrRegister * value = walk_expr(irgen, node->assign.right);
+        EMIT_INSTR(irgen, IR_MOV, .dest=dest, .left=value);
+        return dest;
+    }
 }
 
 static IrRegister *walk_expr(IrGenerator *irgen, ExprAstNode *node)

@@ -39,6 +39,15 @@ static void instruction_arithmetic(CharBuffer * buf, IrInstruction * instr)
     SNPRINTF(buf, INDENT);
     ir_register(buf, instr->dest);
     SNPRINTF(buf, " = ");
+
+    if(instr->op == IR_NOT)
+    {
+        SNPRINTF(buf, "! ");
+        ir_register(buf, instr->left);
+        SNPRINTF(buf, ";\n");
+        return;
+    }
+    
     ir_register(buf, instr->left);
     switch(instr->op)
     {
