@@ -544,10 +544,14 @@ static void walk_decl_function(ErrorReporter *error, DeclAstNode *node, SymbolTa
 
         // Add entries to the function's symbol table for each parameter in the
         // declaration.
+        ActualParameterListItem ** ptr = &(node->args);
         for (ParameterListItem *param = node->type->derived.params; param != NULL;
              param = param->next)
         {
-            symbol_table_put(ft, param->name->lexeme, param->type);
+            *ptr = calloc(1, sizeof(ActualParameterListItem));
+            (*ptr)->sym = symbol_table_put(ft, param->name->lexeme, param->type);
+
+            ptr = &((*ptr)->next);
         }
         walk_stmt(error, node->body, ft);
     }

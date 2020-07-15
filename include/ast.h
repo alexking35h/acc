@@ -28,6 +28,12 @@ typedef struct ArgumentListItem_t
     struct ArgumentListItem_t *next;
 } ArgumentListItem;
 
+typedef struct ActualParameterListItem_t
+{
+    Symbol * sym;
+    struct ActualParameterListItem_t *next;
+} ActualParameterListItem;
+
 typedef enum
 {
     BINARY,
@@ -168,6 +174,8 @@ typedef struct DeclAstNode_t
 
     // Symbol table entry for this declaration (set during context-analysis).
     Symbol *symbol;
+
+    ActualParameterListItem * args;
 
     struct DeclAstNode_t *next;
 } DeclAstNode;

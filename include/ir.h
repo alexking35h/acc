@@ -5,6 +5,7 @@
 
 typedef struct IrBasicBlock IrBasicBlock;
 typedef struct IrObject IrObject;
+typedef struct IrFunction IrFunction;
 
 typedef enum IrOpcode
 {
@@ -98,8 +99,7 @@ typedef struct IrInstruction
         IrBasicBlock *jump_true;
     };
     IrBasicBlock *jump_false;
-
-    char * function_name;
+    IrFunction * function;
 
     struct IrInstruction *next;
 } IrInstruction;

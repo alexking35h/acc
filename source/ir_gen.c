@@ -19,6 +19,8 @@ typedef struct IrGenerator
 
     IrBasicBlock *current_basic_block;
 
+    IrRegister *argument_registers[4];
+
     int bb_counter;
 } IrGenerator;
 
@@ -79,6 +81,15 @@ static IrRegister *new_reg(IrGenerator *irgen, IrRegType type)
             break;
     }
     return reg;
+}
+
+static IrRegister * new_arg_reg(IrGenerator *irgen, bool beginning)
+{
+    static int reg_index;
+    if(beginning)
+        reg_index = 0;
+
+    return irgen->argument_registers[reg_index++];
 }
 
 static IrObject * stack_allocate(IrFunction * function, Symbol * symbol)
@@ -233,9 +244,10 @@ static IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
         if(sym->ir.object) {
             // Object is not in a register.
             abort();
-        } else {
+        } else if(sym->ir.regster)
+        {
             // Object is in a register.
-            return node->primary.symbol->ir.regster;
+            return sym->ir.regster;
         }
     }
     else if (node->primary.string_literal)
@@ -252,13 +264,36 @@ static IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
     }
 }
 
+static IrRegister *walk_expr_postfix_call(IrGenerator *irgen, ExprAstNode *node)
+{
+    // What to do here?
+    if(node->postfix.left->type == UNARY && node->postfix.left->unary.op == UNARY_DEREFERENCE)
+    {
+        // This is a function pointer. Urgh, what a pain.
+        // Think on this one alex.
+        abort();
+    } else {
+        // This is just a straight up function call :-)
+        IrFunction * func = node->postfix.left->primary.symbol->ir.function;
+        int beginning = 0;
+        for(ArgumentListItem * arg = node->postfix.args;arg != NULL;arg = arg->next)
+        {
+            IrRegister * arg_reg = walk_expr(irgen, arg->argument);
+            IrRegister * param_reg = new_arg_reg(irgen, beginning++ == 0);
+            EMIT_INSTR(irgen, IR_MOV, .dest=param_reg, .left=arg_reg);
+        }
+        EMIT_INSTR(irgen, IR_CALL, .function=func);
+        return new_reg(irgen, REG_RETURN);
+    }
+}
+
 static IrRegister *walk_expr_postfix(IrGenerator *irgen, ExprAstNode *node)
 {
     switch (node->postfix.op)
     {
     case POSTFIX_CALL:
-        abort();
-        break;
+        return walk_expr_postfix_call(irgen, node);
+
     case POSTFIX_INC_OP:
         abort();
         break;
@@ -282,7 +317,7 @@ static IrRegister *walk_expr_tertiary(IrGenerator *irgen, ExprAstNode *node)
 }
 static IrRegister *walk_expr_assign(IrGenerator *irgen, ExprAstNode *node)
 {
-    if(node->assign.left->type == UNARY_DEREFERENCE)
+    if(node->assign.left->type == UNARY && node->assign.left->unary.op == UNARY_DEREFERENCE)
     {
         abort();
     } else {
@@ -318,10 +353,21 @@ static IrRegister *walk_expr(IrGenerator *irgen, ExprAstNode *node)
 static void walk_decl_function(IrGenerator *irgen, DeclAstNode *node)
 {
     IrFunction * func = new_function(irgen, node->identifier->lexeme);
+    node->symbol->ir.function = func;
     irgen->current_function = func;
 
     irgen->current_basic_block = new_bb(irgen, func);
     EMIT_INSTR(irgen, IR_STACK);
+
+    int i = 0;
+    for(ActualParameterListItem *arg = node->args;arg != NULL;arg = arg->next)
+    {
+        IrRegister * argument_body = new_reg(irgen, REG_ANY);
+        IrRegister * argument_proto = new_arg_reg(irgen, i++ == 0);
+
+        arg->sym->ir.regster = argument_body;
+        EMIT_INSTR(irgen, IR_MOV, .dest=argument_body, .left=argument_proto);
+    }
     
     irgen->current_function_exit_bb = new_bb(irgen, func);
 
@@ -444,7 +490,13 @@ static void walk_stmt(IrGenerator *irgen, StmtAstNode *node)
 
 IrProgram *Ir_generate(DeclAstNode *ast_root)
 {
-    IrGenerator irgen = {.program = calloc(1, sizeof(IrProgram))};
+    IrGenerator irgen = {
+        .program = calloc(1, sizeof(IrProgram)),
+    };
+    for(int i = 0;i < 4;i++)
+    {
+        irgen.argument_registers[i] = new_reg(&irgen, REG_ARGUMENT);
+    }
 
     walk_decl(&irgen, ast_root);
     return irgen.program;

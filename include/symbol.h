@@ -27,6 +27,7 @@ typedef struct Symbol_t
     {
         IrObject *object;
         IrRegister *regster;
+        IrFunction *function;
     } ir;
 
     struct Symbol_t *next;

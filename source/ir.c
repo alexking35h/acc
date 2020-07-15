@@ -152,7 +152,7 @@ static void instruction_jump(CharBuffer * buf, IrInstruction * instr)
         SNPRINTF(buf, INDENT INDENT "goto bb_%d;\n", instr->jump_false->index);
         SNPRINTF(buf, INDENT "}\n");
     } else if (instr->op == IR_CALL) {
-        SNPRINTF(buf, INDENT "%s();\n", instr->function_name);
+        SNPRINTF(buf, INDENT "_%s();\n", instr->function->name);
     }
 }
 
@@ -251,7 +251,7 @@ static void program(CharBuffer * buf, IrProgram * prog)
         SNPRINTF(buf, "uint32_t ");
         for(int i = 0;i < prog->register_count.arg;i++)
         {
-            SNPRINTF(buf, "t%d", i);
+            SNPRINTF(buf, "a%d", i);
             if(i == prog->register_count.arg-1) {
                 SNPRINTF(buf, ";\n\n");
             } else if ((i + 1) % 10) {
