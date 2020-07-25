@@ -15,7 +15,6 @@ typedef struct IrGenerator
     IrProgram *program;
 
     IrFunction *current_function;
-    IrBasicBlock *current_function_exit_bb;
 
     IrBasicBlock *current_basic_block;
 
@@ -79,7 +78,7 @@ static IrRegister *new_reg(IrGenerator *irgen, IrRegType type)
     switch (reg->type = type)
     {
     case REG_ANY:
-        reg->index = irgen->program->register_count.any++;
+        reg->index = irgen->current_function->register_count++;
         break;
     case REG_ARGUMENT:
         reg->index = irgen->program->register_count.arg++;
@@ -264,10 +263,6 @@ static IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
     {
         abort();
     }
-    else if (node->primary.symbol)
-    {
-        abort();
-    }
     else
     {
         abort();
@@ -384,13 +379,8 @@ static void walk_decl_function(IrGenerator *irgen, DeclAstNode *node)
         arg->sym->ir.regster = argument_body;
         EMIT_INSTR(irgen, IR_MOV, .dest = argument_body, .left = argument_proto);
     }
-
-    irgen->current_function_exit_bb = new_bb(irgen, func);
-
     walk_stmt(irgen, node->body);
-    EMIT_INSTR(irgen, IR_JUMP, .jump = irgen->current_function_exit_bb);
 
-    irgen->current_basic_block = irgen->current_function_exit_bb;
     EMIT_INSTR(irgen, IR_UNSTACK);
     EMIT_INSTR(irgen, IR_RETURN);
 }
@@ -474,14 +464,33 @@ static void walk_stmt_return(IrGenerator *irgen, StmtAstNode *node)
         IrRegister *val = walk_expr(irgen, node->return_jump.value);
         EMIT_INSTR(irgen, IR_MOV, .dest = reg, .left = val);
 
-        // Note: need to issue a 'return' here.
-        EMIT_INSTR(irgen, IR_JUMP, .jump = irgen->current_function_exit_bb);
+        EMIT_INSTR(irgen, IR_UNSTACK);
+        EMIT_INSTR(irgen, IR_RETURN);
     }
 }
 
 static void walk_stmt_if(IrGenerator *irgen, StmtAstNode *node)
 {
-    abort();
+    IrRegister * expr_reg = walk_expr(irgen, node->if_statement.expr);
+
+    IrBasicBlock* true_bb = new_bb(irgen, irgen->current_function);
+    IrBasicBlock* end_bb = new_bb(irgen, irgen->current_function);
+
+    if(node->if_statement.else_arm)
+    {
+        IrBasicBlock* else_bb = new_bb(irgen, irgen->current_function);
+        EMIT_INSTR(irgen, IR_BRANCHZ, .left=expr_reg, .jump_true=true_bb, .jump_false=else_bb);
+
+        irgen->current_basic_block = end_bb;
+        walk_stmt(irgen, node->if_statement.else_arm);
+    } else {
+        EMIT_INSTR(irgen, IR_BRANCHZ, .left=expr_reg, .jump_true=true_bb, .jump_false=end_bb);
+    }
+
+    irgen->current_basic_block = true_bb;
+    walk_stmt(irgen, node->if_statement.if_arm);
+
+    irgen->current_basic_block = end_bb;
 }
 
 static void walk_stmt(IrGenerator *irgen, StmtAstNode *node)

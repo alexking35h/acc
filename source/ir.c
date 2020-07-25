@@ -232,6 +232,12 @@ static void function(CharBuffer *buf, IrFunction *func)
     SNPRINTF(buf, "void _%s(void)\n{\n", func->name);
     SNPRINTF(buf, INDENT "uint8_t sp[%d];\n", func->stack_size);
 
+    // Declare all registers used within this function.
+    for(int i = 0;i < func->register_count;i++)
+    {
+        SNPRINTF(buf, INDENT "uint32_t t%d;\n", i);
+    }
+
     for (IrBasicBlock *bb = func->head; bb != NULL; bb = bb->next)
     {
         basic_block(buf, bb);
@@ -245,48 +251,10 @@ static void program(CharBuffer *buf, IrProgram *prog)
     SNPRINTF(buf, HEADER);
 
     // First, declare all registers used within the program.
-    if (prog->register_count.any)
+    for (int i = 0; i < prog->register_count.arg; i++)
     {
-        SNPRINTF(buf, "uint32_t ");
-        for (int i = 0; i < prog->register_count.any; i++)
-        {
-            SNPRINTF(buf, "t%d", i);
-            if (i == prog->register_count.any - 1)
-            {
-                SNPRINTF(buf, ";\n\n");
-            }
-            else if ((i + 1) % 10)
-            {
-                SNPRINTF(buf, ", ");
-            }
-            else
-            {
-                SNPRINTF(buf, ",\n         ");
-            }
-        }
+        SNPRINTF(buf, "uint32_t a%d;\n", i);
     }
-
-    if (prog->register_count.arg)
-    {
-        SNPRINTF(buf, "uint32_t ");
-        for (int i = 0; i < prog->register_count.arg; i++)
-        {
-            SNPRINTF(buf, "a%d", i);
-            if (i == prog->register_count.arg - 1)
-            {
-                SNPRINTF(buf, ";\n\n");
-            }
-            else if ((i + 1) % 10)
-            {
-                SNPRINTF(buf, ", ");
-            }
-            else
-            {
-                SNPRINTF(buf, ",\n         ");
-            }
-        }
-    }
-
     SNPRINTF(buf, "uint32_t r0;\n\n");
 
     // Now print out all the functions.

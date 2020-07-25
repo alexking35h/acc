@@ -117,6 +117,7 @@ typedef struct IrFunction
     char *name;
     int stack_size;
     IrBasicBlock *head, *tail;
+    int register_count;
 
     struct IrFunction *next;
 } IrFunction;
@@ -127,7 +128,6 @@ typedef struct IrProgram
 
     struct
     {
-        int any;
         int arg;
         int ret;
     } register_count;

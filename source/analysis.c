@@ -646,6 +646,17 @@ static void walk_stmt_ret(ErrorReporter *error, StmtAstNode *node, SymbolTable *
     walk_expr(error, node->return_jump.value, tab, false);
 }
 
+static void walk_stmt_if(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
+{
+    walk_expr(error, node->if_statement.expr, tab, false);
+    walk_stmt(error, node->if_statement.if_arm, tab);
+
+    if(node->if_statement.else_arm)
+    {
+        walk_stmt(error, node->if_statement.else_arm, tab);
+    }
+}
+
 static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
     if (!node)
@@ -673,6 +684,9 @@ static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 
     case RETURN_JUMP:
         walk_stmt_ret(error, node, tab);
+        break;
+    case IF_STATEMENT:
+        walk_stmt_if(error, node, tab);
         break;
     }
     walk_stmt(error, node->next, tab);
