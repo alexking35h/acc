@@ -30,7 +30,7 @@ typedef struct ArgumentListItem_t
 
 typedef struct ActualParameterListItem_t
 {
-    Symbol * sym;
+    Symbol *sym;
     struct ActualParameterListItem_t *next;
 } ActualParameterListItem;
 
@@ -175,7 +175,7 @@ typedef struct DeclAstNode_t
     // Symbol table entry for this declaration (set during context-analysis).
     Symbol *symbol;
 
-    ActualParameterListItem * args;
+    ActualParameterListItem *args;
 
     struct DeclAstNode_t *next;
 } DeclAstNode;
@@ -189,7 +189,8 @@ typedef struct StmtAstNode_t
         EXPR,
         BLOCK,
         WHILE_LOOP,
-        RETURN_JUMP
+        RETURN_JUMP,
+        IF_STATEMENT,
     } type;
 
     Position pos;
@@ -225,6 +226,14 @@ typedef struct StmtAstNode_t
         {
             struct ExprAstNode_t *value;
         } return_jump;
+
+        // If statement.
+        struct
+        {
+            struct ExprAstNode_t *expr;
+            struct StmtAstNode_t *if_arm;
+            struct StmtAstNode_t *else_arm;
+        } if_statement;
     };
 
     struct StmtAstNode_t *next;

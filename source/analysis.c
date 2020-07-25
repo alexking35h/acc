@@ -1,9 +1,9 @@
 #include "analysis.h"
+#include "arch.h"
 #include "ast.h"
 #include "symbol.h"
 #include "token.h"
 #include "util.h"
-#include "arch.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -308,10 +308,11 @@ static CType *walk_expr_postfix(ErrorReporter *error, ExprAstNode *node, SymbolT
         if (!pf)
             return NULL;
 
-        if(CTYPE_IS_POINTER(pf))
+        if (CTYPE_IS_POINTER(pf))
         {
             node->postfix.ptr_scale = arch_get_size(pf->derived.type);
-        } else if (!CTYPE_IS_SCALAR(pf))
+        }
+        else if (!CTYPE_IS_SCALAR(pf))
         {
             Error_report_error(error, ANALYSIS, node->pos,
                                "Invalid operand type to postfix operator");
@@ -331,26 +332,28 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
     CType *right = walk_expr(error, node->binary.right, tab, false);
 
     // The only valid operands to binary operators are scalar (pointer/basic)
-    if(!left || !right)
+    if (!left || !right)
         goto err;
     if (!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right))
         goto err;
 
-    if(node->binary.op == BINARY_ADD || node->binary.op == BINARY_SUB)
+    if (node->binary.op == BINARY_ADD || node->binary.op == BINARY_SUB)
     {
-        if(CTYPE_IS_POINTER(left))
+        if (CTYPE_IS_POINTER(left))
         {
             node->binary.ptr_scale_right = arch_get_size(left->derived.type);
-        } else if(CTYPE_IS_POINTER(right))
+        }
+        else if (CTYPE_IS_POINTER(right))
         {
             node->binary.ptr_scale_left = arch_get_size(right->derived.type);
         }
     }
 
-    if(CTYPE_IS_POINTER(left))
+    if (CTYPE_IS_POINTER(left))
     {
         node->binary.ptr_scale_right = arch_get_size(left->derived.type);
-    } else if (CTYPE_IS_POINTER(right))
+    }
+    else if (CTYPE_IS_POINTER(right))
     {
         node->binary.ptr_scale_left = arch_get_size(right->derived.type);
     }
@@ -428,24 +431,25 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
 
         return addr_of;
     }
-    else if(node->unary.op == UNARY_INC_OP || node->unary.op == UNARY_DEC_OP)
+    else if (node->unary.op == UNARY_INC_OP || node->unary.op == UNARY_DEC_OP)
     {
         // Set the ptr_scale field accordingly if the operand is a pointer.
-        if(CTYPE_IS_POINTER(ctype))
+        if (CTYPE_IS_POINTER(ctype))
         {
             node->unary.ptr_scale = arch_get_size(ctype->derived.type);
             return ctype;
-        } else if(CTYPE_IS_BASIC(ctype))
+        }
+        else if (CTYPE_IS_BASIC(ctype))
         {
             return ctype;
         }
     }
     else
     {
-        if(CTYPE_IS_BASIC(ctype)) return ctype;
+        if (CTYPE_IS_BASIC(ctype))
+            return ctype;
     }
-    Error_report_error(error, ANALYSIS, node->pos,
-                        "Invalid operand to unary operator");
+    Error_report_error(error, ANALYSIS, node->pos, "Invalid operand to unary operator");
     return NULL;
 }
 
@@ -544,7 +548,7 @@ static void walk_decl_function(ErrorReporter *error, DeclAstNode *node, SymbolTa
 
         // Add entries to the function's symbol table for each parameter in the
         // declaration.
-        ActualParameterListItem ** ptr = &(node->args);
+        ActualParameterListItem **ptr = &(node->args);
         for (ParameterListItem *param = node->type->derived.params; param != NULL;
              param = param->next)
         {
@@ -631,7 +635,7 @@ static void walk_stmt_block(ErrorReporter *error, StmtAstNode *node, SymbolTable
     walk_stmt(error, node->block.head, tab);
 }
 
-static void walk_stmt_while(ErrorReporter *error, StmtAstNode *node, SymbolTable * tab) 
+static void walk_stmt_while(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
     walk_expr(error, node->while_loop.expr, tab, false);
     walk_stmt(error, node->while_loop.block, tab);
@@ -662,7 +666,7 @@ static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
     case BLOCK:
         walk_stmt_block(error, node, tab);
         break;
-    
+
     case WHILE_LOOP:
         walk_stmt_while(error, node, tab);
         break;

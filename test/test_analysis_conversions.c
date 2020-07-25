@@ -63,7 +63,7 @@ static void arithmetic_conversions_common_sign(void **state)
     assert_true(test_compare_ast_expr(expected, ast));
 }
 
-static void pointer_scaling_binary(void** state)
+static void pointer_scaling_binary(void **state)
 {
     // The 'pointer scale' field describes how the left or right
     // operand should be multiplied before the operation. E.g.:
@@ -78,7 +78,7 @@ static void pointer_scaling_binary(void** state)
     ExprAstNode *ast = parse_expr("6 / 3");
     analysis_ast_walk_expr(NULL, ast, test_symbol_table);
     assert_true(ast->binary.ptr_scale_left == 0 && ast->binary.ptr_scale_right == 0);
-    
+
     // Not a pointer. The 'ptr_scale' field should not be set.
     ast = parse_expr("_int + 1");
     analysis_ast_walk_expr(NULL, ast, test_symbol_table);
@@ -104,10 +104,10 @@ static void pointer_scaling_binary(void** state)
     assert_true(ast->unary.right->binary.ptr_scale_left == 1);
 }
 
-static void pointer_scaling_unary(void** state)
+static void pointer_scaling_unary(void **state)
 {
     // Not a pointer. The 'ptr_scale' field should not be set.
-    ExprAstNode * ast = parse_expr("++_int");
+    ExprAstNode *ast = parse_expr("++_int");
     analysis_ast_walk_expr(NULL, ast, test_symbol_table);
     assert_true(ast->unary.ptr_scale == 0 || ast->unary.ptr_scale == 1);
 
@@ -127,10 +127,10 @@ static void pointer_scaling_unary(void** state)
     assert_true(ast->unary.ptr_scale == 1);
 }
 
-static void pointer_scaling_postfix(void** state)
+static void pointer_scaling_postfix(void **state)
 {
     // Not a pointer. ptr_scale should not be set.
-    ExprAstNode * ast = parse_expr("_int++");
+    ExprAstNode *ast = parse_expr("_int++");
     analysis_ast_walk_expr(NULL, ast, test_symbol_table);
     assert_true(ast->postfix.ptr_scale == 0 || ast->postfix.ptr_scale == 1);
 

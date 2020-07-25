@@ -135,7 +135,8 @@ void expect_report_error(ErrorType error_type, int expect_line, int expect_line_
 SymbolTable *test_symbol_table;
 
 static CType _int_type = {.type = TYPE_BASIC, .basic.type_specifier = TYPE_SIGNED_INT};
-static CType _short_type = {.type = TYPE_BASIC, .basic.type_specifier = TYPE_SIGNED_SHORT_INT};
+static CType _short_type = {.type = TYPE_BASIC,
+                            .basic.type_specifier = TYPE_SIGNED_SHORT_INT};
 static CType _long_int_type = {.type = TYPE_BASIC,
                                .basic.type_specifier = TYPE_SIGNED_LONG_INT};
 static CType _char_type = {.type = TYPE_BASIC,
@@ -146,8 +147,8 @@ static CType _function_type = {.type = TYPE_FUNCTION,
                                .derived.type = &_int_type,
                                .derived.params =
                                    &((ParameterListItem){NULL, &_int_type, NULL})};
-static CType _short_ptr_type = {.type=TYPE_POINTER, .derived.type=&_short_type};
-static CType _char_ptr_type = {.type=TYPE_POINTER, .derived.type=&_char_type};
+static CType _short_ptr_type = {.type = TYPE_POINTER, .derived.type = &_short_type};
+static CType _char_ptr_type = {.type = TYPE_POINTER, .derived.type = &_char_type};
 
 Symbol *_int;
 Symbol *_long_int;

@@ -67,24 +67,16 @@ static DeclAstNode *external_declaration(Parser *parser);            // @TODO
 static DeclAstNode *function_definition(Parser *parser);             // @TODO
 static DeclAstNode *declaration_list(Parser *parser);                // @TODO
 
-static jmp_buf panic_station;
-
 DeclAstNode *Parser_declaration(Parser *parser)
-{ // @TODO
+{
     /*
-     * declaration_specifiers ';'
      * declaration_specifiers init_declarator_list ';'
+     * declaration_specifiers init_declarator_list compound_statement
      */
     Position pos = peek()->pos;
 
     CType *type = declaration_specifiers(parser);
 
-    // if (match(SEMICOLON))
-    // {
-    //     return DECL(CONCRETE, .line_number = line_number, .line_position =
-    //     line_position,
-    //                 .type = type);
-    // }
     DeclAstNode *decl = init_declarator_list(parser, type);
 
     // If the ctype is a function, check for a compound statement after
@@ -109,7 +101,7 @@ DeclAstNode *Parser_declaration(Parser *parser)
     return decl;
 }
 static CType *declaration_specifiers(Parser *parser)
-{ // @TODO
+{
     /*
      * storage_class_specifier declaration_specifiers
      * storage_class_specifier
@@ -199,11 +191,8 @@ end:
     return type;
 }
 static DeclAstNode *init_declarator_list(Parser *parser, CType *type)
-{ // @TODO
-    /*
-     * init_declarator
-     * init_declarator_list ',' init_declarator
-     */
+{
+    /* init_declarator ',' | init_declarator */
     DeclAstNode *head = init_declarator(parser, type);
     DeclAstNode **curr = &(head->next);
 
@@ -216,11 +205,8 @@ static DeclAstNode *init_declarator_list(Parser *parser, CType *type)
     return head;
 }
 static DeclAstNode *init_declarator(Parser *parser, CType *type)
-{ // @TODO
-    /*
-     * declarator '=' initializer
-     * declarator
-     */
+{
+    /* declarator '=' initializer | declarator */
     Position pos = peek()->pos;
     DeclAstNode *decl = declarator(parser, type);
 
@@ -361,11 +347,8 @@ static DeclAstNode *alignment_specifier(Parser *parser)
     return NULL;
 }
 static DeclAstNode *declarator(Parser *parser, CType *ctype)
-{ // @TODO
-    /*
-     * pointer direct_declarator
-     * direct_declarator
-     */
+{
+    /* '*' direct_declarator | direct_declarator */
     while (match(STAR))
     {
         CType *pointer = calloc(1, sizeof(CType));
@@ -377,7 +360,7 @@ static DeclAstNode *declarator(Parser *parser, CType *ctype)
     return direct_declarator(parser, ctype);
 }
 static DeclAstNode *direct_declarator(Parser *parser, CType *ctype)
-{ // @TODO
+{
     /*
      * IDENTIFIER direct_declarator_end
      * '(' declarator ')' direct_declarator_end
@@ -410,11 +393,8 @@ static DeclAstNode *direct_declarator(Parser *parser, CType *ctype)
 static CType *direct_declarator_end(Parser *parser, CType *ctype)
 {
     /*
-     * direct_declarator_end '[' constant_expression ']'
-     * direct_declarator_end '[' ']'
-     * direct_declarator_end '(' parameter_type_list ')'
-     * direct_declarator_end '(' identifier_list ')'
-     * direct_declarator_end '(' ')'
+     * direct_declarator_end '[' constant_expression ? ']'
+     * direct_declarator_end '(' parameter_type_list ? ')'
      */
     if (match(LEFT_SQUARE))
     {
@@ -446,18 +426,6 @@ static CType *direct_declarator_end(Parser *parser, CType *ctype)
     else
         return ctype;
 }
-
-static DeclAstNode *pointer(Parser *parser)
-{ // @TODO
-    /*
-     * '*' type_qualifier_list pointer
-     * '*' type_qualifier_list
-     * '*' pointer
-     * '*'
-     */
-
-    return NULL;
-}
 static DeclAstNode *type_qualifier_list(Parser *parser)
 { // @TODO
     /*
@@ -468,11 +436,8 @@ static DeclAstNode *type_qualifier_list(Parser *parser)
     return NULL;
 }
 static ParameterListItem *parameter_type_list(Parser *parser)
-{ // @TODO
-    /*
-     * parameter_list ',' ELLIPSIS
-     * parameter_list
-     */
+{
+    /* parameter_list ',' | parameter_list */
     return parameter_list(parser);
 
     ParameterListItem *head;
@@ -503,11 +468,8 @@ static ParameterListItem *parameter_type_list(Parser *parser)
     return head;
 }
 static ParameterListItem *parameter_list(Parser *parser)
-{ // @TODO
-    /*
-     * parameter_declaration
-     * parameter_list ',' parameter_declaration
-     */
+{
+    /* parameter_list ',' parameter_declaration | parameter_declaration */
     if (CATCH_ERROR(parser))
     {
         // Error occurred parsing 'parameter_declaration'
@@ -552,15 +514,7 @@ static ParameterListItem *parameter_declaration(Parser *parser)
 
     return param;
 }
-static DeclAstNode *identifier_list(Parser *parser)
-{ // @TODO
-    /*
-     * IDENTIFIER
-     * identifier_list ',' IDENTIFIER
-     */
 
-    return NULL;
-}
 CType *Parser_type_name(Parser *parser)
 { // @TODO
     /*
@@ -635,11 +589,8 @@ static DeclAstNode *static_assert_declaration(Parser *parser)
     return NULL;
 }
 static DeclAstNode *Parser_translation_unit(Parser *parser)
-{ // @TODO
-    /*
-     * external_declaration
-     * translation_unit external_declaration
-     */
+{
+    /* translation_unit declaration | declaration */
     DeclAstNode *head = NULL, **curr = &head;
     while ((peek())->type != END_OF_FILE)
     {
@@ -658,30 +609,4 @@ static DeclAstNode *Parser_translation_unit(Parser *parser)
         curr = &((*curr)->next);
     }
     return head;
-}
-static DeclAstNode *external_declaration(Parser *parser)
-{ // @TODO
-    /*
-     * function_definition
-     * declaration
-     */
-    return NULL;
-}
-static DeclAstNode *function_definition(Parser *parser)
-{ // @TODO
-    /*
-     * declaration_specifiers declarator declaration_list compound_statement
-     * declaration_specifiers declarator compound_statement
-     */
-
-    return NULL;
-}
-static DeclAstNode *declaration_list(Parser *parser)
-{ // @TODO
-    /*
-     * declaration
-     * declaration_list declaration
-     */
-
-    return NULL;
 }

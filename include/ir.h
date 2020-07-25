@@ -72,7 +72,8 @@ typedef struct IrRegister
 
 typedef struct IrObject
 {
-    enum {
+    enum
+    {
         LOCAL,
         GLOBAL
     } storage;
@@ -99,7 +100,7 @@ typedef struct IrInstruction
         IrBasicBlock *jump_true;
     };
     IrBasicBlock *jump_false;
-    IrFunction * function;
+    IrFunction *function;
 
     struct IrInstruction *next;
 } IrInstruction;
@@ -124,7 +125,8 @@ typedef struct IrProgram
 {
     int bss_size;
 
-    struct {
+    struct
+    {
         int any;
         int arg;
         int ret;

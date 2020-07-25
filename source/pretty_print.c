@@ -335,6 +335,17 @@ static void pp_stmt(StmtAstNode *node, StringBuffer *buf)
         if (node->return_jump.value)
             pp_expr(node->return_jump.value, buf);
         break;
+    case IF_STATEMENT:
+        pp_printf(buf, "I ");
+        pp_expr(node->if_statement.expr, buf);
+        pp_printf(buf, ", ");
+        pp_stmt(node->if_statement.if_arm, buf);
+        if (node->if_statement.else_arm)
+        {
+            pp_printf(buf, ", ");
+            pp_stmt(node->if_statement.else_arm, buf);
+        }
+        break;
     }
     if (node->next)
     {
