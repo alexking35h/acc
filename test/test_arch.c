@@ -1,8 +1,9 @@
-#include <cmocka.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+#include <cmocka.h>
 
 #include "arch.h"
 
