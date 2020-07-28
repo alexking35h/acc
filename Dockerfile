@@ -21,3 +21,7 @@ RUN cd /root/cmocka-1.1.5/build && cmake .. && make install
 RUN ldconfig
 
 RUN echo "set expandtab\nset tabstop=2\nset nu" > /root/.vimrc
+
+# Support for cross-compiling 32-bit i386
+RUN apt-get -y install crossbuild-essential-i386
+RUN apt-get -y install libc6-i386

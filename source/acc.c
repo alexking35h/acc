@@ -46,6 +46,7 @@ typedef struct CommandLineArgs_t
     const char *source_file;
     _Bool json;
     _Bool check_only;
+    const char *ir_output;
 } CommandLineArgs;
 
 typedef struct AccCompiler_t
@@ -99,7 +100,7 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
     args->json = false;
     args->check_only = false;
 
-    while ((c = getopt(argc, argv, "vhjc")) != -1)
+    while ((c = getopt(argc, argv, "vhjci:")) != -1)
     {
         switch (c)
         {
@@ -115,6 +116,12 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
         case 'c':
             args->check_only = true;
             break;
+        case 'i':
+            args->ir_output = optarg;
+            break;
+        case '?':
+            help(argv[0]);
+            return false;
         }
     }
 
@@ -294,7 +301,7 @@ static void compiler_destroy(AccCompiler *compiler)
 
 int main(int argc, char **argv)
 {
-    CommandLineArgs args;
+    CommandLineArgs args = {};
     AccCompiler *compiler;
     int err = 0;
 
@@ -328,8 +335,17 @@ int main(int argc, char **argv)
 
     // Compiler to IR
     IrProgram *ir_program = Ir_generate(ast_root);
+    char * ir_str = Ir_to_str(ir_program);
 
-    printf("%s\n", Ir_to_str(ir_program));
+    if(args.ir_output)
+    {
+        FILE * ir_fh = fopen(args.ir_output, "w");
+        fprintf(ir_fh, "%s", ir_str);
+        fclose(ir_fh);
+    }
+    else {
+        printf("%s\n", ir_str);
+    }
 
 tidyup:
     compiler_destroy(compiler);

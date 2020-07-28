@@ -84,6 +84,7 @@ static IrRegister *new_reg(IrGenerator *irgen, IrRegType type)
         reg->index = irgen->program->register_count.arg++;
         break;
     case REG_RETURN:
+    case REG_STACK:
         reg->index = 0;
         break;
     }
@@ -108,7 +109,7 @@ static IrObject *stack_allocate(IrFunction *function, Symbol *symbol)
     int offset = function->stack_size;
 
     // For now, just give everything on the stack 4 bytes.
-    function->stack_size += MAX((size + 3) & ~3, 4);
+    function->stack_size += (size + 3) & ~3;
 
     IrObject *object = calloc(1, sizeof(IrObject));
     object->size = size;
@@ -130,6 +131,11 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
 {
     IrOpcode op;
     bool post_op_negate = false;
+
+    IrRegister *dest = new_reg(irgen, REG_ANY);
+    IrRegister *left = walk_expr(irgen, node->binary.left);
+    IrRegister *right = walk_expr(irgen, node->binary.right);
+
     switch (node->binary.op)
     {
     case BINARY_ADD:
@@ -139,19 +145,19 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
         op = IR_SUB;
         break;
     case BINARY_MUL:
-        abort();
+        op = IR_MUL;
         break;
     case BINARY_DIV:
-        abort();
+        op = IR_DIV;
         break;
     case BINARY_MOD:
-        abort();
+        op = IR_MOD;
         break;
     case BINARY_SLL:
-        abort();
+        op = IR_SLL;
         break;
     case BINARY_SLR:
-        abort();
+        op = IR_SLR;
         break;
     case BINARY_LT:
         op = IR_LT;
@@ -161,10 +167,11 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
         post_op_negate = true;
         break;
     case BINARY_LE:
-        abort();
+        op = IR_LE;
         break;
     case BINARY_GE:
-        abort();
+        op = IR_LT;
+        post_op_negate = true;
         break;
     case BINARY_EQ:
         op = IR_EQ;
@@ -174,14 +181,22 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
         post_op_negate = true;
         break;
     case BINARY_AND:
-        abort();
+        op = IR_AND;
         break;
     case BINARY_OR:
-        abort();
+        op = IR_OR;
         break;
     case BINARY_XOR:
-        abort();
-        break;
+        // Exclusive or: a ^ b = !(a & b) & (a | b)
+        {   
+            IrRegister * reg_or = new_reg(irgen, REG_ANY);
+            IrRegister * reg_nand = new_reg(irgen, REG_ANY);
+            EMIT_INSTR(irgen, IR_OR, .dest=reg_or, .left=left, .right=right);
+            EMIT_INSTR(irgen, IR_AND, .dest=reg_nand, .left=left, .right=right);
+            EMIT_INSTR(irgen, IR_NOT, .dest=reg_nand, .left=reg_nand);
+            EMIT_INSTR(irgen, IR_AND, .dest=dest, .left=reg_or, .right=reg_nand);
+            return dest;
+        }
     case BINARY_AND_OP:
         abort();
         break;
@@ -189,9 +204,6 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
         abort();
         break;
     }
-    IrRegister *dest = new_reg(irgen, REG_ANY);
-    IrRegister *left = walk_expr(irgen, node->binary.left);
-    IrRegister *right = walk_expr(irgen, node->binary.right);
     EMIT_INSTR(irgen, op, .dest = dest, .left = left, .right = right);
 
     if (post_op_negate)
@@ -203,13 +215,14 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
 
 static IrRegister *walk_expr_unary(IrGenerator *irgen, ExprAstNode *node)
 {
+    IrRegister * dest = new_reg(irgen, REG_ANY);
     switch (node->unary.op)
     {
     case UNARY_ADDRESS_OF:
         abort();
         break;
     case UNARY_DEREFERENCE:
-        abort();
+        EMIT_INSTR(irgen, IR_LOAD, .dest=dest, .left=walk_expr(irgen, node->unary.right));
         break;
     case UNARY_PLUS:
         abort();
@@ -221,7 +234,7 @@ static IrRegister *walk_expr_unary(IrGenerator *irgen, ExprAstNode *node)
         abort();
         break;
     case UNARY_LOGICAL_NOT:
-        abort();
+        EMIT_INSTR(irgen, IR_NOT, .dest=dest, .left=walk_expr(irgen, node->unary.right));
         break;
     case UNARY_SIZEOF:
         abort();
@@ -233,7 +246,7 @@ static IrRegister *walk_expr_unary(IrGenerator *irgen, ExprAstNode *node)
         abort();
         break;
     }
-    return NULL;
+    return dest;
 }
 
 static IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
@@ -251,7 +264,13 @@ static IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
         if (sym->ir.object)
         {
             // Object is not in a register.
-            abort();
+            IrRegister * stack = new_reg(irgen, REG_STACK);
+            IrRegister * dest = new_reg(irgen, REG_ANY);
+            IrRegister * offset = new_reg(irgen, REG_ANY);
+            EMIT_INSTR(irgen, IR_LOADI, .dest=offset, .value=sym->ir.object->offset);
+            EMIT_INSTR(irgen, IR_ADD, .dest=dest, .left=offset, .right=stack);
+
+            return dest;
         }
         else if (sym->ir.regster)
         {
@@ -303,11 +322,8 @@ static IrRegister *walk_expr_postfix(IrGenerator *irgen, ExprAstNode *node)
         return walk_expr_postfix_call(irgen, node);
 
     case POSTFIX_INC_OP:
-        abort();
-        break;
     case POSTFIX_DEC_OP:
         abort();
-        break;
     }
     return NULL;
 }
@@ -328,7 +344,10 @@ static IrRegister *walk_expr_assign(IrGenerator *irgen, ExprAstNode *node)
     if (node->assign.left->type == UNARY &&
         node->assign.left->unary.op == UNARY_DEREFERENCE)
     {
-        abort();
+        IrRegister *src = walk_expr(irgen, node->assign.left->unary.right);
+        IrRegister *val = walk_expr(irgen, node->assign.right);
+
+        EMIT_INSTR(irgen, IR_STORE, .left=src, .right=val);
     }
     else
     {

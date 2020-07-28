@@ -9,7 +9,15 @@
     "// === ACC IR === \n//\n"                                                           \
     "// Date: " __DATE__ "\n"                                                            \
     "// Time: " __TIME__ "\n\n"                                                          \
-    "#include <stdint.h>\n\n"
+    "typedef unsigned int uint32_t;\n"                                                   \
+    "typedef unsigned short uint16_t;\n"                                                 \    
+    "typedef unsigned char uint8_t;\n"                                                   \
+    "typedef signed int int32_t;\n"                                                      \
+    "typedef signed short int16_t;\n"                                                    \
+    "typedef signed char int8_t;\n\n"                                                    \
+    "#if __INT_WIDTH__ != __INTPTR_WIDTH__\n"                                            \
+    "#error Require 32-bit system (int32 and pointers should have the same size)\n"      \
+    "#endif\n\n"                
 
 typedef struct CharBuffer
 {
@@ -31,6 +39,9 @@ static void ir_register(CharBuffer *buf, IrRegister *reg)
         break;
     case REG_RETURN:
         SNPRINTF(buf, "r%d", reg->index);
+        break;
+    case REG_STACK:
+        SNPRINTF(buf, "sp");
         break;
     }
 }
@@ -111,14 +122,15 @@ static void instruction_mem(CharBuffer *buf, IrInstruction *instr)
     if (instr->op == IR_LOAD)
     {
         ir_register(buf, instr->dest);
-        SNPRINTF(buf, " = *");
+        SNPRINTF(buf, " = *((uint32_t*)");
         ir_register(buf, instr->left);
+        SNPRINTF(buf, ")");
     }
     else
     {
-        SNPRINTF(buf, "*");
+        SNPRINTF(buf, "*((uint32_t*)");
         ir_register(buf, instr->left);
-        SNPRINTF(buf, " = ");
+        SNPRINTF(buf, ") = ");
         ir_register(buf, instr->right);
     }
     SNPRINTF(buf, ";\n");
@@ -230,7 +242,7 @@ static void basic_block(CharBuffer *buf, IrBasicBlock *bb)
 static void function(CharBuffer *buf, IrFunction *func)
 {
     SNPRINTF(buf, "void _%s(void)\n{\n", func->name);
-    SNPRINTF(buf, INDENT "uint8_t sp[%d];\n", func->stack_size);
+    SNPRINTF(buf, INDENT "_Alignas(4) uint8_t sp[%d];\n", func->stack_size);
 
     // Declare all registers used within this function.
     for(int i = 0;i < func->register_count;i++)
@@ -271,8 +283,8 @@ static void program(CharBuffer *buf, IrProgram *prog)
 
 char *Ir_to_str(IrProgram *ir)
 {
-    char *chbuffer = calloc(4096, sizeof(char));
-    CharBuffer buffer = {chbuffer, chbuffer + 4096};
+    char *chbuffer = calloc(18256, sizeof(char));
+    CharBuffer buffer = {chbuffer, chbuffer + 18256};
 
     program(&buffer, ir);
 
