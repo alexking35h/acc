@@ -60,7 +60,8 @@ typedef enum
 {
     REG_ARGUMENT,
     REG_RETURN,
-    REG_ANY
+    REG_ANY,
+    REG_STACK
 } IrRegType;
 
 typedef struct IrRegister
