@@ -133,7 +133,7 @@ typedef struct IrProgram
         int ret;
     } register_count;
 
-    IrFunction *functions;
+    IrFunction *head, *tail;
 } IrProgram;
 
 /*

@@ -130,6 +130,19 @@ int unary()
 //    return 1;
 }
 
+int tertiary()
+{
+    if(1 == 2 ? 1 : 0)
+    {
+        return 0;
+    }
+    if(1 != 1 ? 1 : 0)
+    {
+        return 0;
+    }
+    return 1;
+}
+
 int main()
 {
     if(!primary())
@@ -153,6 +166,10 @@ int main()
         return 1;
     }
     if(!equality())
+    {
+        return 1;
+    }
+    if(!tertiary())
     {
         return 1;
     }

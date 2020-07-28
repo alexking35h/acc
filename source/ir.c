@@ -270,7 +270,7 @@ static void program(CharBuffer *buf, IrProgram *prog)
     SNPRINTF(buf, "uint32_t r0;\n\n");
 
     // Now print out all the functions.
-    for (IrFunction *func = prog->functions; func != NULL; func = func->next)
+    for (IrFunction *func = prog->head; func != NULL; func = func->next)
     {
         function(buf, func);
     }
