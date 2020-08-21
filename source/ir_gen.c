@@ -332,9 +332,25 @@ static IrRegister *walk_expr_postfix(IrGenerator *irgen, ExprAstNode *node)
     return NULL;
 }
 
-static IrRegister *walk_expr_cast(IrGenerator *irgen, ExprAstNode *node)
+static IrRegister *walk_expr_cast_signed(IrGenerator *irgen, ExprAstNode *node)
 {
     abort();
+}
+
+static IrRegister *walk_expr_cast_unsigned(IrGenerator *irgen, ExprAstNode *node)
+{
+    abort();
+}
+
+static IrRegister *walk_expr_cast(IrGenerator *irgen, ExprAstNode *node)
+{
+    if(node->cast.type->basic.type_specifier & TYPE_SIGNED)
+    {
+        return walk_expr_cast_signed(irgen, node);
+    }
+    else {
+        return walk_expr_cast_unsigned(irgen, node);
+    }
     return NULL;
 }
 
