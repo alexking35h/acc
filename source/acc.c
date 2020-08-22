@@ -37,7 +37,7 @@
 
 extern int errno;
 
-// Extern is defined as a weak symbol so that individual unit test files
+// main is defined as a weak symbol so that individual unit test files
 // can override it.
 int main(int, char **) __attribute__((weak));
 
@@ -335,16 +335,15 @@ int main(int argc, char **argv)
 
     // Compiler to IR
     IrProgram *ir_program = Ir_generate(ast_root);
-    char * ir_str = Ir_to_str(ir_program);
 
     if(args.ir_output)
     {
         FILE * ir_fh = fopen(args.ir_output, "w");
-        fprintf(ir_fh, "%s", ir_str);
+        Ir_to_str(ir_program, ir_fh);
         fclose(ir_fh);
     }
     else {
-        printf("%s\n", ir_str);
+        Ir_to_str(ir_program, stdout);
     }
 
 tidyup:

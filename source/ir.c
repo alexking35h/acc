@@ -10,7 +10,7 @@
     "// Date: " __DATE__ "\n"                                                            \
     "// Time: " __TIME__ "\n\n"                                                          \
     "typedef unsigned int uint32_t;\n"                                                   \
-    "typedef unsigned short uint16_t;\n"                                                 \    
+    "typedef unsigned short uint16_t;\n"                                                 \
     "typedef unsigned char uint8_t;\n"                                                   \
     "typedef signed int int32_t;\n"                                                      \
     "typedef signed short int16_t;\n"                                                    \
@@ -18,170 +18,161 @@
     "#if __INT_WIDTH__ != __INTPTR_WIDTH__\n"                                            \
     "#error Require 32-bit system (int32 and pointers should have the same size)\n"      \
     "#endif\n\n"                
-
-typedef struct CharBuffer
-{
-    char *pos;
-    char *end;
-} CharBuffer;
-
-#define SNPRINTF(cb, ...) cb->pos += snprintf(cb->pos, cb->end - cb->pos, __VA_ARGS__)
-
-static void ir_register(CharBuffer *buf, IrRegister *reg)
+static void ir_register(FILE *fd, IrRegister *reg)
 {
     switch (reg->type)
     {
     case REG_ANY:
-        SNPRINTF(buf, "t%d", reg->index);
+        fprintf(fd, "t%d", reg->index);
         break;
     case REG_ARGUMENT:
-        SNPRINTF(buf, "a%d", reg->index);
+        fprintf(fd, "a%d", reg->index);
         break;
     case REG_RETURN:
-        SNPRINTF(buf, "r%d", reg->index);
+        fprintf(fd, "r%d", reg->index);
         break;
     case REG_STACK:
-        SNPRINTF(buf, "sp");
+        fprintf(fd, "sp");
         break;
     }
 }
 
-static void instruction_arithmetic(CharBuffer *buf, IrInstruction *instr)
+static void instruction_arithmetic(FILE *fd, IrInstruction *instr)
 {
-    SNPRINTF(buf, INDENT);
-    ir_register(buf, instr->dest);
-    SNPRINTF(buf, " = ");
+    fprintf(fd, INDENT);
+    ir_register(fd, instr->dest);
+    fprintf(fd, " = ");
 
     if (instr->op == IR_NOT)
     {
-        SNPRINTF(buf, "! ");
-        ir_register(buf, instr->left);
-        SNPRINTF(buf, ";\n");
+        fprintf(fd, "! ");
+        ir_register(fd, instr->left);
+        fprintf(fd, ";\n");
         return;
     }
 
-    ir_register(buf, instr->left);
+    ir_register(fd, instr->left);
     switch (instr->op)
     {
     case IR_ADD:
-        SNPRINTF(buf, " + ");
+        fprintf(fd, " + ");
         break;
     case IR_SUB:
-        SNPRINTF(buf, " - ");
+        fprintf(fd, " - ");
         break;
     case IR_MUL:
-        SNPRINTF(buf, " * ");
+        fprintf(fd, " * ");
         break;
     case IR_DIV:
-        SNPRINTF(buf, " / ");
+        fprintf(fd, " / ");
         break;
     case IR_MOD:
-        SNPRINTF(buf, " %% ");
+        fprintf(fd, " %% ");
         break;
     case IR_SLL:
-        SNPRINTF(buf, " << ");
+        fprintf(fd, " << ");
         break;
     case IR_SLR:
-        SNPRINTF(buf, " >> ");
+        fprintf(fd, " >> ");
         break;
     case IR_OR:
-        SNPRINTF(buf, " | ");
+        fprintf(fd, " | ");
         break;
     case IR_AND:
-        SNPRINTF(buf, " & ");
+        fprintf(fd, " & ");
         break;
     case IR_NOT:
-        SNPRINTF(buf, " ! ");
+        fprintf(fd, " ! ");
         break;
     case IR_EQ:
-        SNPRINTF(buf, " == ");
+        fprintf(fd, " == ");
         break;
     case IR_LT:
-        SNPRINTF(buf, " < ");
+        fprintf(fd, " < ");
         break;
     case IR_LE:
-        SNPRINTF(buf, " <= ");
+        fprintf(fd, " <= ");
         break;
     }
-    ir_register(buf, instr->right);
-    SNPRINTF(buf, ";\n");
+    ir_register(fd, instr->right);
+    fprintf(fd, ";\n");
 }
 
-static void instruction_move(CharBuffer *buf, IrInstruction *instr)
+static void instruction_move(FILE *fd, IrInstruction *instr)
 {
-    SNPRINTF(buf, INDENT);
-    ir_register(buf, instr->dest);
-    SNPRINTF(buf, " = ");
-    ir_register(buf, instr->left);
-    SNPRINTF(buf, ";\n");
+    fprintf(fd, INDENT);
+    ir_register(fd, instr->dest);
+    fprintf(fd, " = ");
+    ir_register(fd, instr->left);
+    fprintf(fd, ";\n");
 }
 
-static void instruction_mem(CharBuffer *buf, IrInstruction *instr)
+static void instruction_mem(FILE *fd, IrInstruction *instr)
 {
-    SNPRINTF(buf, INDENT);
+    fprintf(fd, INDENT);
     if (instr->op == IR_LOAD)
     {
-        ir_register(buf, instr->dest);
-        SNPRINTF(buf, " = *((uint32_t*)");
-        ir_register(buf, instr->left);
-        SNPRINTF(buf, ")");
+        ir_register(fd, instr->dest);
+        fprintf(fd, " = *((uint32_t*)");
+        ir_register(fd, instr->left);
+        fprintf(fd, ")");
     }
     else
     {
-        SNPRINTF(buf, "*((uint32_t*)");
-        ir_register(buf, instr->left);
-        SNPRINTF(buf, ") = ");
-        ir_register(buf, instr->right);
+        fprintf(fd, "*((uint32_t*)");
+        ir_register(fd, instr->left);
+        fprintf(fd, ") = ");
+        ir_register(fd, instr->right);
     }
-    SNPRINTF(buf, ";\n");
+    fprintf(fd, ";\n");
 }
 
-static void instruction_loadi(CharBuffer *buf, IrInstruction *instr)
+static void instruction_loadi(FILE *fd, IrInstruction *instr)
 {
-    SNPRINTF(buf, INDENT);
-    ir_register(buf, instr->dest);
-    SNPRINTF(buf, " = %d;\n", instr->value);
+    fprintf(fd, INDENT);
+    ir_register(fd, instr->dest);
+    fprintf(fd, " = %d;\n", instr->value);
 }
 
-static void instruction_stack(CharBuffer *buf, IrInstruction *instr)
+static void instruction_stack(FILE *fd, IrInstruction *instr)
 {
     if (instr->op == IR_STACK)
     {
-        SNPRINTF(buf, INDENT "// STACK REGISTERS\n");
+        fprintf(fd, INDENT "// STACK REGISTERS\n");
     }
     else
     {
-        SNPRINTF(buf, INDENT "// UNSTACK REGISTERS\n");
+        fprintf(fd, INDENT "// UNSTACK REGISTERS\n");
     }
 }
 
-static void instruction_jump(CharBuffer *buf, IrInstruction *instr)
+static void instruction_jump(FILE *fd, IrInstruction *instr)
 {
     if (instr->op == IR_JUMP)
     {
-        SNPRINTF(buf, INDENT "goto bb_%d;\n", instr->jump->index);
+        fprintf(fd, INDENT "goto bb_%d;\n", instr->jump->index);
     }
     else if (instr->op == IR_RETURN)
     {
-        SNPRINTF(buf, INDENT "return;\n");
+        fprintf(fd, INDENT "return;\n");
     }
     else if (instr->op == IR_BRANCHZ)
     {
-        SNPRINTF(buf, INDENT "if(");
-        ir_register(buf, instr->left);
-        SNPRINTF(buf, ")\n" INDENT "{\n");
-        SNPRINTF(buf, INDENT INDENT "goto bb_%d;\n", instr->jump_true->index);
-        SNPRINTF(buf, INDENT "} else {\n");
-        SNPRINTF(buf, INDENT INDENT "goto bb_%d;\n", instr->jump_false->index);
-        SNPRINTF(buf, INDENT "}\n");
+        fprintf(fd, INDENT "if(");
+        ir_register(fd, instr->left);
+        fprintf(fd, ")\n" INDENT "{\n");
+        fprintf(fd, INDENT INDENT "goto bb_%d;\n", instr->jump_true->index);
+        fprintf(fd, INDENT "} else {\n");
+        fprintf(fd, INDENT INDENT "goto bb_%d;\n", instr->jump_false->index);
+        fprintf(fd, INDENT "}\n");
     }
     else if (instr->op == IR_CALL)
     {
-        SNPRINTF(buf, INDENT "_%s();\n", instr->function->name);
+        fprintf(fd, INDENT "_%s();\n", instr->function->name);
     }
 }
 
-static void instruction(CharBuffer *buf, IrInstruction *instr)
+static void instruction(FILE *fd, IrInstruction *instr)
 {
     switch (instr->op)
     {
@@ -198,95 +189,90 @@ static void instruction(CharBuffer *buf, IrInstruction *instr)
     case IR_EQ:
     case IR_LT:
     case IR_LE:
-        instruction_arithmetic(buf, instr);
+        instruction_arithmetic(fd, instr);
         break;
 
     case IR_MOV:
-        instruction_move(buf, instr);
+        instruction_move(fd, instr);
         break;
 
     case IR_STORE:
     case IR_LOAD:
-        instruction_mem(buf, instr);
+        instruction_mem(fd, instr);
         break;
 
     case IR_LOADI:
-        instruction_loadi(buf, instr);
+        instruction_loadi(fd, instr);
         break;
 
     case IR_STACK:
     case IR_UNSTACK:
-        instruction_stack(buf, instr);
+        instruction_stack(fd, instr);
         break;
 
     case IR_BRANCHZ:
     case IR_JUMP:
     case IR_CALL:
     case IR_RETURN:
-        instruction_jump(buf, instr);
+        instruction_jump(fd, instr);
         break;
     case IR_NOP:
-        SNPRINTF(buf, INDENT ";\n");
+        fprintf(fd, INDENT ";\n");
     }
 }
 
-static void basic_block(CharBuffer *buf, IrBasicBlock *bb)
+static void basic_block(FILE *fd, IrBasicBlock *bb)
 {
-    SNPRINTF(buf, "bb_%d:\n", bb->index);
+    fprintf(fd, "bb_%d:\n", bb->index);
     for (IrInstruction *instr = bb->head; instr != NULL; instr = instr->next)
     {
-        instruction(buf, instr);
+        instruction(fd, instr);
     }
 }
 
-static void function(CharBuffer *buf, IrFunction *func)
+static void function(FILE *fd, IrFunction *func)
 {
-    SNPRINTF(buf, "void _%s(void)\n{\n", func->name);
-    SNPRINTF(buf, INDENT "_Alignas(4) uint8_t sp[%d];\n", func->stack_size);
+    fprintf(fd, "void _%s(void)\n{\n", func->name);
+    fprintf(fd, INDENT "_Alignas(4) uint8_t sp[%d];\n", func->stack_size);
 
     // Declare all registers used within this function.
     for(int i = 0;i < func->register_count;i++)
     {
-        SNPRINTF(buf, INDENT "uint32_t t%d;\n", i);
+        fprintf(fd, INDENT "uint32_t t%d;\n", i);
     }
 
     for (IrBasicBlock *bb = func->head; bb != NULL; bb = bb->next)
     {
-        basic_block(buf, bb);
+        basic_block(fd, bb);
     }
 
-    SNPRINTF(buf, "}\n");
+    fprintf(fd, "}\n");
 }
 
-static void program(CharBuffer *buf, IrProgram *prog)
+static void program(FILE *fd, IrProgram *prog)
 {
-    SNPRINTF(buf, HEADER);
+    fprintf(fd, HEADER);
 
     // First, declare all registers used within the program.
     for (int i = 0; i < prog->register_count.arg; i++)
     {
-        SNPRINTF(buf, "uint32_t a%d;\n", i);
+        fprintf(fd, "uint32_t a%d;\n", i);
     }
-    SNPRINTF(buf, "uint32_t r0;\n\n");
+    fprintf(fd, "uint32_t r0;\n\n");
 
     // Now print out all the functions.
     for (IrFunction *func = prog->head; func != NULL; func = func->next)
     {
-        function(buf, func);
+        function(fd, func);
     }
 
     // Add a main function!
-    SNPRINTF(buf, "int main(int argc, char ** argv){\n");
-    SNPRINTF(buf, INDENT "_main();\n");
-    SNPRINTF(buf, INDENT "return r0;\n}\n");
+    fprintf(fd, "int main(int argc, char ** argv){\n");
+    fprintf(fd, INDENT "_main();\n");
+    fprintf(fd, INDENT "return r0;\n}\n");
 }
 
-char *Ir_to_str(IrProgram *ir)
+void Ir_to_str(IrProgram *ir, FILE *fd)
 {
-    char *chbuffer = calloc(18256, sizeof(char));
-    CharBuffer buffer = {chbuffer, chbuffer + 18256};
-
-    program(&buffer, ir);
-
-    return chbuffer;
+    program(fd, ir);
 }

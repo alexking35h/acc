@@ -2,6 +2,7 @@
 #define __IR___
 
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct IrBasicBlock IrBasicBlock;
 typedef struct IrObject IrObject;
@@ -139,6 +140,6 @@ typedef struct IrProgram
 /*
  * Generate string-representation of the IR.
  */
-char *Ir_to_str(IrProgram *);
+void Ir_to_str(IrProgram *, FILE*);
 
 #endif
