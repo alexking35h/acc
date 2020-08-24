@@ -35,6 +35,8 @@
     " /  _____  \\ |  `----.|  `----.\n"                                                 \
     "/__/     \\__\\ \\______| \\______|\n"
 
+#define STDIN_READ_CHUNK_SIZE 256
+
 extern int errno;
 
 // main is defined as a weak symbol so that individual unit test files
@@ -65,9 +67,11 @@ static void help(const char *exe_path)
     printf("  -v version information\n");
     printf("  -h help\n");
     printf("  -j json output\n");
-    printf("  -c check only (do not compile)");
+    printf("  -c check only (do not compile)\n");
+    printf("  -i [FILE] Save Intermediate Representation (IR) output to file\n");
     printf("\n");
     printf("[FILE] is a file path to the C source file which will be compiled\n");
+    printf("(use '-' to read from stdin).\n\n");
     printf("Returns 0 if no errors were reported\n");
 }
 
@@ -134,7 +138,27 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
     return true;
 }
 
-static char *read_source(const char *path)
+static char *read_source_stdin()
+{
+    // Read from stdin in 256-byte chunks.
+    char *source_buf = malloc(STDIN_READ_CHUNK_SIZE + 1);
+
+    for(int read_offset = 0;;)
+    {
+        int read_size = fread(source_buf + read_offset, 1, STDIN_READ_CHUNK_SIZE, stdin);
+        if(read_size != STDIN_READ_CHUNK_SIZE)
+        {
+            source_buf[read_offset + read_size] = '\0';
+            return source_buf;
+        }
+        else {
+            read_offset += STDIN_READ_CHUNK_SIZE;
+            source_buf = realloc(source_buf, read_offset + STDIN_READ_CHUNK_SIZE + 1);
+        }
+    }
+}
+
+static char *read_source_file(const char *path)
 {
     FILE *f = fopen(path, "r");
     if (!f)
@@ -172,6 +196,16 @@ err:
         free(file_contents);
     printf("Unable to read source file:\n%s\n", strerror(errno));
     return NULL;
+}
+
+static char *read_source(const char *path)
+{
+    if(*path == '-')
+    {
+        return read_source_stdin();
+    } else {
+        return read_source_file(path);
+    }
 }
 
 static AccCompiler *compiler_init(const char *path)
