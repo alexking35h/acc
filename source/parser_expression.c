@@ -216,7 +216,7 @@ static ExprAstNode *cast_expression(Parser *parser)
     consume(LEFT_PAREN);
     CType *type = Parser_type_name(parser);
     consume(RIGHT_PAREN);
-    return EXPR_CAST(peek()->pos, .type = type, .right = cast_expression(parser));
+    return EXPR_CAST(peek()->pos, .to = type, .from = NULL, .right = cast_expression(parser));
 }
 static ExprAstNode *multiplicative_expression(Parser *parser)
 {

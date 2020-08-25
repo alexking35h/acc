@@ -232,7 +232,11 @@ static IrRegister *walk_expr_unary(IrGenerator *irgen, ExprAstNode *node)
         abort();
         break;
     case UNARY_MINUS:
-        abort();
+        {
+            IrRegister *imm = get_reg(irgen, REG_ANY, false);
+            EMIT_INSTR(irgen, IR_LOADI, .dest=imm, .value=0);
+            EMIT_INSTR(irgen, IR_SUB, .dest=dest, .left=imm, .right=walk_expr(irgen, node->unary.right));
+        }
         break;
     case UNARY_BITWISE_NOT:
         abort();
@@ -332,26 +336,46 @@ static IrRegister *walk_expr_postfix(IrGenerator *irgen, ExprAstNode *node)
     return NULL;
 }
 
-static IrRegister *walk_expr_cast_signed(IrGenerator *irgen, ExprAstNode *node)
-{
-    abort();
-}
-
-static IrRegister *walk_expr_cast_unsigned(IrGenerator *irgen, ExprAstNode *node)
-{
-    abort();
-}
-
 static IrRegister *walk_expr_cast(IrGenerator *irgen, ExprAstNode *node)
 {
-    if(node->cast.type->basic.type_specifier & TYPE_SIGNED)
+    IrRegister * right = walk_expr(irgen, node->cast.right);
+
+    // Sign-extend.
+    if(CTYPE_IS_SIGNED(node->cast.from) && CTYPE_IS_SIGNED(node->cast.to))
     {
-        return walk_expr_cast_signed(irgen, node);
+        IrRegister * result = get_reg(irgen, REG_ANY, false);
+
+        if(node->cast.from->basic.type_specifier & TYPE_CHAR)
+        {
+            EMIT_INSTR(irgen, IR_SIGN_EXTEND_8, .dest = result, .left = right);
+            right = result;
+        } else if(node->cast.from->basic.type_specifier & TYPE_SHORT)
+        {
+            EMIT_INSTR(irgen, IR_SIGN_EXTEND_16, .dest = result, .left = right);
+            right = result;
+        } else if(node->cast.from->basic.type_specifier * TYPE_INT)
+        {   
+            // Nothing.
+        }
     }
-    else {
-        return walk_expr_cast_unsigned(irgen, node);
+    
+    // Truncate.
+    IrRegister * reg_imm = get_reg(irgen, REG_ANY, false);
+    IrRegister * result = get_reg(irgen, REG_ANY, false);
+
+    if(node->cast.to->basic.type_specifier & TYPE_CHAR)
+    {
+        EMIT_INSTR(irgen, IR_LOADI, .dest = reg_imm, .value = 0xFF);
+        EMIT_INSTR(irgen, IR_AND, .dest = result, .left = reg_imm, .right=right);
+    } else if(node->cast.to->basic.type_specifier & TYPE_SHORT)
+    {
+        EMIT_INSTR(irgen, IR_LOADI, .dest = reg_imm, .value = 0xFFFF);
+        EMIT_INSTR(irgen, IR_AND, .dest = result, .left = reg_imm, .right=right);
+    } else
+    {
+        return right;
     }
-    return NULL;
+    return result;
 }
 
 static IrRegister *walk_expr_tertiary(IrGenerator *irgen, ExprAstNode *node)

@@ -110,11 +110,12 @@ static const OpRequirements binary_op_requirements[] = {
     {BINARY_OR_OP, false, false, false, &int_type},
 };
 
-static ExprAstNode *create_cast(ExprAstNode *node, CType *type)
+static ExprAstNode *create_cast(ExprAstNode *node, CType *to, CType *from)
 {
     ExprAstNode *cast_node = calloc(1, sizeof(ExprAstNode));
     cast_node->type = CAST;
-    cast_node->cast.type = type;
+    cast_node->cast.to = to;
+    cast_node->cast.from = from;
     cast_node->cast.right = node;
 
     return cast_node;
@@ -139,7 +140,7 @@ static _Bool check_assign_cast(ExprAstNode **node, CType *left, CType *right)
         // Simple assignment: the left has arithmetic type, and the right has arithmetic
         // type.
         if (l->basic.type_specifier != r->basic.type_specifier)
-            *node = create_cast((*node)->assign.right, left);
+            *node = create_cast(*node, left, right);
         return true;
     }
     else if (CTYPE_IS_FUNCTION(l) && CTYPE_IS_FUNCTION(r))
@@ -184,7 +185,7 @@ static CType *integer_promote(ExprAstNode **node, CType *ctype)
     cast_type->type = TYPE_BASIC;
     cast_type->basic.type_specifier = TYPE_SIGNED_INT;
 
-    *node = create_cast(*node, cast_type);
+    *node = create_cast(*node, cast_type, ctype);
     return cast_type;
 }
 
@@ -208,10 +209,11 @@ static CType *type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode 
         return ctype_a;
 
     ExprAstNode **cast_expr = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? node_a : node_b;
-    CType *cast_type = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? ctype_b : ctype_a;
+    CType *cast_to_type = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? ctype_b : ctype_a;
+    CType *cast_from_type = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? ctype_a : ctype_b;
 
-    *cast_expr = create_cast(*cast_expr, cast_type);
-    return cast_type;
+    *cast_expr = create_cast(*cast_expr, cast_to_type, cast_from_type);
+    return cast_to_type;
 }
 
 static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,
@@ -486,7 +488,11 @@ static CType *walk_expr_cast(ErrorReporter *error, ExprAstNode *node, SymbolTabl
     {
         Error_report_error(error, ANALYSIS, node->pos, "Invalid lvalue");
     }
-    return walk_expr(error, node->cast.right, tab, false);
+    if (node->cast.from == NULL)
+    {
+        node->cast.from = walk_expr(error, node->cast.right, tab, false);
+    }
+    return node->cast.to;
 }
 
 static CType *walk_expr_assign(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,

@@ -17,7 +17,10 @@
     "typedef signed char int8_t;\n\n"                                                    \
     "#if __INT_WIDTH__ != __INTPTR_WIDTH__\n"                                            \
     "#error Require 32-bit system (int32 and pointers should have the same size)\n"      \
-    "#endif\n\n"                
+    "#endif\n\n"                                                                         \
+    "#define SIGN_EXTEND8(c) (c | (c & 0x80 ? 0xFFFFFF00 : 0))\n"                         \
+    "#define SIGN_EXTEND16(c) (c | (c & 0x8000 ? 0xFFFF0000 : 0))\n\n"                    
+
 static void ir_register(FILE *fd, IrRegister *reg)
 {
     switch (reg->type)
@@ -96,6 +99,20 @@ static void instruction_arithmetic(FILE *fd, IrInstruction *instr)
     }
     ir_register(fd, instr->right);
     fprintf(fd, ";\n");
+}
+
+static void instruction_sign_extend(FILE *fd, IrInstruction *instr)
+{
+    fprintf(fd, INDENT);
+    ir_register(fd, instr->dest);
+    if(instr->op == IR_SIGN_EXTEND_8)
+    {
+        fprintf(fd, " = SIGN_EXTEND8(");
+    } else {
+        fprintf(fd, " = SIGN_EXTEND16(");
+    }
+    ir_register(fd, instr->left);
+    fprintf(fd, ");\n");
 }
 
 static void instruction_move(FILE *fd, IrInstruction *instr)
@@ -190,6 +207,11 @@ static void instruction(FILE *fd, IrInstruction *instr)
     case IR_LT:
     case IR_LE:
         instruction_arithmetic(fd, instr);
+        break;
+    
+    case IR_SIGN_EXTEND_16:
+    case IR_SIGN_EXTEND_8:
+        instruction_sign_extend(fd, instr);
         break;
 
     case IR_MOV:

@@ -296,7 +296,8 @@ static void assignment_operators(void **state)
     ExprAstNode *ast = parse_expr("_char = _int");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, ast, test_symbol_table);
     assert_true(ast->assign.right->type == CAST);
-    assert_true(ast->assign.right->cast.type->basic.type_specifier == TYPE_UNSIGNED_CHAR);
+    assert_true(ast->assign.right->cast.to->basic.type_specifier == TYPE_UNSIGNED_CHAR);
+    assert_true(ast->assign.right->cast.from->basic.type_specifier == TYPE_SIGNED_INT);
 
     // 6.5.16.1 Simple Assignment
     // - The left value has atomic, qualified, or unqualified arithmetic type, and the

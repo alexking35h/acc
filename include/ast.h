@@ -129,7 +129,8 @@ typedef struct ExprAstNode_t
         // Cast
         struct
         {
-            CType *type;
+            CType *to;
+            CType *from;
             struct ExprAstNode_t *right;
         } cast;
 

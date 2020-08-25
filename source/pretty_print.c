@@ -261,7 +261,7 @@ static void pp_tertiary(ExprAstNode *node, StringBuffer *buf)
 static void pp_cast(ExprAstNode *node, StringBuffer *buf)
 {
     pp_printf(buf, "C ");
-    pp_type(node->cast.type, buf);
+    pp_type(node->cast.to, buf);
     pp_printf(buf, ", ");
     pp_expr(node->cast.right, buf);
 }

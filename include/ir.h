@@ -29,6 +29,10 @@ typedef enum IrOpcode
     IR_LT,
     IR_LE,
 
+    // Sign-extend operations.
+    IR_SIGN_EXTEND_8,
+    IR_SIGN_EXTEND_16,
+
     // Move instruction. dest = left
     IR_MOV,
 
