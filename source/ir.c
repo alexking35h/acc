@@ -18,8 +18,8 @@
     "#if __INT_WIDTH__ != __INTPTR_WIDTH__\n"                                            \
     "#error Require 32-bit system (int32 and pointers should have the same size)\n"      \
     "#endif\n\n"                                                                         \
-    "#define SIGN_EXTEND8(c) (c | (c & 0x80 ? 0xFFFFFF00 : 0))\n"                         \
-    "#define SIGN_EXTEND16(c) (c | (c & 0x8000 ? 0xFFFF0000 : 0))\n\n"                    
+    "#define SIGN_EXTEND8(c) (c | (c & 0x80 ? 0xFFFFFF00 : 0))\n"                        \
+    "#define SIGN_EXTEND16(c) (c | (c & 0x8000 ? 0xFFFF0000 : 0))\n\n"
 
 static void ir_register(FILE *fd, IrRegister *reg)
 {
@@ -105,10 +105,12 @@ static void instruction_sign_extend(FILE *fd, IrInstruction *instr)
 {
     fprintf(fd, INDENT);
     ir_register(fd, instr->dest);
-    if(instr->op == IR_SIGN_EXTEND_8)
+    if (instr->op == IR_SIGN_EXTEND_8)
     {
         fprintf(fd, " = SIGN_EXTEND8(");
-    } else {
+    }
+    else
+    {
         fprintf(fd, " = SIGN_EXTEND16(");
     }
     ir_register(fd, instr->left);
@@ -208,7 +210,7 @@ static void instruction(FILE *fd, IrInstruction *instr)
     case IR_LE:
         instruction_arithmetic(fd, instr);
         break;
-    
+
     case IR_SIGN_EXTEND_16:
     case IR_SIGN_EXTEND_8:
         instruction_sign_extend(fd, instr);
@@ -258,7 +260,7 @@ static void function(FILE *fd, IrFunction *func)
     fprintf(fd, INDENT "_Alignas(4) uint8_t sp[%d];\n", func->stack_size);
 
     // Declare all registers used within this function.
-    for(int i = 0;i < func->register_count;i++)
+    for (int i = 0; i < func->register_count; i++)
     {
         fprintf(fd, INDENT "uint32_t t%d;\n", i);
     }

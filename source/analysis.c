@@ -657,7 +657,7 @@ static void walk_stmt_if(ErrorReporter *error, StmtAstNode *node, SymbolTable *t
     walk_expr(error, node->if_statement.expr, tab, false);
     walk_stmt(error, node->if_statement.if_arm, tab);
 
-    if(node->if_statement.else_arm)
+    if (node->if_statement.else_arm)
     {
         walk_stmt(error, node->if_statement.else_arm, tab);
     }

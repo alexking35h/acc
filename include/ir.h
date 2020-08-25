@@ -144,6 +144,6 @@ typedef struct IrProgram
 /*
  * Generate string-representation of the IR.
  */
-void Ir_to_str(IrProgram *, FILE*);
+void Ir_to_str(IrProgram *, FILE *);
 
 #endif

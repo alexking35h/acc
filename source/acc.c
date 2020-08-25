@@ -143,15 +143,16 @@ static char *read_source_stdin()
     // Read from stdin in 256-byte chunks.
     char *source_buf = malloc(STDIN_READ_CHUNK_SIZE + 1);
 
-    for(int read_offset = 0;;)
+    for (int read_offset = 0;;)
     {
         int read_size = fread(source_buf + read_offset, 1, STDIN_READ_CHUNK_SIZE, stdin);
-        if(read_size != STDIN_READ_CHUNK_SIZE)
+        if (read_size != STDIN_READ_CHUNK_SIZE)
         {
             source_buf[read_offset + read_size] = '\0';
             return source_buf;
         }
-        else {
+        else
+        {
             read_offset += STDIN_READ_CHUNK_SIZE;
             source_buf = realloc(source_buf, read_offset + STDIN_READ_CHUNK_SIZE + 1);
         }
@@ -200,10 +201,12 @@ err:
 
 static char *read_source(const char *path)
 {
-    if(*path == '-')
+    if (*path == '-')
     {
         return read_source_stdin();
-    } else {
+    }
+    else
+    {
         return read_source_file(path);
     }
 }
@@ -370,13 +373,14 @@ int main(int argc, char **argv)
     // Compiler to IR
     IrProgram *ir_program = Ir_generate(ast_root);
 
-    if(args.ir_output)
+    if (args.ir_output)
     {
-        FILE * ir_fh = fopen(args.ir_output, "w");
+        FILE *ir_fh = fopen(args.ir_output, "w");
         Ir_to_str(ir_program, ir_fh);
         fclose(ir_fh);
     }
-    else {
+    else
+    {
         Ir_to_str(ir_program, stdout);
     }
 
