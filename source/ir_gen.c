@@ -44,6 +44,20 @@ static void emit_instr(IrBasicBlock *bb, IrInstruction instr)
     new_instr->next = NULL;
 }
 
+static void emit_store(IrGenerator *irgen, ExprAstNode * lhs, IrRegister * rhs)
+{
+    if (lhs->type == UNARY && lhs->unary.op == UNARY_DEREFERENCE)
+    {
+        IrRegister *dest = walk_expr(irgen, lhs->unary.right);
+        EMIT_INSTR(irgen, IR_STORE, .left = dest, .right = rhs);
+    }
+    else
+    {
+        IrRegister *dest = walk_expr(irgen, lhs);
+        EMIT_INSTR(irgen, IR_MOV, .dest = dest, .left = rhs);
+    }
+}
+
 static IrBasicBlock *new_bb(IrGenerator *irgen, IrFunction *function)
 {
     IrBasicBlock *bb = calloc(1, sizeof(IrBasicBlock));
@@ -335,9 +349,23 @@ static IrRegister *walk_expr_postfix(IrGenerator *irgen, ExprAstNode *node)
 
     case POSTFIX_INC_OP:
     case POSTFIX_DEC_OP:
-        abort();
+        break;
     }
-    return NULL;
+    IrRegister * original = walk_expr(irgen, node->postfix.left);
+    IrRegister * copy = get_reg(irgen, REG_ANY, false);
+    IrRegister * imm = get_reg(irgen, REG_ANY, false);
+    IrRegister * new = get_reg(irgen, REG_ANY, false);
+    EMIT_INSTR(irgen, IR_MOV, .dest=copy, .left=original);
+    EMIT_INSTR(irgen, IR_LOADI, .dest=imm, .value=1);
+
+    if(node->postfix.op == POSTFIX_INC_OP)
+    {
+        EMIT_INSTR(irgen, IR_ADD, .dest=new, .left=original, .right=imm);
+    } else {
+        EMIT_INSTR(irgen, IR_SUB, .dest=new, .left=original, .right=imm);
+    }
+    emit_store(irgen, node->postfix.left, new);
+    return new;
 }
 
 static IrRegister *walk_expr_cast(IrGenerator *irgen, ExprAstNode *node)
@@ -413,21 +441,24 @@ static IrRegister *walk_expr_tertiary(IrGenerator *irgen, ExprAstNode *node)
 }
 static IrRegister *walk_expr_assign(IrGenerator *irgen, ExprAstNode *node)
 {
-    if (node->assign.left->type == UNARY &&
-        node->assign.left->unary.op == UNARY_DEREFERENCE)
-    {
-        IrRegister *src = walk_expr(irgen, node->assign.left->unary.right);
-        IrRegister *val = walk_expr(irgen, node->assign.right);
+    IrRegister * value = walk_expr(irgen, node->assign.right);
+    emit_store(irgen, node->assign.left, value);
+    return value;
+        // if (node->assign.left->type == UNARY &&
+        //     node->assign.left->unary.op == UNARY_DEREFERENCE)
+        // {
+        //     IrRegister *src = walk_expr(irgen, node->assign.left->unary.right);
+        //     IrRegister *val = walk_expr(irgen, node->assign.right);
 
-        EMIT_INSTR(irgen, IR_STORE, .left = src, .right = val);
-    }
-    else
-    {
-        IrRegister *dest = walk_expr(irgen, node->assign.left);
-        IrRegister *value = walk_expr(irgen, node->assign.right);
-        EMIT_INSTR(irgen, IR_MOV, .dest = dest, .left = value);
-        return dest;
-    }
+        //     EMIT_INSTR(irgen, IR_STORE, .left = src, .right = val);
+        // }
+        // else
+        // {
+        //     IrRegister *dest = walk_expr(irgen, node->assign.left);
+        //     IrRegister *value = walk_expr(irgen, node->assign.right);
+        //     EMIT_INSTR(irgen, IR_MOV, .dest = dest, .left = value);
+        //     return dest;
+        // }
 }
 
 static IrRegister *walk_expr(IrGenerator *irgen, ExprAstNode *node)

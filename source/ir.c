@@ -35,7 +35,7 @@ static void ir_register(FILE *fd, IrRegister *reg)
         fprintf(fd, "r%d", reg->index);
         break;
     case REG_STACK:
-        fprintf(fd, "sp");
+        fprintf(fd, "(uint32_t)sp");
         break;
     }
 }
