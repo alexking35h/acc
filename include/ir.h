@@ -37,10 +37,14 @@ typedef enum IrOpcode
     IR_MOV,
 
     // Store instruction memory @ left = right
-    IR_STORE,
+    IR_STORE8,
+    IR_STORE16,
+    IR_STORE32,
 
     // Load instruction dest = memory @ left
-    IR_LOAD,
+    IR_LOAD8,
+    IR_LOAD16,
+    IR_LOAD32,
 
     // Load-immediate (integer)
     IR_LOADI,

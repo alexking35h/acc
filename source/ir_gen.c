@@ -26,6 +26,8 @@ typedef struct IrGenerator
 static IrRegister *walk_expr(IrGenerator *, ExprAstNode *);
 static void walk_stmt(IrGenerator *irgen, StmtAstNode *node);
 
+static IrRegister *get_reg(IrGenerator*, IrRegType, bool);
+
 static void emit_instr(IrBasicBlock *bb, IrInstruction instr)
 {
     IrInstruction *new_instr = calloc(1, sizeof(IrInstruction));
@@ -49,13 +51,37 @@ static void emit_store(IrGenerator *irgen, ExprAstNode * lhs, IrRegister * rhs)
     if (lhs->type == UNARY && lhs->unary.op == UNARY_DEREFERENCE)
     {
         IrRegister *dest = walk_expr(irgen, lhs->unary.right);
-        EMIT_INSTR(irgen, IR_STORE, .left = dest, .right = rhs);
+        if(lhs->unary.ptr_type->basic.type_specifier & TYPE_CHAR)
+        {
+            EMIT_INSTR(irgen, IR_STORE8, .left=dest, .right=rhs);
+        } else if(lhs->unary.ptr_type->basic.type_specifier & TYPE_SHORT)
+        {
+            EMIT_INSTR(irgen, IR_STORE16, .left=dest, .right=rhs);
+        } else {
+            EMIT_INSTR(irgen, IR_STORE32, .left=dest, .right=rhs);
+        }
     }
     else
     {
         IrRegister *dest = walk_expr(irgen, lhs);
         EMIT_INSTR(irgen, IR_MOV, .dest = dest, .left = rhs);
     }
+}
+
+static IrRegister* emit_load(IrGenerator *irgen, ExprAstNode *src)
+{
+    IrRegister * dest = get_reg(irgen, REG_ANY, false);
+
+    if(src->unary.ptr_type->basic.type_specifier & TYPE_CHAR)
+    {
+        EMIT_INSTR(irgen, IR_LOAD8, .dest=dest, .left=walk_expr(irgen, src->unary.right));
+    } else if(src->unary.ptr_type->basic.type_specifier & TYPE_SHORT)
+    {
+        EMIT_INSTR(irgen, IR_LOAD16, .dest=dest, .left=walk_expr(irgen, src->unary.right));
+    } else {
+        EMIT_INSTR(irgen, IR_LOAD32, .dest=dest, .left=walk_expr(irgen, src->unary.right));
+    }
+    return dest;
 }
 
 static IrBasicBlock *new_bb(IrGenerator *irgen, IrFunction *function)
@@ -242,9 +268,7 @@ static IrRegister *walk_expr_unary(IrGenerator *irgen, ExprAstNode *node)
         abort();
         break;
     case UNARY_DEREFERENCE:
-        EMIT_INSTR(irgen, IR_LOAD, .dest = dest,
-                   .left = walk_expr(irgen, node->unary.right));
-        break;
+        return emit_load(irgen, node);
     case UNARY_PLUS:
         abort();
         break;

@@ -106,6 +106,7 @@ typedef struct ExprAstNode_t
         {
             UnaryExprOp op;
             struct ExprAstNode_t *right;
+            CType *ptr_type;
             int ptr_scale;
         } unary;
 

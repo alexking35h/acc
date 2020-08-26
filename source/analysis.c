@@ -420,6 +420,7 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
             Error_report_error(error, ANALYSIS, node->pos, "Invalid Pointer dereference");
             return NULL;
         }
+        node->unary.ptr_type = ctype->derived.type;
 
         // Return the CType we're dereferencing.
         return ctype->derived.type;
