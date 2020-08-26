@@ -161,6 +161,7 @@ static char *read_source_stdin()
 
 static char *read_source_file(const char *path)
 {
+    char *file_contents = NULL;
     FILE *f = fopen(path, "r");
     if (!f)
     {
@@ -179,7 +180,7 @@ static char *read_source_file(const char *path)
     }
 
     // Allocate storage space on the heap for the file.
-    char *file_contents = calloc(fsize + 1, 1);
+    file_contents = calloc(fsize + 1, 1);
     if (!file_contents)
     {
         printf("Unable to allocate sufficient space for the file\n");
