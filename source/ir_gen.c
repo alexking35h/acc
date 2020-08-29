@@ -495,21 +495,6 @@ static IrRegister *walk_expr_assign(IrGenerator *irgen, ExprAstNode *node)
     IrRegister *value = walk_expr(irgen, node->assign.right);
     emit_store(irgen, node->assign.left, value);
     return value;
-    // if (node->assign.left->type == UNARY &&
-    //     node->assign.left->unary.op == UNARY_DEREFERENCE)
-    // {
-    //     IrRegister *src = walk_expr(irgen, node->assign.left->unary.right);
-    //     IrRegister *val = walk_expr(irgen, node->assign.right);
-
-    //     EMIT_INSTR(irgen, IR_STORE, .left = src, .right = val);
-    // }
-    // else
-    // {
-    //     IrRegister *dest = walk_expr(irgen, node->assign.left);
-    //     IrRegister *value = walk_expr(irgen, node->assign.right);
-    //     EMIT_INSTR(irgen, IR_MOV, .dest = dest, .left = value);
-    //     return dest;
-    // }
 }
 
 static IrRegister *walk_expr(IrGenerator *irgen, ExprAstNode *node)
