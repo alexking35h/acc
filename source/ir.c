@@ -132,33 +132,34 @@ static void instruction_mem(FILE *fd, IrInstruction *instr)
     if (instr->op == IR_LOAD8 || instr->op == IR_LOAD16 || instr->op == IR_LOAD32)
     {
         ir_register(fd, instr->dest);
-        switch(instr->op) {
-            case IR_LOAD8:
-                fprintf(fd, " = *((uint8_t*)");
-                break;
-            case IR_LOAD16:
-                fprintf(fd, " = *((uint16_t*)");
-                break;
-            case IR_LOAD32:
-                fprintf(fd, " = *((uint32_t*)");
-                break;
+        switch (instr->op)
+        {
+        case IR_LOAD8:
+            fprintf(fd, " = *((uint8_t*)");
+            break;
+        case IR_LOAD16:
+            fprintf(fd, " = *((uint16_t*)");
+            break;
+        case IR_LOAD32:
+            fprintf(fd, " = *((uint32_t*)");
+            break;
         }
         ir_register(fd, instr->left);
         fprintf(fd, ")");
     }
     else
     {
-        switch(instr->op)
+        switch (instr->op)
         {
-            case IR_STORE8:
-                fprintf(fd, "*((uint8_t*)");
-                break;
-            case IR_STORE16:
-                fprintf(fd, "*((uint16_t*)");
-                break;
-            case IR_STORE32:
-                fprintf(fd, "*((uint32_t*)");
-                break;
+        case IR_STORE8:
+            fprintf(fd, "*((uint8_t*)");
+            break;
+        case IR_STORE16:
+            fprintf(fd, "*((uint16_t*)");
+            break;
+        case IR_STORE32:
+            fprintf(fd, "*((uint32_t*)");
+            break;
         }
         ir_register(fd, instr->left);
         fprintf(fd, ") = ");
