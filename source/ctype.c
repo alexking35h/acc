@@ -1,10 +1,9 @@
 
-#include "ctype.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "token.h"
+#include "ctype.h"
 
 #define TYPE_SIGNEDNESS (TYPE_SIGNED | TYPE_UNSIGNED)
 #define TYPE_SPECIFIERS (TYPE_VOID | TYPE_CHAR | TYPE_INT)

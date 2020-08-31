@@ -191,6 +191,19 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
     IrRegister *left = walk_expr(irgen, node->binary.left);
     IrRegister *right = walk_expr(irgen, node->binary.right);
 
+    if(node->binary.ptr_scale_left != 0)
+    {
+        IrRegister * imm = get_reg(irgen, REG_ANY, false);
+        EMIT_INSTR(irgen, IR_LOADI, .dest=imm, .value=node->binary.ptr_scale_left);
+        EMIT_INSTR(irgen, IR_MUL, .dest=left, .left=left, .right=imm);
+    }
+    if(node->binary.ptr_scale_right != 0)
+    {
+        IrRegister * imm = get_reg(irgen, REG_ANY, false);
+        EMIT_INSTR(irgen, IR_LOADI, .dest=imm, .value=node->binary.ptr_scale_left);
+        EMIT_INSTR(irgen, IR_MUL, .dest=right, .left=right, .right=imm);
+    }
+
     switch (node->binary.op)
     {
     case BINARY_ADD:

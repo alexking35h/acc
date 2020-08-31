@@ -37,12 +37,12 @@ int unary()
     // if(*(++bp) != 8) return 0;
     // if(*(--bp) != 9) return 0;
 
-    char c[2];
-    c[0] = 13;
-    c[1] = 11;
-    char * cp = c;
-    if(*(++cp) != 11) return 0;
-    if(*(--cp) != 13) return 0;
+    // char c[2];
+    // c[0] = 13;
+    // c[1] = 11;
+    // char * cp = c;
+    // if(*(++cp) != 11) return 0;
+    // if(*(--cp) != 13) return 0;
 
     return 1;
 }
@@ -65,13 +65,13 @@ int postfix()
     // if(*(bp--) != 15) return 0;
     // if(*bp != 14) return 0;
 
-    char c[3];
-    c[0] = 21;
-    c[1] = 22;
-    char * cp = c;
-    if(*(cp++) != 21) return 0;
-    if(*(cp--) != 22) return 0;
-    if(*cp != 21) return 0;
+    // char c[3];
+    // c[0] = 21;
+    // c[1] = 22;
+    // char * cp = c;
+    // if(*(cp++) != 21) return 0;
+    // if(*(cp--) != 22) return 0;
+    // if(*cp != 21) return 0;
 
     return 1;
 }

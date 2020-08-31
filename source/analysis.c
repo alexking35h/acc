@@ -351,15 +351,6 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
         }
     }
 
-    if (CTYPE_IS_POINTER(left))
-    {
-        node->binary.ptr_scale_right = arch_get_size(left->derived.type);
-    }
-    else if (CTYPE_IS_POINTER(right))
-    {
-        node->binary.ptr_scale_left = arch_get_size(right->derived.type);
-    }
-
     for (int i = 0;
          i < sizeof(binary_op_requirements) / sizeof(binary_op_requirements[0]); i++)
     {

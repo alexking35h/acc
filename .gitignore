@@ -1,2 +1,4 @@
 *.o
 build/*
+regression/*.ir.c
+regression/*.out
