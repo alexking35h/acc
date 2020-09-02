@@ -360,10 +360,7 @@ static IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
     {
         abort();
     }
-    else
-    {
-        abort();
-    }
+    return NULL;
 }
 
 static IrRegister *walk_expr_postfix_call(IrGenerator *irgen, ExprAstNode *node)

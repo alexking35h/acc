@@ -88,6 +88,7 @@ format:
 
 clean:
 	rm -rf build
+	rm *gcov.json.gz
 
 docker_build:
 	docker build --tag acc:v1 .
