@@ -48,6 +48,8 @@ int unary()
     if(--b != 13) return 0;
 
     if((-13) != -13) return 0;
+    if(~(-2) != 1) return 0;
+    if(+(-4) != -4) return 0;
 
     return 1;
 }

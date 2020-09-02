@@ -22,6 +22,8 @@ typedef enum IrOpcode
     IR_OR,
     IR_AND,
     IR_NOT,
+    IR_FLIP,
+    IR_XOR,
 
     // Comparison - equal, less than, less than or equal
     // dest = 1 if left OP right, else 0

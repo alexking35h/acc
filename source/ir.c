@@ -46,15 +46,10 @@ static void instruction_arithmetic(FILE *fd, IrInstruction *instr)
     ir_register(fd, instr->dest);
     fprintf(fd, " = ");
 
-    if (instr->op == IR_NOT)
+    if (instr->right)
     {
-        fprintf(fd, "! ");
         ir_register(fd, instr->left);
-        fprintf(fd, ";\n");
-        return;
     }
-
-    ir_register(fd, instr->left);
     switch (instr->op)
     {
     case IR_ADD:
@@ -87,6 +82,12 @@ static void instruction_arithmetic(FILE *fd, IrInstruction *instr)
     case IR_NOT:
         fprintf(fd, " ! ");
         break;
+    case IR_FLIP:
+        fprintf(fd, " ~ ");
+        break;
+    case IR_XOR:
+        fprintf(fd, " ^ ");
+        break;
     case IR_EQ:
         fprintf(fd, " == ");
         break;
@@ -97,7 +98,15 @@ static void instruction_arithmetic(FILE *fd, IrInstruction *instr)
         fprintf(fd, " <= ");
         break;
     }
-    ir_register(fd, instr->right);
+
+    if (instr->right)
+    {
+        ir_register(fd, instr->right);
+    }
+    else
+    {
+        ir_register(fd, instr->left);
+    }
     fprintf(fd, ";\n");
 }
 
@@ -227,6 +236,8 @@ static void instruction(FILE *fd, IrInstruction *instr)
     case IR_OR:
     case IR_AND:
     case IR_NOT:
+    case IR_XOR:
+    case IR_FLIP:
     case IR_EQ:
     case IR_LT:
     case IR_LE:
