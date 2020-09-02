@@ -202,12 +202,14 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
     if (node->binary.ptr_scale_left != 0)
     {
         int scale = node->binary.ptr_scale_left;
-        EMIT(irgen, IR_MUL, .dest=left, .left=left, .right=emit_loadi(irgen, scale));
+        EMIT(irgen, IR_MUL, .dest = left, .left = left,
+             .right = emit_loadi(irgen, scale));
     }
     if (node->binary.ptr_scale_right != 0)
     {
         int scale = node->binary.ptr_scale_right;
-        EMIT(irgen, IR_MUL, .dest=right, .left=right, .right=emit_loadi(irgen, scale));
+        EMIT(irgen, IR_MUL, .dest = right, .left = right,
+             .right = emit_loadi(irgen, scale));
     }
 
     switch (node->binary.op)
@@ -309,13 +311,15 @@ static IrRegister *walk_expr_unary(IrGenerator *irgen, ExprAstNode *node)
         abort();
         break;
     case UNARY_INC_OP: {
-        IrRegister *imm = emit_loadi(irgen, node->unary.ptr_scale ? node->unary.ptr_scale : 1);
+        IrRegister *imm =
+            emit_loadi(irgen, node->unary.ptr_scale ? node->unary.ptr_scale : 1);
         EMIT(irgen, IR_ADD, .dest = dest, .left = right, .right = imm);
         emit_store(irgen, node->unary.right, dest);
         break;
     }
     case UNARY_DEC_OP: {
-        IrRegister *imm = emit_loadi(irgen, node->unary.ptr_scale ? node->unary.ptr_scale : 1);
+        IrRegister *imm =
+            emit_loadi(irgen, node->unary.ptr_scale ? node->unary.ptr_scale : 1);
         EMIT(irgen, IR_SUB, .dest = dest, .left = right, .right = imm);
         emit_store(irgen, node->unary.right, dest);
         break;
@@ -403,12 +407,14 @@ static IrRegister *walk_expr_postfix(IrGenerator *irgen, ExprAstNode *node)
     if (node->postfix.op == POSTFIX_INC_OP)
     {
         int increment = node->postfix.ptr_scale ? node->postfix.ptr_scale : 1;
-        EMIT(irgen, IR_ADD, .dest = left, .left = left, .right = emit_loadi(irgen, increment));
+        EMIT(irgen, IR_ADD, .dest = left, .left = left,
+             .right = emit_loadi(irgen, increment));
     }
     else if (node->postfix.op == POSTFIX_DEC_OP)
     {
         int increment = node->postfix.ptr_scale ? node->postfix.ptr_scale : 1;
-        EMIT(irgen, IR_SUB, .dest = left, .left = left, .right = emit_loadi(irgen, increment));
+        EMIT(irgen, IR_SUB, .dest = left, .left = left,
+             .right = emit_loadi(irgen, increment));
     }
 
     emit_store(irgen, node->postfix.left, left);

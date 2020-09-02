@@ -418,7 +418,8 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
     }
     else if (node->unary.op == UNARY_ADDRESS_OF)
     {
-        if(node->unary.right->type == UNARY && node->unary.right->unary.op == UNARY_DEREFERENCE)
+        if (node->unary.right->type == UNARY &&
+            node->unary.right->unary.op == UNARY_DEREFERENCE)
         {
             // &*A => +A
             node->unary.right = node->unary.right->unary.right;
