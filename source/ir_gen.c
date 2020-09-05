@@ -434,10 +434,6 @@ static IrRegister *walk_expr_cast(IrGenerator *irgen, ExprAstNode *node)
         {
             EMIT(irgen, IR_SIGN_EXTEND_16, .dest = right, .left = right);
         }
-        else if (node->cast.from->basic.type_specifier & TYPE_INT)
-        {
-            // Nothing.
-        }
     }
 
     // Truncate.
@@ -450,10 +446,6 @@ static IrRegister *walk_expr_cast(IrGenerator *irgen, ExprAstNode *node)
     {
         EMIT(irgen, IR_AND, .dest = right, .left = emit_loadi(irgen, 0xFFFF),
              .right = right);
-    }
-    else if (node->cast.from->basic.type_specifier & TYPE_INT)
-    {
-        // Nothing.
     }
 
     return right;
