@@ -104,9 +104,10 @@ def test_assignment(cc):
         cc.body(preamble + f"return (a {operator} 5) != {result};")
         cc.body(preamble + f"a {operator} 5;return a != {result};")
 
+
 def test_precedence(cc):
     """Test expression precedence
-    
+
     Expression precendence (loosely-bound first):
      - Assignment
      - Conditional
@@ -152,5 +153,12 @@ def test_precedence(cc):
     everything += "return b != 99;"
     cc.body(everything)
 
-def associativity(cc):
-    assert False
+
+def test_associativity(cc):
+    """Test expression associativity.
+
+    Binary operators are left-associative, assignment is right-associative.
+    """
+    cc.expression("-1 - 1 - 1 == ((-1 - 1) - 1)")
+    cc.expression("5 == 5 == 1")
+    cc.body("int a, b;a = b = 4;return a != 4;")

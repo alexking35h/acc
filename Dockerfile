@@ -11,6 +11,11 @@ RUN apt-get -y install pkg-config
 RUN apt-get -y install clang-format
 RUN apt-get -y install gdb
 RUN apt-get -y install git
+RUN apt-get -y install python3
+RUN apt-get -y install python3-pip
+
+RUN pip3 install black
+RUN pip3 install pytest
 
 # Download & install cmocka
 RUN apt-get -y install curl cmake
