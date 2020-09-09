@@ -146,6 +146,9 @@ class AccIrCompiler(Compiler):
 
         gcc_cmd = [GCC_COMPILER, "-x", "c", "-o", output, "-"]
         subprocess.run(gcc_cmd, input=ir.stdout, check=True)
+    
+    def error_check(self, source, expected_errors):
+        raise NotImplemented
 
 
 class AccCheckOnlyCompiler(Compiler):
