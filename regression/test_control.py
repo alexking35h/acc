@@ -12,10 +12,13 @@ import functional
 import pytest
 import tempfile
 import functools
+import os
+
+ACC_PATH=os.environ.get("ACC_PATH", os.path.join(os.path.dirname(__file__), "../build/acc"))
 
 COMPILERS = [
     functional.GccCompiler,
-    functools.partial(functional.AccIrCompiler, "../build/acc"),
+    functools.partial(functional.AccIrCompiler, ACC_PATH)
 ]
 
 

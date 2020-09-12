@@ -68,7 +68,7 @@ build/test_arch: $(ACC_OBJECTS) build/test_arch.o
 	$(CC) $^ -o $@ $(CFLAGS)
 
 regression_test: build/acc
-	python3 regression/regression.py --acc $^ regression/*.c
+	ACC_PATH=$^ pytest regression/
 	gcov -o build source/*.c -i |sed -n 's/.*uted:\([0-9][0-9]*\).*of \([0-9][0-9]*\)/\1 \2/p' | awk '{t+=$$2;a+=(.01*$$1*$$2)}END{printf "\n** Test coverage: %f0.2%% **\n\n",100*a/t}'
 
 build/acc: $(ACC_OBJECTS) | build

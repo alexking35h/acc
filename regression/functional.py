@@ -126,7 +126,7 @@ class GccCompiler(Compiler):
         subprocess.run(cmd, input=source.encode(), check=True)
     
     def error_check(self, source, errors):
-        cmd = [GCC_COMPILER, "-x", "c", "-S", "-o", "-", "-"]
+        cmd = [GCC_COMPILER, "-Werror", "-x", "c", "-S", "-o", "-", "-"]
         result = subprocess.run(cmd, input=source.encode(), check=False)
 
         if result.returncode == 0:
@@ -175,8 +175,4 @@ class AccCheckOnlyCompiler(Compiler):
         
 
         errors = set(list(CompilerError(**e) for e in json_errors))
-
-        if not set(expected_errors) <= errors:
-            print(source)
-            print(str(json_errors))
         assert set(expected_errors) <= errors
