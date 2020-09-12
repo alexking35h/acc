@@ -53,6 +53,20 @@ static IrRegister *emit_loadi(IrGenerator *irgen, int value)
     return imm;
 }
 
+static void emit_jump(IrGenerator *irgen, IrBasicBlock * b)
+{
+    *(b->entry[0] ? b->entry+1 : b->entry) = irgen->current_basic_block;
+    EMIT(irgen, IR_JUMP, .jump=b);
+}
+
+static void emit_jumpz(IrGenerator *irgen, IrBasicBlock * tb, IrBasicBlock * fb, IrRegister * cond)
+{
+    *(tb->entry[0] ? tb->entry+1 : tb->entry) = irgen->current_basic_block;
+    *(fb->entry[0] ? fb->entry+1 : fb->entry) = irgen->current_basic_block;
+
+    EMIT(irgen, IR_BRANCHZ, .left=cond, .jump_true=tb, .jump_false=fb);
+}
+
 static void emit_store(IrGenerator *irgen, ExprAstNode *lhs, IrRegister *rhs)
 {
     if (lhs->type == UNARY && lhs->unary.op == UNARY_DEREFERENCE)
@@ -460,18 +474,17 @@ static IrRegister *walk_expr_tertiary(IrGenerator *irgen, ExprAstNode *node)
     IrBasicBlock *false_bb = new_bb(irgen, irgen->current_function);
     IrBasicBlock *end_bb = new_bb(irgen, irgen->current_function);
 
-    EMIT(irgen, IR_BRANCHZ, .left = cond_reg, .jump_true = true_bb,
-         .jump_false = false_bb);
+    emit_jumpz(irgen, true_bb, false_bb, cond_reg);
 
     irgen->current_basic_block = true_bb;
     EMIT(irgen, IR_MOV, .dest = result_reg,
          .left = walk_expr(irgen, node->tertiary.expr_true));
-    EMIT(irgen, IR_JUMP, .jump = end_bb);
+    emit_jump(irgen, end_bb);
 
     irgen->current_basic_block = false_bb;
     EMIT(irgen, IR_MOV, .dest = result_reg,
          .left = walk_expr(irgen, node->tertiary.expr_false));
-    EMIT(irgen, IR_JUMP, .jump = end_bb);
+    emit_jump(irgen, end_bb);
 
     irgen->current_basic_block = end_bb;
     return result_reg;
@@ -586,16 +599,15 @@ static void walk_stmt_while(IrGenerator *irgen, StmtAstNode *node)
     IrBasicBlock *while_bb = new_bb(irgen, irgen->current_function);
     IrBasicBlock *end_bb = new_bb(irgen, irgen->current_function);
 
-    EMIT(irgen, IR_JUMP, .jump = loop_init_bb);
+    emit_jump(irgen, loop_init_bb);
     irgen->current_basic_block = loop_init_bb;
 
     IrRegister *condition_reg = walk_expr(irgen, node->while_loop.expr);
-    EMIT(irgen, IR_BRANCHZ, .left = condition_reg, .jump_false = end_bb,
-         .jump_true = while_bb);
+    emit_jumpz(irgen, while_bb, end_bb, condition_reg);
 
     irgen->current_basic_block = while_bb;
     walk_stmt(irgen, node->while_loop.block);
-    EMIT(irgen, IR_JUMP, .jump = loop_init_bb);
+    emit_jump(irgen, loop_init_bb);
 
     irgen->current_basic_block = end_bb;
 }
@@ -623,16 +635,14 @@ static void walk_stmt_if(IrGenerator *irgen, StmtAstNode *node)
     if (node->if_statement.else_arm)
     {
         IrBasicBlock *else_bb = new_bb(irgen, irgen->current_function);
-        EMIT(irgen, IR_BRANCHZ, .left = expr_reg, .jump_true = true_bb,
-             .jump_false = else_bb);
+        emit_jumpz(irgen, true_bb, else_bb, expr_reg);
 
         irgen->current_basic_block = end_bb;
         walk_stmt(irgen, node->if_statement.else_arm);
     }
     else
     {
-        EMIT(irgen, IR_BRANCHZ, .left = expr_reg, .jump_true = true_bb,
-             .jump_false = end_bb);
+        emit_jumpz(irgen, true_bb, end_bb, expr_reg);
     }
 
     irgen->current_basic_block = true_bb;

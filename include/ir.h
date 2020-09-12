@@ -122,6 +122,8 @@ typedef struct IrBasicBlock
     int index;
     IrInstruction *head, *tail;
     IrBasicBlock *next;
+
+    IrBasicBlock * entry[2];
 } IrBasicBlock;
 
 typedef struct IrFunction
