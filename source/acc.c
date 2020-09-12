@@ -6,6 +6,8 @@
 
 #include "analysis.h"
 #include "error.h"
+#include "ir.h"
+#include "ir_gen.h"
 #include "parser.h"
 #include "pretty_print.h"
 #include "scanner.h"
@@ -33,9 +35,11 @@
     " /  _____  \\ |  `----.|  `----.\n"                                                 \
     "/__/     \\__\\ \\______| \\______|\n"
 
+#define STDIN_READ_CHUNK_SIZE 256
+
 extern int errno;
 
-// Extern is defined as a weak symbol so that individual unit test files
+// main is defined as a weak symbol so that individual unit test files
 // can override it.
 int main(int, char **) __attribute__((weak));
 
@@ -44,6 +48,7 @@ typedef struct CommandLineArgs_t
     const char *source_file;
     _Bool json;
     _Bool check_only;
+    const char *ir_output;
 } CommandLineArgs;
 
 typedef struct AccCompiler_t
@@ -62,9 +67,11 @@ static void help(const char *exe_path)
     printf("  -v version information\n");
     printf("  -h help\n");
     printf("  -j json output\n");
-    printf("  -c check only (do not compile)");
+    printf("  -c check only (do not compile)\n");
+    printf("  -i [FILE] Save Intermediate Representation (IR) output to file\n");
     printf("\n");
     printf("[FILE] is a file path to the C source file which will be compiled\n");
+    printf("(use '-' to read from stdin).\n\n");
     printf("Returns 0 if no errors were reported\n");
 }
 
@@ -97,7 +104,7 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
     args->json = false;
     args->check_only = false;
 
-    while ((c = getopt(argc, argv, "vhjc")) != -1)
+    while ((c = getopt(argc, argv, "vhjci:")) != -1)
     {
         switch (c)
         {
@@ -113,6 +120,12 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
         case 'c':
             args->check_only = true;
             break;
+        case 'i':
+            args->ir_output = optarg;
+            break;
+        case '?':
+            help(argv[0]);
+            return false;
         }
     }
 
@@ -125,8 +138,30 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
     return true;
 }
 
-static char *read_source(const char *path)
+static char *read_source_stdin()
 {
+    // Read from stdin in 256-byte chunks.
+    char *source_buf = malloc(STDIN_READ_CHUNK_SIZE + 1);
+
+    for (int read_offset = 0;;)
+    {
+        int read_size = fread(source_buf + read_offset, 1, STDIN_READ_CHUNK_SIZE, stdin);
+        if (read_size != STDIN_READ_CHUNK_SIZE)
+        {
+            source_buf[read_offset + read_size] = '\0';
+            return source_buf;
+        }
+        else
+        {
+            read_offset += STDIN_READ_CHUNK_SIZE;
+            source_buf = realloc(source_buf, read_offset + STDIN_READ_CHUNK_SIZE + 1);
+        }
+    }
+}
+
+static char *read_source_file(const char *path)
+{
+    char *file_contents = NULL;
     FILE *f = fopen(path, "r");
     if (!f)
     {
@@ -145,7 +180,7 @@ static char *read_source(const char *path)
     }
 
     // Allocate storage space on the heap for the file.
-    char *file_contents = calloc(fsize + 1, 1);
+    file_contents = calloc(fsize + 1, 1);
     if (!file_contents)
     {
         printf("Unable to allocate sufficient space for the file\n");
@@ -163,6 +198,18 @@ err:
         free(file_contents);
     printf("Unable to read source file:\n%s\n", strerror(errno));
     return NULL;
+}
+
+static char *read_source(const char *path)
+{
+    if (*path == '-')
+    {
+        return read_source_stdin();
+    }
+    else
+    {
+        return read_source_file(path);
+    }
 }
 
 static AccCompiler *compiler_init(const char *path)
@@ -292,7 +339,7 @@ static void compiler_destroy(AccCompiler *compiler)
 
 int main(int argc, char **argv)
 {
-    CommandLineArgs args;
+    CommandLineArgs args = {};
     AccCompiler *compiler;
     int err = 0;
 
@@ -322,6 +369,20 @@ int main(int argc, char **argv)
     if (args.check_only)
     {
         goto tidyup;
+    }
+
+    // Compiler to IR
+    IrProgram *ir_program = Ir_generate(ast_root);
+
+    if (args.ir_output)
+    {
+        FILE *ir_fh = fopen(args.ir_output, "w");
+        Ir_to_str(ir_program, ir_fh);
+        fclose(ir_fh);
+    }
+    else
+    {
+        Ir_to_str(ir_program, stdout);
     }
 
 tidyup:

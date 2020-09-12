@@ -1,4 +1,5 @@
 #include "analysis.h"
+#include "arch.h"
 #include "ast.h"
 #include "symbol.h"
 #include "token.h"
@@ -109,11 +110,12 @@ static const OpRequirements binary_op_requirements[] = {
     {BINARY_OR_OP, false, false, false, &int_type},
 };
 
-static ExprAstNode *create_cast(ExprAstNode *node, CType *type)
+static ExprAstNode *create_cast(ExprAstNode *node, CType *to, CType *from)
 {
     ExprAstNode *cast_node = calloc(1, sizeof(ExprAstNode));
     cast_node->type = CAST;
-    cast_node->cast.type = type;
+    cast_node->cast.to = to;
+    cast_node->cast.from = from;
     cast_node->cast.right = node;
 
     return cast_node;
@@ -138,7 +140,7 @@ static _Bool check_assign_cast(ExprAstNode **node, CType *left, CType *right)
         // Simple assignment: the left has arithmetic type, and the right has arithmetic
         // type.
         if (l->basic.type_specifier != r->basic.type_specifier)
-            *node = create_cast((*node)->assign.right, left);
+            *node = create_cast(*node, left, right);
         return true;
     }
     else if (CTYPE_IS_FUNCTION(l) && CTYPE_IS_FUNCTION(r))
@@ -183,7 +185,7 @@ static CType *integer_promote(ExprAstNode **node, CType *ctype)
     cast_type->type = TYPE_BASIC;
     cast_type->basic.type_specifier = TYPE_SIGNED_INT;
 
-    *node = create_cast(*node, cast_type);
+    *node = create_cast(*node, cast_type, ctype);
     return cast_type;
 }
 
@@ -207,10 +209,11 @@ static CType *type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode 
         return ctype_a;
 
     ExprAstNode **cast_expr = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? node_a : node_b;
-    CType *cast_type = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? ctype_b : ctype_a;
+    CType *cast_to_type = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? ctype_b : ctype_a;
+    CType *cast_from_type = ctype_rank(ctype_a) < ctype_rank(ctype_b) ? ctype_a : ctype_b;
 
-    *cast_expr = create_cast(*cast_expr, cast_type);
-    return cast_type;
+    *cast_expr = create_cast(*cast_expr, cast_to_type, cast_from_type);
+    return cast_to_type;
 }
 
 static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,
@@ -307,7 +310,11 @@ static CType *walk_expr_postfix(ErrorReporter *error, ExprAstNode *node, SymbolT
         if (!pf)
             return NULL;
 
-        if (!CTYPE_IS_SCALAR(pf))
+        if (CTYPE_IS_POINTER(pf))
+        {
+            node->postfix.ptr_scale = arch_get_size(pf->derived.type);
+        }
+        else if (!CTYPE_IS_SCALAR(pf))
         {
             Error_report_error(error, ANALYSIS, node->pos,
                                "Invalid operand type to postfix operator");
@@ -327,8 +334,22 @@ static CType *walk_expr_binary(ErrorReporter *error, ExprAstNode *node, SymbolTa
     CType *right = walk_expr(error, node->binary.right, tab, false);
 
     // The only valid operands to binary operators are scalar (pointer/basic)
+    if (!left || !right)
+        goto err;
     if (!CTYPE_IS_SCALAR(left) || !CTYPE_IS_SCALAR(right))
         goto err;
+
+    if (node->binary.op == BINARY_ADD || node->binary.op == BINARY_SUB)
+    {
+        if (CTYPE_IS_POINTER(left))
+        {
+            node->binary.ptr_scale_right = arch_get_size(left->derived.type);
+        }
+        else if (CTYPE_IS_POINTER(right))
+        {
+            node->binary.ptr_scale_left = arch_get_size(right->derived.type);
+        }
+    }
 
     for (int i = 0;
          i < sizeof(binary_op_requirements) / sizeof(binary_op_requirements[0]); i++)
@@ -390,12 +411,21 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
             Error_report_error(error, ANALYSIS, node->pos, "Invalid Pointer dereference");
             return NULL;
         }
+        node->unary.ptr_type = ctype->derived.type;
 
         // Return the CType we're dereferencing.
         return ctype->derived.type;
     }
     else if (node->unary.op == UNARY_ADDRESS_OF)
     {
+        if (node->unary.right->type == UNARY &&
+            node->unary.right->unary.op == UNARY_DEREFERENCE)
+        {
+            // &*A => +A
+            node->unary.right = node->unary.right->unary.right;
+            node->unary.op = UNARY_PLUS;
+        }
+
         // Address-of operator.
         CType *addr_of = calloc(1, sizeof(CType));
         addr_of->type = TYPE_POINTER;
@@ -403,17 +433,26 @@ static CType *walk_expr_unary(ErrorReporter *error, ExprAstNode *node, SymbolTab
 
         return addr_of;
     }
+    else if (node->unary.op == UNARY_INC_OP || node->unary.op == UNARY_DEC_OP)
+    {
+        // Set the ptr_scale field accordingly if the operand is a pointer.
+        if (CTYPE_IS_POINTER(ctype))
+        {
+            node->unary.ptr_scale = arch_get_size(ctype->derived.type);
+            return ctype;
+        }
+        else if (CTYPE_IS_BASIC(ctype))
+        {
+            return ctype;
+        }
+    }
     else
     {
-        // '-', '+', '~', or '!' operators.
-        // Test that the operand is of type 'basic' (section 6.5.3.1)
-        if (!CTYPE_IS_BASIC(ctype))
-        {
-            Error_report_error(error, ANALYSIS, node->pos,
-                               "Invalid operand to unary operator");
-        }
-        return ctype;
+        if (CTYPE_IS_BASIC(ctype))
+            return ctype;
     }
+    Error_report_error(error, ANALYSIS, node->pos, "Invalid operand to unary operator");
+    return NULL;
 }
 
 static CType *walk_expr_tertiary(ErrorReporter *error, ExprAstNode *node,
@@ -449,7 +488,11 @@ static CType *walk_expr_cast(ErrorReporter *error, ExprAstNode *node, SymbolTabl
     {
         Error_report_error(error, ANALYSIS, node->pos, "Invalid lvalue");
     }
-    return walk_expr(error, node->cast.right, tab, false);
+    if (node->cast.from == NULL)
+    {
+        node->cast.from = walk_expr(error, node->cast.right, tab, false);
+    }
+    return node->cast.to;
 }
 
 static CType *walk_expr_assign(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,
@@ -511,10 +554,14 @@ static void walk_decl_function(ErrorReporter *error, DeclAstNode *node, SymbolTa
 
         // Add entries to the function's symbol table for each parameter in the
         // declaration.
+        ActualParameterListItem **ptr = &(node->args);
         for (ParameterListItem *param = node->type->derived.params; param != NULL;
              param = param->next)
         {
-            symbol_table_put(ft, param->name->lexeme, param->type);
+            *ptr = calloc(1, sizeof(ActualParameterListItem));
+            (*ptr)->sym = symbol_table_put(ft, param->name->lexeme, param->type);
+
+            ptr = &((*ptr)->next);
         }
         walk_stmt(error, node->body, ft);
     }
@@ -584,19 +631,36 @@ static void walk_stmt_decl(ErrorReporter *error, StmtAstNode *node, SymbolTable 
     walk_decl(error, node->decl.decl, tab, false);
 }
 
-static void walk_stmt_block(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
-{
-    walk_stmt(error, node->block.head, tab);
-}
-
 static void walk_stmt_expr(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
     walk_expr(error, node->expr.expr, tab, false);
 }
 
+static void walk_stmt_block(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
+{
+    walk_stmt(error, node->block.head, tab);
+}
+
+static void walk_stmt_while(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
+{
+    walk_expr(error, node->while_loop.expr, tab, false);
+    walk_stmt(error, node->while_loop.block, tab);
+}
+
 static void walk_stmt_ret(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
 {
     walk_expr(error, node->return_jump.value, tab, false);
+}
+
+static void walk_stmt_if(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
+{
+    walk_expr(error, node->if_statement.expr, tab, false);
+    walk_stmt(error, node->if_statement.if_arm, tab);
+
+    if (node->if_statement.else_arm)
+    {
+        walk_stmt(error, node->if_statement.else_arm, tab);
+    }
 }
 
 static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
@@ -612,20 +676,26 @@ static void walk_stmt(ErrorReporter *error, StmtAstNode *node, SymbolTable *tab)
         walk_stmt_decl(error, node, tab);
         break;
 
+    case EXPR:
+        walk_stmt_expr(error, node, tab);
+        break;
+
     case BLOCK:
         walk_stmt_block(error, node, tab);
         break;
 
-    case EXPR:
-        walk_stmt_expr(error, node, tab);
+    case WHILE_LOOP:
+        walk_stmt_while(error, node, tab);
         break;
 
     case RETURN_JUMP:
         walk_stmt_ret(error, node, tab);
         break;
+    case IF_STATEMENT:
+        walk_stmt_if(error, node, tab);
+        break;
     }
-    if (node->next)
-        walk_stmt(error, node->next, tab);
+    walk_stmt(error, node->next, tab);
 }
 
 /*

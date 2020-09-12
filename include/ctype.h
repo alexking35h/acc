@@ -174,5 +174,6 @@ _Bool ctype_pointers_compatible(CType *a, CType *b);
 #define CTYPE_IS_POINTER(C) (C->type == TYPE_POINTER)
 #define CTYPE_IS_SCALAR(C) (CTYPE_IS_BASIC(C) || CTYPE_IS_POINTER(C))
 #define CTYPE_IS_ARRAY(C) (C->type == TYPE_ARRAY)
+#define CTYPE_IS_SIGNED(C) (C->basic.type_specifier & TYPE_SIGNED)
 
 #endif

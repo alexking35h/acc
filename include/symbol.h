@@ -9,6 +9,7 @@
 #include <stddef.h>
 
 #include "ctype.h"
+#include "ir.h"
 
 /*
  * Symbol table entry for a single symbol.
@@ -21,6 +22,13 @@ typedef struct Symbol_t
 {
     char *name;
     CType *type;
+
+    struct
+    {
+        IrObject *object;
+        IrRegister *regster;
+        IrFunction *function;
+    } ir;
 
     struct Symbol_t *next;
 } Symbol;

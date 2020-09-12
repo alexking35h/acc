@@ -24,6 +24,9 @@
 #define STMT_RETURN(p, ...)                                                              \
     Ast_create_stmt_node(                                                                \
         (StmtAstNode){.type = RETURN_JUMP, p, .return_jump = {__VA_ARGS__}})
+#define STMT_IF(p, ...)                                                                  \
+    Ast_create_stmt_node(                                                                \
+        (StmtAstNode){.type = IF_STATEMENT, p, .if_statement = {__VA_ARGS__}})
 
 #define consume(t) Parser_consume_token(parser, t)
 #define peek(t) Parser_peek_token(parser)
@@ -34,6 +37,7 @@
 static StmtAstNode *expression_statement(Parser *parser);
 static StmtAstNode *iteration_statement(Parser *parser);
 static StmtAstNode *return_statement(Parser *parser);
+static StmtAstNode *if_statement(Parser *parser);
 
 static _Bool is_decl(TokenType tok)
 {
@@ -67,6 +71,10 @@ static StmtAstNode *statement(Parser *parser)
     if (peek()->type == RETURN)
     {
         return return_statement(parser);
+    }
+    if (peek()->type == IF)
+    {
+        return if_statement(parser);
     }
     return expression_statement(parser);
 }
@@ -167,6 +175,28 @@ StmtAstNode *return_statement(Parser *parser)
         ExprAstNode *expr = Parser_expression(parser);
         stmt = STMT_RETURN(expr->pos, .value = expr);
         consume(SEMICOLON);
+    }
+
+    return stmt;
+}
+
+StmtAstNode *if_statement(Parser *parser)
+{
+    /*
+     * 'if' '(' expression ')' '{' statement '}'
+     * 'if' '(' expression ')' statement 'else' statement
+     */
+    StmtAstNode *stmt = STMT_IF(consume(IF)->pos);
+
+    consume(LEFT_PAREN);
+    stmt->if_statement.expr = Parser_expression(parser);
+    consume(RIGHT_PAREN);
+
+    stmt->if_statement.if_arm = statement(parser);
+
+    if (match(ELSE))
+    {
+        stmt->if_statement.else_arm = statement(parser);
     }
 
     return stmt;

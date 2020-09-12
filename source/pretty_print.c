@@ -261,7 +261,7 @@ static void pp_tertiary(ExprAstNode *node, StringBuffer *buf)
 static void pp_cast(ExprAstNode *node, StringBuffer *buf)
 {
     pp_printf(buf, "C ");
-    pp_type(node->cast.type, buf);
+    pp_type(node->cast.to, buf);
     pp_printf(buf, ", ");
     pp_expr(node->cast.right, buf);
 }
@@ -334,6 +334,17 @@ static void pp_stmt(StmtAstNode *node, StringBuffer *buf)
         pp_printf(buf, "R ");
         if (node->return_jump.value)
             pp_expr(node->return_jump.value, buf);
+        break;
+    case IF_STATEMENT:
+        pp_printf(buf, "I ");
+        pp_expr(node->if_statement.expr, buf);
+        pp_printf(buf, ", ");
+        pp_stmt(node->if_statement.if_arm, buf);
+        if (node->if_statement.else_arm)
+        {
+            pp_printf(buf, ", ");
+            pp_stmt(node->if_statement.else_arm, buf);
+        }
         break;
     }
     if (node->next)

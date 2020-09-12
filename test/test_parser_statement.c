@@ -41,6 +41,21 @@ static void block_statement(void **state)
     assert_true(test_parse_compare_ast_set(tests, TEST_STMT));
 }
 
+static void if_statement(void **state)
+{
+    AstTestSet tests[] = {
+        {"{if(1){}}", "{B {I (P 1), {B }}}"},
+        {"{if(1)return;}", "{B {I (P 1), {R }}}"},
+        {"{if(1){}else return;}", "{B {I (P 1), {B }, {R }}}"},
+
+        // 6.8.4.1 (dangling-else): An else is associated with the lexically nearest
+        // preceeding if that is allowed by the syntax.
+        {"{if(1)if(2){}else{}}", "{B {I (P 1), {I (P 2), {B }, {B }}}}"},
+        {NULL, NULL}};
+
+    assert_true(test_parse_compare_ast_set(tests, TEST_STMT));
+}
+
 static void loops(void **state)
 {
     AstTestSet tests[] = {
@@ -68,7 +83,8 @@ int main(void)
 {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(expression_statement), cmocka_unit_test(block_statement),
-        cmocka_unit_test(loops), cmocka_unit_test(return_statement)};
+        cmocka_unit_test(loops), cmocka_unit_test(return_statement),
+        cmocka_unit_test(if_statement)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -28,6 +28,12 @@ typedef struct ArgumentListItem_t
     struct ArgumentListItem_t *next;
 } ArgumentListItem;
 
+typedef struct ActualParameterListItem_t
+{
+    Symbol *sym;
+    struct ActualParameterListItem_t *next;
+} ActualParameterListItem;
+
 typedef enum
 {
     BINARY,
@@ -41,11 +47,11 @@ typedef enum
 
 typedef enum
 {
+    BINARY_ADD,
+    BINARY_SUB,
     BINARY_MUL,
     BINARY_DIV,
     BINARY_MOD,
-    BINARY_ADD,
-    BINARY_SUB,
     BINARY_SLL,
     BINARY_SLR,
     BINARY_LT,
@@ -93,12 +99,15 @@ typedef struct ExprAstNode_t
             BinaryExprOp op;
             struct ExprAstNode_t *left;
             struct ExprAstNode_t *right;
+            int ptr_scale_left, ptr_scale_right;
         } binary;
 
         struct
         {
             UnaryExprOp op;
             struct ExprAstNode_t *right;
+            CType *ptr_type;
+            int ptr_scale;
         } unary;
 
         struct
@@ -107,6 +116,7 @@ typedef struct ExprAstNode_t
             struct ExprAstNode_t *index_expression;
             struct ExprAstNode_t *left;
             struct ArgumentListItem_t *args;
+            int ptr_scale;
         } postfix;
 
         struct
@@ -120,7 +130,8 @@ typedef struct ExprAstNode_t
         // Cast
         struct
         {
-            CType *type;
+            CType *to;
+            CType *from;
             struct ExprAstNode_t *right;
         } cast;
 
@@ -160,13 +171,13 @@ typedef struct DeclAstNode_t
     CType *type;
     Token *identifier;
 
-    union {
-        struct ExprAstNode_t *initializer;
-        struct StmtAstNode_t *body;
-    };
+    struct ExprAstNode_t *initializer;
+    struct StmtAstNode_t *body;
 
     // Symbol table entry for this declaration (set during context-analysis).
     Symbol *symbol;
+
+    ActualParameterListItem *args;
 
     struct DeclAstNode_t *next;
 } DeclAstNode;
@@ -180,7 +191,8 @@ typedef struct StmtAstNode_t
         EXPR,
         BLOCK,
         WHILE_LOOP,
-        RETURN_JUMP
+        RETURN_JUMP,
+        IF_STATEMENT,
     } type;
 
     Position pos;
@@ -216,6 +228,14 @@ typedef struct StmtAstNode_t
         {
             struct ExprAstNode_t *value;
         } return_jump;
+
+        // If statement.
+        struct
+        {
+            struct ExprAstNode_t *expr;
+            struct StmtAstNode_t *if_arm;
+            struct StmtAstNode_t *else_arm;
+        } if_statement;
     };
 
     struct StmtAstNode_t *next;

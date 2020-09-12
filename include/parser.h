@@ -8,11 +8,6 @@
  *  - Declarations (parser_declaration.c)
  *  - Statements (parser_statement.c)
  *
- * This head file defines functions/types called outside the parser,
- * and
- *
- * This header file defines functions/types used outside the parser
- *
  * Therefore, this header file declares functions used outside the parser:
  *  - Parser_init()
  *  - Parser_destroy()

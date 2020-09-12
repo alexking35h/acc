@@ -1,2 +1,6 @@
 *.o
 build/*
+regression/*.ir.c
+regression/*.out
+__pycache__
+*.pyc
