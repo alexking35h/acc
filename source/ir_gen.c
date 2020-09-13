@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "arch.h"
 #include "ir.h"
@@ -36,10 +37,12 @@ static void emit_instr(IrBasicBlock *bb, IrInstruction instr)
 
     if (bb->head == NULL)
     {
+        new_instr->prev = NULL;
         bb->head = bb->tail = new_instr;
     }
     else
     {
+        new_instr->prev = bb->tail;
         bb->tail->next = new_instr;
         bb->tail = new_instr;
     }
@@ -170,11 +173,17 @@ static IrRegister *get_reg(IrGenerator *irgen, IrRegType type, bool begin_arg_li
     case REG_ANY:
         break;
     }
-    IrRegister *reg_any;
-    reg_any = calloc(1, sizeof(IrRegister));
-    reg_any->type = REG_ANY;
-    reg_any->index = irgen->current_function->register_count++;
-    return reg_any;
+
+    /* REG_ANY registers are allocated from an array within the IrFunction block */
+    int reg_idx = irgen->current_function->register_count++;
+    assert(reg_idx < 128);
+    IrRegister * reg = &irgen->current_function->registers[reg_idx];
+    reg->type=REG_ANY;
+    reg->index=reg_idx;
+    reg->liveness.start = -1;
+    reg->liveness.finish = 0;
+
+    return reg;
 }
 
 static IrObject *stack_allocate(IrFunction *function, Symbol *symbol)
@@ -521,6 +530,8 @@ static IrRegister *walk_expr(IrGenerator *irgen, ExprAstNode *node)
 static void walk_decl_function(IrGenerator *irgen, DeclAstNode *node)
 {
     IrFunction *func = new_function(irgen, node->identifier->lexeme);
+    func->registers = calloc(128, sizeof(IrRegister));
+
     node->symbol->ir.function = func;
     irgen->current_function = func;
 
@@ -540,6 +551,15 @@ static void walk_decl_function(IrGenerator *irgen, DeclAstNode *node)
 
     EMIT(irgen, IR_UNSTACK);
     EMIT(irgen, IR_RETURN);
+
+    int pos = 0;
+    for(IrBasicBlock * bb = func->head;bb;bb=bb->next)
+    {
+        for(IrInstruction * instr = bb->head;instr;instr=instr->next)
+        {
+            instr->pos = pos++;
+        }
+    }
 }
 
 static void walk_decl_object(IrGenerator *irgen, DeclAstNode *node)

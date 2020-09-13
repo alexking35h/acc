@@ -1,6 +1,7 @@
 #ifndef __IR___
 #define __IR___
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -80,6 +81,12 @@ typedef struct IrRegister
     int index;
     IrRegType type;
 
+    struct 
+    {
+        unsigned int start;
+        unsigned int finish;
+    } liveness;
+
 } IrRegister;
 
 typedef struct IrObject
@@ -114,7 +121,9 @@ typedef struct IrInstruction
     IrBasicBlock *jump_false;
     IrFunction *function;
 
-    struct IrInstruction *next;
+    struct IrInstruction *next, *prev;
+
+    int pos;
 } IrInstruction;
 
 typedef struct IrBasicBlock
@@ -122,6 +131,9 @@ typedef struct IrBasicBlock
     int index;
     IrInstruction *head, *tail;
     IrBasicBlock *next;
+
+    uint32_t * entry_set;
+    uint32_t * exit_set;
 
     IrBasicBlock * entry[2];
 } IrBasicBlock;
@@ -131,6 +143,8 @@ typedef struct IrFunction
     char *name;
     int stack_size;
     IrBasicBlock *head, *tail;
+
+    IrRegister* registers;
     int register_count;
 
     struct IrFunction *next;
