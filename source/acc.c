@@ -132,7 +132,8 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
     }
     if (args->omit_regalloc && !args->ir_output)
     {
-        printf("-r must be used with -i (IR output must be used if not allocating registers)\n");
+        printf("-r must be used with -i (IR output must be used if not allocating "
+               "registers)\n");
         exit(1);
     }
     args->source_file = argv[optind];
