@@ -203,8 +203,6 @@ static ExprAstNode *cast_expression(Parser *parser)
     case SHORT:
     case INT:
     case LONG:
-    case FLOAT:
-    case DOUBLE:
     case SIGNED:
     case UNSIGNED:
         break;

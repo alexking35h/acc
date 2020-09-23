@@ -89,16 +89,6 @@ static void version()
 
 /*
  * Parse command line options/arguments.
- *
- * Usage: acc [options] [source file]
- *
- * options:
- * -v  print version information
- * -j  print output in json format
- * -h  print help information
- *
- * Returns true if the program should continue.
- * Quit otherwise.
  */
 static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *args)
 {
@@ -131,22 +121,21 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
             break;
         case '?':
             help(argv[0]);
-            return false;
+            exit(1);
         }
     }
 
     if ((optind) == argc)
     {
         printf("No source file provided. See help (-h)\n");
-        return false;
+        exit(1);
     }
     if (args->omit_regalloc && !args->ir_output)
     {
         printf("-r must be used with -i (IR output must be used if not allocating registers)\n");
-        return false;
+        exit(1);
     }
     args->source_file = argv[optind];
-    return true;
 }
 
 static char *read_source_stdin()
@@ -354,8 +343,7 @@ int main(int argc, char **argv)
     AccCompiler *compiler;
     int err = 0;
 
-    if (!parse_cmd_args(argc, argv, &args))
-        return 1;
+    parse_cmd_args(argc, argv, &args);
 
     if (!(compiler = compiler_init(args.source_file)))
     {

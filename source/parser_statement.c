@@ -48,8 +48,6 @@ static _Bool is_decl(TokenType tok)
     case SHORT:
     case INT:
     case LONG:
-    case FLOAT:
-    case DOUBLE:
     case SIGNED:
     case UNSIGNED:
         return true;

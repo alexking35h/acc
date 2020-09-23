@@ -20,16 +20,12 @@ char *Token_str(TokenType type)
         return "default";
     case DO:
         return "do";
-    case DOUBLE:
-        return "double";
     case ELSE:
         return "else";
     case ENUM:
         return "enum";
     case EXTERN:
         return "extern";
-    case FLOAT:
-        return "float";
     case FOR:
         return "for";
     case GOTO:
