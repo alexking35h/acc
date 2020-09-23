@@ -48,6 +48,7 @@ typedef struct CommandLineArgs_t
     const char *source_file;
     _Bool json;
     _Bool check_only;
+    _Bool omit_regalloc;
     const char *ir_output;
 } CommandLineArgs;
 
@@ -69,6 +70,7 @@ static void help(const char *exe_path)
     printf("  -j json output\n");
     printf("  -c check only (do not compile)\n");
     printf("  -i [FILE] Save Intermediate Representation (IR) output to file\n");
+    printf("  -r omit register allocation (use virtual register allocations)\n");
     printf("\n");
     printf("[FILE] is a file path to the C source file which will be compiled\n");
     printf("(use '-' to read from stdin).\n\n");
@@ -103,17 +105,21 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
     int c = 0;
     args->json = false;
     args->check_only = false;
+    args->omit_regalloc = false;
 
-    while ((c = getopt(argc, argv, "vhjci:")) != -1)
+    while ((c = getopt(argc, argv, "rvhjci:")) != -1)
     {
         switch (c)
         {
+        case 'r':
+            args->omit_regalloc = true;
+            break;
         case 'h':
             help(argv[0]);
-            return false;
+            exit(0);
         case 'v':
             version();
-            return false;
+            exit(0);
         case 'j':
             args->json = true;
             break;
@@ -132,6 +138,11 @@ static _Bool parse_cmd_args(int argc, char **argv, struct CommandLineArgs_t *arg
     if ((optind) == argc)
     {
         printf("No source file provided. See help (-h)\n");
+        return false;
+    }
+    if (args->omit_regalloc && !args->ir_output)
+    {
+        printf("-r must be used with -i (IR output must be used if not allocating registers)\n");
         return false;
     }
     args->source_file = argv[optind];
@@ -374,7 +385,14 @@ int main(int argc, char **argv)
     // Compiler to IR
     IrProgram *ir_program = Ir_generate(ast_root);
 
-    if (args.ir_output)
+    // Register allocation
+    if (!args.omit_regalloc)
+    {
+        // Liveness_analysis(ir_program);
+        // regalloc(ir_program);
+    }
+
+    if (args.ir_output && *args.ir_output != '-')
     {
         FILE *ir_fh = fopen(args.ir_output, "w");
         Ir_to_str(ir_program, ir_fh);
