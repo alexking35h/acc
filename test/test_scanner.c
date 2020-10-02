@@ -168,14 +168,14 @@ static void hex_literal(void **state)
 static void keyword(void **state)
 {
     const char *source =
-        "auto break case char const continue default do double else "
-        "enum extern float for goto if inline int long register "
+        "auto break case char const continue default do else "
+        "enum extern for goto if inline int long register "
         "restrict return short signed sizeof static struct switch "
         "typedef union unsigned void volatile while _identifier_1234_name";
 
     TokenType keyword_tokens[] = {
         AUTO,     BREAK,  CASE,       CHAR,       CONST,    CONTINUE, DEFAULT,  DO,
-        DOUBLE,   ELSE,   ENUM,       EXTERN,     FLOAT,    FOR,      GOTO,     IF,
+        ELSE,   ENUM,       EXTERN,     FOR,      GOTO,     IF,
         INLINE,   INT,    LONG,       REGISTER,   RESTRICT, RETURN,   SHORT,    SIGNED,
         SIZEOF,   STATIC, STRUCT,     SWITCH,     TYPEDEF,  UNION,    UNSIGNED, VOID,
         VOLATILE, WHILE,  IDENTIFIER, END_OF_FILE};

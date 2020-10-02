@@ -7,6 +7,8 @@
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+#if 0
+
 static uint32_t *register_set_init(int sz)
 {
     return calloc(sz / 32 + 1, sizeof(uint32_t));
@@ -164,3 +166,5 @@ void Liveness_analysis(IrProgram *program)
         function(func);
     }
 }
+
+#endif

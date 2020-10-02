@@ -1,75 +1,59 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "arch.h"
 #include "ir.h"
 #include "ir_gen.h"
 
 #define EMIT(irgen, opcode, ...)                                                         \
-    emit_instr(irgen->current_basic_block, (IrInstruction){.op = opcode, __VA_ARGS__})
+    Ir_emit_instr(irgen->current_basic_block, (IrInstruction){.op = opcode, __VA_ARGS__})
+#define UPDATE_CFG(from, to)                                                             \
+    *(to->cfg_entry[0] ? to->cfg_entry + 1 : to->cfg_entry) = from
 
 typedef struct IrGenerator
 {
-    IrProgram *program;
-
     IrFunction *current_function;
-
     IrBasicBlock *current_basic_block;
-
-    IrRegister *argument_registers[4];
-    IrRegister *stack_register;
-    IrRegister *return_register;
 
     int bb_counter;
 } IrGenerator;
 
+static IrRegister *get_reg_any(IrGenerator *);
+static IrRegister *get_reg_reserved(IrGenerator *, int);
 static IrRegister *walk_expr(IrGenerator *, ExprAstNode *);
 static void walk_stmt(IrGenerator *irgen, StmtAstNode *node);
 
-static IrRegister *get_reg(IrGenerator *, IrRegType, bool);
-
-static void emit_instr(IrBasicBlock *bb, IrInstruction instr)
+static IrRegister * emit_loadi(IrGenerator * irgen, int value)
 {
-    IrInstruction *new_instr = calloc(1, sizeof(IrInstruction));
-
-    memcpy(new_instr, &instr, sizeof(IrInstruction));
-
-    if (bb->head == NULL)
-    {
-        new_instr->prev = NULL;
-        bb->head = bb->tail = new_instr;
-    }
-    else
-    {
-        new_instr->prev = bb->tail;
-        bb->tail->next = new_instr;
-        bb->tail = new_instr;
-    }
-    new_instr->next = NULL;
+    IrRegister * dest = get_reg_any(irgen);
+    EMIT(irgen, IR_LOADI, .dest=dest, .value=value);
+    return dest;
 }
-
-static IrRegister *emit_loadi(IrGenerator *irgen, int value)
+static IrRegister * emit_loadso(IrGenerator * irgen, int value)
 {
-    IrRegister *imm = get_reg(irgen, REG_ANY, false);
-    EMIT(irgen, IR_LOADI, .dest = imm, .value = value);
-    return imm;
+    IrRegister * dest = get_reg_any(irgen);
+    EMIT(irgen, IR_LOADSO, .dest=dest, .value=value);
+    return dest;
 }
-
-static void emit_jump(IrGenerator *irgen, IrBasicBlock * b)
+static IrRegister * emit_arith(IrGenerator * irgen, IrOpcode op, IrRegister * left, IrRegister * right)
 {
-    *(b->entry[0] ? b->entry+1 : b->entry) = irgen->current_basic_block;
-    EMIT(irgen, IR_JUMP, .jump=b);
+    IrRegister * dest = get_reg_any(irgen);
+    EMIT(irgen, op, .dest=dest, .left=left, .right=right);
+    return dest;
 }
-
-static void emit_jumpz(IrGenerator *irgen, IrBasicBlock * tb, IrBasicBlock * fb, IrRegister * cond)
+static void emit_jump(IrGenerator *irgen, IrBasicBlock *b)
 {
-    *(tb->entry[0] ? tb->entry+1 : tb->entry) = irgen->current_basic_block;
-    *(fb->entry[0] ? fb->entry+1 : fb->entry) = irgen->current_basic_block;
-
-    EMIT(irgen, IR_BRANCHZ, .left=cond, .jump_true=tb, .jump_false=fb);
+    UPDATE_CFG(irgen->current_basic_block, b);
+    EMIT(irgen, IR_JUMP, .control.jump_true = b);
 }
-
+static void emit_jumpz(IrGenerator *irgen, IrBasicBlock *tb, IrBasicBlock *fb,
+                       IrRegister *cond)
+{
+    UPDATE_CFG(irgen->current_basic_block, tb);
+    UPDATE_CFG(irgen->current_basic_block, fb);
+    EMIT(irgen, IR_BRANCHZ, .left = cond, .control.jump_true = tb, .control.jump_false = fb);
+}
 static void emit_store(IrGenerator *irgen, ExprAstNode *lhs, IrRegister *rhs)
 {
     if (lhs->type == UNARY && lhs->unary.op == UNARY_DEREFERENCE)
@@ -98,10 +82,9 @@ static void emit_store(IrGenerator *irgen, ExprAstNode *lhs, IrRegister *rhs)
         abort();
     }
 }
-
 static IrRegister *emit_load(IrGenerator *irgen, ExprAstNode *src)
 {
-    IrRegister *dest = get_reg(irgen, REG_ANY, false);
+    IrRegister *dest = get_reg_any(irgen);
 
     if (src->unary.ptr_type->basic.type_specifier & TYPE_CHAR)
     {
@@ -122,7 +105,7 @@ static IrBasicBlock *new_bb(IrGenerator *irgen, IrFunction *function)
 {
     IrBasicBlock *bb = calloc(1, sizeof(IrBasicBlock));
     bb->index = irgen->bb_counter++;
-    emit_instr(bb, (IrInstruction){IR_NOP});
+    Ir_emit_instr(bb, (IrInstruction){IR_NOP});
 
     if (function->head == NULL)
     {
@@ -139,49 +122,37 @@ static IrBasicBlock *new_bb(IrGenerator *irgen, IrFunction *function)
 static IrFunction *new_function(IrGenerator *irgen, char *name)
 {
     IrFunction *function = calloc(1, sizeof(IrFunction));
-    function->next = NULL;
     function->name = name;
 
-    if (irgen->program->head == NULL)
+    for(IrFunction * tail = irgen->current_function;tail;tail=tail->next)
     {
-        irgen->program->head = irgen->program->tail = function;
+        if(tail->next) tail->next = function;
     }
-    else
-    {
-        irgen->program->tail->next = function;
-        irgen->program->tail = function;
-    }
+
     return function;
 }
 
-static IrRegister *get_reg(IrGenerator *irgen, IrRegType type, bool begin_arg_list)
+static IrRegister *get_reg_any(IrGenerator *irgen)
 {
-    static int arg_reg_index;
+    int reg_idx = irgen->current_function->registers.count++;
 
-    switch (type)
-    {
-    case REG_STACK:
-        return irgen->stack_register;
-
-    case REG_RETURN:
-        return irgen->return_register;
-
-    case REG_ARGUMENT:
-        arg_reg_index = begin_arg_list ? 0 : arg_reg_index + 1;
-        return irgen->argument_registers[arg_reg_index];
-
-    case REG_ANY:
-        break;
-    }
-
-    /* REG_ANY registers are allocated from an array within the IrFunction block */
-    int reg_idx = irgen->current_function->register_count++;
-    assert(reg_idx < 128);
-    IrRegister * reg = &irgen->current_function->registers[reg_idx];
-    reg->type=REG_ANY;
-    reg->index=reg_idx;
+    IrRegister *reg = calloc(1, sizeof(IrRegister));
+    reg->type = REG_ANY;
+    reg->virtual_index = reg_idx;
     reg->liveness.start = -1;
     reg->liveness.finish = 0;
+    reg->next = irgen->current_function->registers.head;
+
+    irgen->current_function->registers.head = reg;
+
+    return reg;
+}
+
+static IrRegister *get_reg_reserved(IrGenerator *irgen, int index)
+{
+    IrRegister *reg = calloc(1, sizeof(IrRegister));
+    reg->type = REG_RESERVED;
+    reg->virtual_index = index;
 
     return reg;
 }
@@ -207,32 +178,23 @@ static IrObject *stack_allocate(IrFunction *function, Symbol *symbol)
     return object;
 }
 
-static IrObject *bss_allocate(IrProgram *program, Symbol *symbol)
-{
-    // Allocate space for a symbol in BSS.
-    abort();
-}
-
 static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
 {
     IrOpcode op;
     bool post_op_negate = false;
 
-    IrRegister *dest = get_reg(irgen, REG_ANY, false);
     IrRegister *left = walk_expr(irgen, node->binary.left);
     IrRegister *right = walk_expr(irgen, node->binary.right);
 
     if (node->binary.ptr_scale_left != 0)
     {
         int scale = node->binary.ptr_scale_left;
-        EMIT(irgen, IR_MUL, .dest = left, .left = left,
-             .right = emit_loadi(irgen, scale));
+        left = emit_arith(irgen, IR_MUL, left, emit_loadi(irgen, scale));
     }
     if (node->binary.ptr_scale_right != 0)
     {
         int scale = node->binary.ptr_scale_right;
-        EMIT(irgen, IR_MUL, .dest = right, .left = right,
-             .right = emit_loadi(irgen, scale));
+        right = emit_arith(irgen, IR_MUL, right, emit_loadi(irgen, scale));
     }
 
     switch (node->binary.op)
@@ -295,11 +257,11 @@ static IrRegister *walk_expr_binary(IrGenerator *irgen, ExprAstNode *node)
         abort();
         break;
     }
-    EMIT(irgen, op, .dest = dest, .left = left, .right = right);
+    IrRegister * dest = emit_arith(irgen, op, left, right);
 
     if (post_op_negate)
     {
-        EMIT(irgen, IR_NOT, .dest = dest, .left = dest);
+        return emit_arith(irgen, IR_NOT, dest, NULL);
     }
     return dest;
 }
@@ -311,7 +273,6 @@ static IrRegister *walk_expr_unary(IrGenerator *irgen, ExprAstNode *node)
         return emit_load(irgen, node);
     }
 
-    IrRegister *dest = get_reg(irgen, REG_ANY, false);
     IrRegister *right = walk_expr(irgen, node->unary.right);
 
     switch (node->unary.op)
@@ -322,33 +283,28 @@ static IrRegister *walk_expr_unary(IrGenerator *irgen, ExprAstNode *node)
     case UNARY_PLUS:
         return right;
     case UNARY_MINUS:
-        EMIT(irgen, IR_SUB, .dest = dest, .left = emit_loadi(irgen, 0), right);
-        break;
+        return emit_arith(irgen, IR_SUB, emit_loadi(irgen, 0), right);
     case UNARY_BITWISE_NOT:
-        EMIT(irgen, IR_FLIP, .dest = dest, .left = right);
-        break;
+        return emit_arith(irgen, IR_FLIP, right, NULL);
     case UNARY_LOGICAL_NOT:
-        EMIT(irgen, IR_NOT, .dest = dest, .left = right);
-        break;
+        return emit_arith(irgen, IR_NOT, right, NULL);
     case UNARY_SIZEOF:
         abort();
         break;
     case UNARY_INC_OP: {
-        IrRegister *imm =
-            emit_loadi(irgen, node->unary.ptr_scale ? node->unary.ptr_scale : 1);
-        EMIT(irgen, IR_ADD, .dest = dest, .left = right, .right = imm);
+        int incr = node->unary.ptr_scale ? node->unary.ptr_scale : 1;
+        IrRegister * dest = emit_arith(irgen, IR_ADD, right, emit_loadi(irgen, incr));
         emit_store(irgen, node->unary.right, dest);
-        break;
+        return dest;
     }
     case UNARY_DEC_OP: {
-        IrRegister *imm =
-            emit_loadi(irgen, node->unary.ptr_scale ? node->unary.ptr_scale : 1);
-        EMIT(irgen, IR_SUB, .dest = dest, .left = right, .right = imm);
+        int incr = node->unary.ptr_scale ? node->unary.ptr_scale : 1;
+        IrRegister * dest = emit_arith(irgen, IR_SUB, right, emit_loadi(irgen, incr));
         emit_store(irgen, node->unary.right, dest);
-        break;
+        return dest;
     }
     }
-    return dest;
+    return NULL;
 }
 
 static IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
@@ -363,20 +319,13 @@ static IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
         if (sym->ir.object)
         {
             // Object is not in a register.
-            IrRegister *stack = get_reg(irgen, REG_STACK, false);
-            IrRegister *dest = get_reg(irgen, REG_ANY, false);
-            IrRegister *offset = emit_loadi(irgen, sym->ir.object->offset);
-            EMIT(irgen, IR_ADD, .dest = dest, .left = stack, .right = offset);
-
-            return dest;
+            return emit_loadso(irgen, sym->ir.object->offset);
         }
         else if (sym->ir.regster)
         {
             // Object is in a register.
             IrRegister *value = sym->ir.regster;
-            IrRegister *copy = get_reg(irgen, REG_ANY, false);
-            EMIT(irgen, IR_MOV, .dest = copy, .left = value);
-            return copy;
+            return emit_arith(irgen, IR_MOV, value, NULL);
         }
     }
     else if (node->primary.string_literal)
@@ -400,15 +349,15 @@ static IrRegister *walk_expr_postfix_call(IrGenerator *irgen, ExprAstNode *node)
     {
         // This is just a straight up function call :-)
         IrFunction *func = node->postfix.left->primary.symbol->ir.function;
-        int beginning = 0;
+        int i = 0;
         for (ArgumentListItem *arg = node->postfix.args; arg != NULL; arg = arg->next)
         {
             IrRegister *arg_reg = walk_expr(irgen, arg->argument);
-            IrRegister *param_reg = get_reg(irgen, REG_ARGUMENT, beginning++ == 0);
+            IrRegister *param_reg = get_reg_reserved(irgen, i++);
             EMIT(irgen, IR_MOV, .dest = param_reg, .left = arg_reg);
         }
-        EMIT(irgen, IR_CALL, .function = func);
-        return get_reg(irgen, REG_RETURN, false);
+        EMIT(irgen, IR_CALL, .control.callee = func);
+        return get_reg_reserved(irgen, 0);
     }
 }
 
@@ -420,7 +369,7 @@ static IrRegister *walk_expr_postfix(IrGenerator *irgen, ExprAstNode *node)
     }
 
     IrRegister *left = walk_expr(irgen, node->postfix.left);
-    IrRegister *copy = get_reg(irgen, REG_ANY, false);
+    IrRegister *copy = get_reg_any(irgen);
 
     EMIT(irgen, IR_MOV, .dest = copy, .left = left);
 
@@ -477,7 +426,7 @@ static IrRegister *walk_expr_cast(IrGenerator *irgen, ExprAstNode *node)
 static IrRegister *walk_expr_tertiary(IrGenerator *irgen, ExprAstNode *node)
 {
     IrRegister *cond_reg = walk_expr(irgen, node->tertiary.condition_expr);
-    IrRegister *result_reg = get_reg(irgen, REG_ANY, false);
+    IrRegister *result_reg = get_reg_any(irgen);
 
     IrBasicBlock *true_bb = new_bb(irgen, irgen->current_function);
     IrBasicBlock *false_bb = new_bb(irgen, irgen->current_function);
@@ -530,36 +479,24 @@ static IrRegister *walk_expr(IrGenerator *irgen, ExprAstNode *node)
 static void walk_decl_function(IrGenerator *irgen, DeclAstNode *node)
 {
     IrFunction *func = new_function(irgen, node->identifier->lexeme);
-    func->registers = calloc(128, sizeof(IrRegister));
 
     node->symbol->ir.function = func;
     irgen->current_function = func;
 
     irgen->current_basic_block = new_bb(irgen, func);
-    EMIT(irgen, IR_STACK);
 
     int i = 0;
     for (ActualParameterListItem *arg = node->args; arg != NULL; arg = arg->next)
     {
-        IrRegister *argument_body = get_reg(irgen, REG_ANY, false);
-        IrRegister *argument_proto = get_reg(irgen, REG_ARGUMENT, i++ == 0);
+        IrRegister *argument_body = get_reg_any(irgen);
+        IrRegister *argument_proto = get_reg_reserved(irgen, i++);
 
         arg->sym->ir.regster = argument_body;
         EMIT(irgen, IR_MOV, .dest = argument_body, .left = argument_proto);
     }
     walk_stmt(irgen, node->body);
 
-    EMIT(irgen, IR_UNSTACK);
     EMIT(irgen, IR_RETURN);
-
-    int pos = 0;
-    for(IrBasicBlock * bb = func->head;bb;bb=bb->next)
-    {
-        for(IrInstruction * instr = bb->head;instr;instr=instr->next)
-        {
-            instr->pos = pos++;
-        }
-    }
 }
 
 static void walk_decl_object(IrGenerator *irgen, DeclAstNode *node)
@@ -572,13 +509,12 @@ static void walk_decl_object(IrGenerator *irgen, DeclAstNode *node)
     else if (CTYPE_IS_SCALAR(node->type))
     {
         // Local - allocate in register.
-        IrRegister *reg = get_reg(irgen, REG_ANY, false);
-        node->symbol->ir.regster = reg;
-
         if (node->initializer)
         {
-            IrRegister *init = walk_expr(irgen, node->initializer);
-            EMIT(irgen, IR_MOV, .dest = reg, .left = init);
+            IrRegister * dest = emit_arith(irgen, IR_MOV, walk_expr(irgen, node->initializer), NULL);
+            node->symbol->ir.regster = dest;
+        } else {
+            node->symbol->ir.regster = emit_loadi(irgen, 0);
         }
     }
     else
@@ -636,13 +572,10 @@ static void walk_stmt_return(IrGenerator *irgen, StmtAstNode *node)
 {
     if (node->return_jump.value)
     {
-        IrRegister *reg = get_reg(irgen, REG_RETURN, false);
         IrRegister *val = walk_expr(irgen, node->return_jump.value);
-        EMIT(irgen, IR_MOV, .dest = reg, .left = val);
-
-        EMIT(irgen, IR_UNSTACK);
-        EMIT(irgen, IR_RETURN);
+        EMIT(irgen, IR_MOV, .dest = get_reg_reserved(irgen, 0), .left = val);
     }
+    EMIT(irgen, IR_RETURN);
 }
 
 static void walk_stmt_if(IrGenerator *irgen, StmtAstNode *node)
@@ -701,24 +634,10 @@ static void walk_stmt(IrGenerator *irgen, StmtAstNode *node)
     walk_stmt(irgen, node->next);
 }
 
-IrProgram *Ir_generate(DeclAstNode *ast_root)
+IrFunction *Ir_generate(DeclAstNode *ast_root)
 {
-    IrRegister *return_register = calloc(1, sizeof(IrRegister));
-    return_register->type = REG_RETURN;
-
-    IrRegister *stack_register = calloc(1, sizeof(IrRegister));
-    stack_register->type = REG_STACK;
-
-    IrGenerator irgen = {.program = calloc(1, sizeof(IrProgram)),
-                         .return_register = return_register,
-                         .stack_register = stack_register};
-
-    for (int i = 0; i < 4; i++)
-    {
-        irgen.argument_registers[i] = calloc(1, sizeof(IrRegister));
-        irgen.argument_registers[i]->type = REG_ARGUMENT;
-    }
+    IrGenerator irgen = {NULL, NULL};
 
     walk_decl(&irgen, ast_root);
-    return irgen.program;
+    return irgen.current_function;
 }

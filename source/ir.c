@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "ir.h"
@@ -25,17 +26,11 @@ static void ir_register(FILE *fd, IrRegister *reg)
 {
     switch (reg->type)
     {
+    case REG_RESERVED:
+        fprintf(fd, "r%d", reg->virtual_index);
+        break;
     case REG_ANY:
-        fprintf(fd, "t%d", reg->index);
-        break;
-    case REG_ARGUMENT:
-        fprintf(fd, "a%d", reg->index);
-        break;
-    case REG_RETURN:
-        fprintf(fd, "r%d", reg->index);
-        break;
-    case REG_STACK:
-        fprintf(fd, "(uint32_t)sp");
+        fprintf(fd, "t%d", reg->virtual_index);
         break;
     }
 }
@@ -184,23 +179,18 @@ static void instruction_loadi(FILE *fd, IrInstruction *instr)
     fprintf(fd, " = %d;\n", instr->value);
 }
 
-static void instruction_stack(FILE *fd, IrInstruction *instr)
+static void instruction_loadso(FILE *fd, IrInstruction *instr)
 {
-    if (instr->op == IR_STACK)
-    {
-        fprintf(fd, INDENT "// STACK REGISTERS\n");
-    }
-    else
-    {
-        fprintf(fd, INDENT "// UNSTACK REGISTERS\n");
-    }
+    fprintf(fd, INDENT);
+    ir_register(fd, instr->dest);
+    fprintf(fd, " = (uint32_t)sp + %d;\n", instr->value);
 }
 
 static void instruction_jump(FILE *fd, IrInstruction *instr)
 {
     if (instr->op == IR_JUMP)
     {
-        fprintf(fd, INDENT "goto bb_%d;\n", instr->jump->index);
+        fprintf(fd, INDENT "goto bb_%d;\n", instr->control.jump_true->index);
     }
     else if (instr->op == IR_RETURN)
     {
@@ -211,14 +201,14 @@ static void instruction_jump(FILE *fd, IrInstruction *instr)
         fprintf(fd, INDENT "if(");
         ir_register(fd, instr->left);
         fprintf(fd, ")\n" INDENT "{\n");
-        fprintf(fd, INDENT INDENT "goto bb_%d;\n", instr->jump_true->index);
+        fprintf(fd, INDENT INDENT "goto bb_%d;\n", instr->control.jump_true->index);
         fprintf(fd, INDENT "} else {\n");
-        fprintf(fd, INDENT INDENT "goto bb_%d;\n", instr->jump_false->index);
+        fprintf(fd, INDENT INDENT "goto bb_%d;\n", instr->control.jump_false->index);
         fprintf(fd, INDENT "}\n");
     }
     else if (instr->op == IR_CALL)
     {
-        fprintf(fd, INDENT "_%s();\n", instr->function->name);
+        fprintf(fd, INDENT "_%s();\n", instr->control.callee->name);
     }
 }
 
@@ -265,10 +255,9 @@ static void instruction(FILE *fd, IrInstruction *instr)
     case IR_LOADI:
         instruction_loadi(fd, instr);
         break;
-
-    case IR_STACK:
-    case IR_UNSTACK:
-        instruction_stack(fd, instr);
+    
+    case IR_LOADSO:
+        instruction_loadso(fd, instr);
         break;
 
     case IR_BRANCHZ:
@@ -297,7 +286,7 @@ static void function(FILE *fd, IrFunction *func)
     fprintf(fd, INDENT "_Alignas(4) uint8_t sp[%d];\n", func->stack_size);
 
     // Declare all registers used within this function.
-    for (int i = 0; i < func->register_count; i++)
+    for (int i = 0; i < func->registers.count; i++)
     {
         fprintf(fd, INDENT "uint32_t t%d;\n", i);
     }
@@ -310,30 +299,44 @@ static void function(FILE *fd, IrFunction *func)
     fprintf(fd, "}\n");
 }
 
-static void program(FILE *fd, IrProgram *prog)
+void Ir_to_str(IrFunction *ir, FILE *fd)
 {
     fprintf(fd, HEADER);
 
-    // First, declare all registers used within the program.
-    for (int i = 0; i < prog->register_count.arg; i++)
+    // Declare all registers used within the program
+    for (int i = 0; i < 3; i++)
     {
-        fprintf(fd, "uint32_t a%d;\n", i);
+        fprintf(fd, "uint32_t r%d = 0;\n", i);
     }
-    fprintf(fd, "uint32_t r0;\n\n");
 
-    // Now print out all the functions.
-    for (IrFunction *func = prog->head; func != NULL; func = func->next)
+    // Print out all functions.
+    for (IrFunction *func = ir;func != NULL;func = func->next)
     {
         function(fd, func);
     }
 
-    // Add a main function!
+    // Add a main function/entry point.
     fprintf(fd, "int main(int argc, char ** argv){\n");
     fprintf(fd, INDENT "_main();\n");
     fprintf(fd, INDENT "return r0;\n}\n");
 }
 
-void Ir_to_str(IrProgram *ir, FILE *fd)
+void Ir_insert_instr(IrInstruction ** prev, IrInstruction instr)
 {
-    program(fd, ir);
+    
+}
+
+void Ir_emit_instr(IrBasicBlock * bb, IrInstruction instr)
+{
+    IrInstruction * new_instr = calloc(1, sizeof(IrInstruction));
+    memcpy(new_instr, &instr, sizeof(IrInstruction));
+
+    if(bb->head)
+    {
+        new_instr->prev = bb->tail;
+        bb->tail->next = new_instr;
+        bb->tail = new_instr;
+    } else {
+        bb->head = bb->tail = new_instr;
+    }
 }

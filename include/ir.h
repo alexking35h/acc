@@ -1,8 +1,8 @@
 #ifndef __IR___
 #define __IR___
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 typedef struct IrBasicBlock IrBasicBlock;
@@ -52,9 +52,8 @@ typedef enum IrOpcode
     // Load-immediate (integer)
     IR_LOADI,
 
-    // Stack operations (function preamble/postable)
-    IR_STACK,
-    IR_UNSTACK,
+    // Load-stack offset
+    IR_LOADSO,
 
     // Branch-if-zero: true/false arms.
     // Unconditional jump.
@@ -70,23 +69,29 @@ typedef enum IrOpcode
 
 typedef enum
 {
-    REG_ARGUMENT,
-    REG_RETURN,
-    REG_ANY,
-    REG_STACK
+    REG_RESERVED,
+    REG_ANY
 } IrRegType;
 
 typedef struct IrRegister
 {
-    int index;
     IrRegType type;
 
+    int virtual_index;
+
     struct 
+    {
+        int index;
+        int spill;
+    } real;
+
+    struct
     {
         unsigned int start;
         unsigned int finish;
     } liveness;
 
+    struct IrRegister *next;
 } IrRegister;
 
 typedef struct IrObject
@@ -114,58 +119,61 @@ typedef struct IrInstruction
     // Loadi instruction
     int value;
 
-    union {
-        IrBasicBlock *jump;
-        IrBasicBlock *jump_true;
-    };
-    IrBasicBlock *jump_false;
-    IrFunction *function;
+    struct {
+        IrBasicBlock * jump_true;
+        IrBasicBlock * jump_false;
+        IrFunction * callee;
+    } control;
+
+    int live_position;
 
     struct IrInstruction *next, *prev;
-
-    int pos;
 } IrInstruction;
 
 typedef struct IrBasicBlock
 {
     int index;
+
+    struct 
+    {
+        uint32_t * entry;
+        uint32_t * exit;
+    } live;
+
+    IrBasicBlock * cfg_entry[2];
+
     IrInstruction *head, *tail;
     IrBasicBlock *next;
-
-    uint32_t * entry_set;
-    uint32_t * exit_set;
-
-    IrBasicBlock * entry[2];
 } IrBasicBlock;
 
 typedef struct IrFunction
 {
     char *name;
     int stack_size;
+
+    struct 
+    {
+        IrRegister *head;
+        int count;
+    } registers;
+
     IrBasicBlock *head, *tail;
-
-    IrRegister* registers;
-    int register_count;
-
     struct IrFunction *next;
 } IrFunction;
-
-typedef struct IrProgram
-{
-    int bss_size;
-
-    struct
-    {
-        int arg;
-        int ret;
-    } register_count;
-
-    IrFunction *head, *tail;
-} IrProgram;
 
 /*
  * Generate string-representation of the IR.
  */
-void Ir_to_str(IrProgram *, FILE *);
+void Ir_to_str(IrFunction *, FILE *);
+
+/*
+ * Insert an instruction.
+ */
+void Ir_insert_instr(IrInstruction ** prev, IrInstruction instr);
+
+/*
+ * Append an instruction to a basic block.
+ */
+void Ir_emit_instr(IrBasicBlock * bb, IrInstruction instr);
 
 #endif

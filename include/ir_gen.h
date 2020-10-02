@@ -5,4 +5,4 @@
 /*
  * Generate the IR representation for the given program
  */
-IrProgram *Ir_generate(DeclAstNode *);
+IrFunction *Ir_generate(DeclAstNode *);

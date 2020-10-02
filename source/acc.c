@@ -372,7 +372,7 @@ int main(int argc, char **argv)
     }
 
     // Compiler to IR
-    IrProgram *ir_program = Ir_generate(ast_root);
+    IrFunction *ir_program = Ir_generate(ast_root);
 
     // Register allocation
     if (!args.omit_regalloc)
