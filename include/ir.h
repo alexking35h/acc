@@ -136,8 +136,8 @@ typedef struct IrBasicBlock
 
     struct 
     {
-        uint32_t * entry;
-        uint32_t * exit;
+        uint8_t * entry;
+        uint8_t * exit;
     } live;
 
     IrBasicBlock * cfg_entry[2];
@@ -153,7 +153,8 @@ typedef struct IrFunction
 
     struct 
     {
-        IrRegister *head;
+        IrRegister **list;
+        int list_size;
         int count;
     } registers;
 

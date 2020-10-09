@@ -141,9 +141,15 @@ static IrRegister *get_reg_any(IrGenerator *irgen)
     reg->virtual_index = reg_idx;
     reg->liveness.start = -1;
     reg->liveness.finish = 0;
-    reg->next = irgen->current_function->registers.head;
 
-    irgen->current_function->registers.head = reg;
+    if(reg_idx >= irgen->current_function->registers.list_size)
+    {
+        irgen->current_function->registers.list = (IrRegister**)realloc(
+            irgen->current_function->registers.list, 
+            sizeof(IrRegister**) * (irgen->current_function->registers.list_size += 32)
+        );
+    }
+    irgen->current_function->registers.list[reg_idx] = &reg;
 
     return reg;
 }
@@ -479,6 +485,9 @@ static IrRegister *walk_expr(IrGenerator *irgen, ExprAstNode *node)
 static void walk_decl_function(IrGenerator *irgen, DeclAstNode *node)
 {
     IrFunction *func = new_function(irgen, node->identifier->lexeme);
+
+    func->registers.list = calloc(sizeof(IrRegister**), 32);
+    func->registers.list_size = 32;
 
     node->symbol->ir.function = func;
     irgen->current_function = func;
