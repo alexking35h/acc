@@ -169,13 +169,12 @@ typedef struct IrFunction
 void Ir_to_str(IrFunction *, FILE *);
 
 /*
- * Insert an instruction.
- */
-void Ir_insert_instr(IrInstruction ** prev, IrInstruction instr);
-
-/*
  * Append an instruction to a basic block.
  */
 void Ir_emit_instr(IrBasicBlock * bb, IrInstruction instr);
+
+void Ir_emit_instr_after(IrInstruction * prev, IrInstruction * instr);
+
+void Ir_emit_instr_before(IrInstruction * after, IrInstruction * instr);
 
 #endif

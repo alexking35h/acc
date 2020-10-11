@@ -116,14 +116,18 @@ static void regalloc_no_fixup()
 
 static void compare_reg(IrRegister * regA, IrRegister * regB)
 {
-    assert_true(regA->type == regB->type);
-    assert_true(regA->real.index == regB->real.index);
+    if(regA == NULL)
+    {
+        assert_true(regB == NULL);
+    }
+    else {
+        assert_true(regB);
+        assert_true(regA->real.index == regB->real.index);
+    }
 }
 
 static void regalloc_fixup_store()
 {
-    // Code input:
-    // - LOADI regA, 99
     IrRegister regA = {
         .type = REG_ANY,
         .virtual_index = 1,
@@ -132,14 +136,19 @@ static void regalloc_fixup_store()
             .finish = 1
         }
     };
+    IrInstruction nop = {
+        .op = IR_NOP
+    };
     IrInstruction loadi = {
         .op = IR_LOADI,
         .value = 99,
         .dest = &regA
     };
+    nop.next = &loadi;
+
     IrBasicBlock bb = {
-        .head=&loadi,
-        .tail=&loadi
+        .head = &nop,
+        .tail = &loadi
     };
     IrFunction func = {
         .head = &bb,
@@ -158,8 +167,8 @@ static void regalloc_fixup_store()
     );
 
     // Transformed code:
-    // - LOADSO reg0, 12
     // - LOADI reg1, 99
+    // - LOADSO reg0, 12
     // - STORE32 reg0, reg1
     IrRegister reg0 = {
         .type = REG_REAL,
@@ -169,26 +178,26 @@ static void regalloc_fixup_store()
         .type = REG_REAL,
         .real.index = 1
     };
+    IrInstruction loadi_t = {
+        .op = IR_LOADI,
+        .dest = &reg1,
+        .value = 99
+    };
     IrInstruction loadso_t = {
         .op = IR_LOADSO,
         .value = 12,
         .dest = &reg0
-    };
-    IrInstruction loadi_t = {
-        .op = IR_LOADI,
-        .left = &reg1,
-        .value = 99
     };
     IrInstruction store_t = {
         .op = IR_STORE32,
         .left = &reg0,
         .right = &reg1
     };
-    loadso_t.next = &loadi_t;
-    loadi_t.next = &store_t;
+    loadi_t.next = &loadso_t;
+    loadso_t.next = &store_t;
 
-    IrInstruction * cut = func.head->head;
-    IrInstruction * expected = &loadso_t;
+    IrInstruction * cut = func.head->head->next;
+    IrInstruction * expected = &loadi_t;
 
     while(cut != NULL && expected != NULL)
     {
@@ -213,12 +222,66 @@ static void regalloc_fixup_store()
 static void regalloc_fixup_load()
 {
     // Code input:
+    //  - NOP
     //  - ADD (?), regA, regA
+    IrRegister regA = {
+        .type = REG_ANY,
+        .virtual_index = 1,
+        .liveness = {
+            .start = 0,
+            .finish = 1
+        }
+    };
+    IrInstruction nop = {
+        .op = IR_NOP
+    };
+    IrInstruction add = {
+        .op = IR_LOADI,
+        .value = 99,
+        .dest = NULL,
+        .left = &regA,
+        .right = &regA
+    };
+    nop.next = &add;
+
     // Transformed code:
     //  - LOADSO reg0, 12
     //  - LOAD32 reg2, reg0
     //  - LOADSO reg0, 12
     //  - LOAD32 reg3, reg0
+    //  - ADD (?), reg2, reg3
+    IrRegister reg0 = {
+        .type = REG_REAL,
+        .real.index = 2
+    };
+    IrRegister reg2 = {
+        .type = REG_REAL,
+        .real.index = 2
+    };
+    IrRegister reg3 = {
+        .type = REG_REAL,
+        .real.index = 3
+    };
+    IrInstruction loadso_t1 = {
+        .op = IR_LOADSO,
+        .value = 12,
+        .dest = &reg0
+    };
+    IrInstruction load32_t1 = {
+        .op = IR_LOAD32,
+        .dest = &reg2,
+        .left = &reg0
+    };
+    IrInstruction loadso_t2 = {
+        .op = IR_LOADSO,
+        .value = 12,
+        .dest = &reg0
+    };
+    IrInstruction load32_t2 = {
+        .op = IR_LOAD32,
+        .dest = &reg3,
+        .left = &reg0
+    };
 }
 
 

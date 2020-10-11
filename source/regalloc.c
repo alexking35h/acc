@@ -188,9 +188,83 @@ static void regalloc_alloc(IrFunction * function, int registers[])
     }
 }
 
-static void regalloc_fixup(IrFunction * function)
+static void regalloc_fixup(IrFunction * function, int reserved_registers[])
 {
-    // TODO.
+    // Create the reserved register set.
+    IrRegister * rreg_0 = calloc(1, sizeof(IrRegister));
+    rreg_0->type = REG_REAL;
+    rreg_0->real.index = reserved_registers[0];
+    IrRegister * rreg_1 = calloc(1, sizeof(IrRegister));
+    rreg_1->type = REG_REAL;
+    rreg_1->real.index = reserved_registers[1];
+    IrRegister * rreg_2 = calloc(1, sizeof(IrRegister));
+    rreg_2->type = REG_REAL;
+    rreg_2->real.index = reserved_registers[2];
+    IrRegister * rreg_3 = calloc(1, sizeof(IrRegister));
+    rreg_3->type = REG_REAL;
+    rreg_3->real.index = reserved_registers[3];
+
+    for(IrBasicBlock * bb = function->head;bb != NULL;bb = bb->next)
+    {
+        for(IrInstruction * instr = bb->head;instr != NULL;)
+        {
+            IrInstruction * next = instr->next;
+
+            if(instr->dest && instr->dest->real.spill)
+            {
+                IrInstruction * loadso = calloc(1, sizeof(IrInstruction));
+                loadso->op = IR_LOADSO;
+                loadso->value = instr->dest->real.spill;
+                loadso->dest = rreg_0;
+                Ir_emit_instr_after(instr, loadso);
+
+                IrInstruction * store32 = calloc(1, sizeof(IrInstruction));
+                store32->op = IR_STORE32;
+                store32->left = rreg_0;
+                store32->right = rreg_1;
+                Ir_emit_instr_after(loadso, store32);
+
+                instr->dest = rreg_1;
+            }
+
+            if(instr->left && instr->left->real.spill)
+            {
+                IrInstruction * loadso = calloc(1, sizeof(IrInstruction));
+                loadso->op = IR_LOADSO;
+                loadso->value = instr->left->real.spill;
+                loadso->dest = rreg_0;
+
+                IrInstruction * load32 = calloc(1, sizeof(IrInstruction));
+                load32->op = IR_LOAD32;
+                load32->dest = rreg_2;
+                load32->left = rreg_0;
+
+                Ir_emit_instr_before(instr, load32);
+                Ir_emit_instr_before(instr, loadso);
+
+                instr->left = rreg_2;
+            }
+            if(instr->right && instr->right->real.spill)
+            {
+                IrInstruction * loadso = calloc(1, sizeof(IrInstruction));
+                loadso->op = IR_LOADSO;
+                loadso->value = instr->left->real.spill;
+                loadso->dest = rreg_0;
+
+                IrInstruction * load32 = calloc(1, sizeof(IrInstruction));
+                load32->op = IR_LOAD32;
+                load32->dest = rreg_3;
+                load32->left = rreg_0;
+
+                Ir_emit_instr_before(instr, load32);
+                Ir_emit_instr_before(instr, loadso);
+
+                instr->right = rreg_3;
+            }
+
+            instr = next;
+        }
+    }
 }
 
 void regalloc(IrFunction * function, int reserved_registers[], int free_registers[])
@@ -198,6 +272,6 @@ void regalloc(IrFunction * function, int reserved_registers[], int free_register
     for(;function;function=function->next)
     {
         regalloc_alloc(function, free_registers);
-        regalloc_fixup(function);
+        regalloc_fixup(function, reserved_registers);
     }
 }
