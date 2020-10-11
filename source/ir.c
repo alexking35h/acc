@@ -341,7 +341,7 @@ void Ir_emit_instr_after(IrInstruction * prev, IrInstruction * instr)
     instr->prev = prev;
     instr->next = prev->next;
 
-    if(prev->next){
+    if(prev->next) {
         prev->next->prev = instr;
     }
     prev->next = instr;
@@ -352,6 +352,8 @@ void Ir_emit_instr_before(IrInstruction * after, IrInstruction * instr)
     instr->next = after;
     instr->prev = after->prev;
 
-    after->prev->next = instr;
+    if(after->prev) {
+        after->prev->next = instr;
+    }
     after->prev = instr;
 }

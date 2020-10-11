@@ -233,14 +233,13 @@ static void regalloc_fixup(IrFunction * function, int reserved_registers[])
                 loadso->op = IR_LOADSO;
                 loadso->value = instr->left->real.spill;
                 loadso->dest = rreg_0;
+                Ir_emit_instr_before(instr, loadso);
 
                 IrInstruction * load32 = calloc(1, sizeof(IrInstruction));
                 load32->op = IR_LOAD32;
                 load32->dest = rreg_2;
                 load32->left = rreg_0;
-
                 Ir_emit_instr_before(instr, load32);
-                Ir_emit_instr_before(instr, loadso);
 
                 instr->left = rreg_2;
             }
@@ -250,14 +249,13 @@ static void regalloc_fixup(IrFunction * function, int reserved_registers[])
                 loadso->op = IR_LOADSO;
                 loadso->value = instr->left->real.spill;
                 loadso->dest = rreg_0;
+                Ir_emit_instr_before(instr, loadso);
 
                 IrInstruction * load32 = calloc(1, sizeof(IrInstruction));
                 load32->op = IR_LOAD32;
                 load32->dest = rreg_3;
                 load32->left = rreg_0;
-
                 Ir_emit_instr_before(instr, load32);
-                Ir_emit_instr_before(instr, loadso);
 
                 instr->right = rreg_3;
             }

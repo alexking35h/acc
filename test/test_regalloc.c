@@ -236,13 +236,34 @@ static void regalloc_fixup_load()
         .op = IR_NOP
     };
     IrInstruction add = {
-        .op = IR_LOADI,
+        .op = IR_ADD,
         .value = 99,
         .dest = NULL,
         .left = &regA,
-        .right = &regA
+        .right = &regA,
+        .prev = &nop
     };
     nop.next = &add;
+
+    IrBasicBlock bb = {
+        .head = &nop,
+        .tail = &add
+    };
+    IrFunction function = {
+        .head = &bb,
+        .tail = &bb,
+        .registers = {
+            .count = 1,
+            .list = (IrRegister*[]){&regA}
+        },
+        .stack_size = 12
+    };
+    
+    regalloc(
+        &function,
+        (int[]){0,1,2,3},
+        (int[]){-1}
+    );
 
     // Transformed code:
     //  - LOADSO reg0, 12
@@ -252,7 +273,7 @@ static void regalloc_fixup_load()
     //  - ADD (?), reg2, reg3
     IrRegister reg0 = {
         .type = REG_REAL,
-        .real.index = 2
+        .real.index = 0
     };
     IrRegister reg2 = {
         .type = REG_REAL,
@@ -282,6 +303,38 @@ static void regalloc_fixup_load()
         .dest = &reg3,
         .left = &reg0
     };
+    IrInstruction add_t = {
+        .op = IR_ADD,
+        .dest = NULL,
+        .left = &reg2,
+        .right = &reg3
+    };
+    loadso_t1.next = &load32_t1;
+    load32_t1.next = &loadso_t2;
+    loadso_t2.next = &load32_t2;
+    load32_t2.next = &add_t;
+
+    IrInstruction * cut = function.head->head->next;
+    IrInstruction * expected = &loadso_t1;
+
+    while(cut != NULL && expected != NULL)
+    {
+        assert_true(cut->op == expected->op);
+
+        if(expected->op == IR_LOADI)
+        {
+            assert_true(cut->value == expected->value);
+        }
+
+        compare_reg(cut->dest, expected->dest);
+        compare_reg(cut->left, expected->left);
+        compare_reg(cut->right, expected->right);
+
+        cut = cut->next;
+        expected = expected->next;
+    }
+
+    assert_true(cut == NULL && expected == NULL);
 }
 
 
@@ -290,7 +343,8 @@ int main(void)
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(regalloc_no_spill),
         cmocka_unit_test(regalloc_no_fixup),
-        cmocka_unit_test(regalloc_fixup_store)
+        cmocka_unit_test(regalloc_fixup_store),
+        cmocka_unit_test(regalloc_fixup_load)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
