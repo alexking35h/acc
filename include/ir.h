@@ -70,7 +70,8 @@ typedef enum IrOpcode
 typedef enum
 {
     REG_RESERVED,
-    REG_ANY
+    REG_ANY,
+    REG_REAL
 } IrRegType;
 
 typedef struct IrRegister
