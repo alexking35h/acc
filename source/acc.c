@@ -375,11 +375,11 @@ int main(int argc, char **argv)
 
     // Compiler to IR
     IrFunction *ir_program = Ir_generate(ast_root);
+    Liveness_analysis(ir_program);
 
     // Register allocation
     if (!args.omit_regalloc)
     {
-        Liveness_analysis(ir_program);
         regalloc(ir_program, REGS_ALLOCABLE_AARCH32);
     }
 

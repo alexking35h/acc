@@ -298,7 +298,11 @@ static void function(FILE *fd, IrFunction *func)
     {
         for (int i = 0;i < func->registers.count;i++)
         {
-            fprintf(fd, INDENT "uint32_t t%d;\n", func->registers.list[i]->index);
+            fprintf(fd, INDENT "uint32_t t%d; // Live[%d,%d]\n",
+                func->registers.list[i]->index,
+                func->registers.list[i]->liveness.start,
+                func->registers.list[i]->liveness.finish
+            );
         }
     }
 

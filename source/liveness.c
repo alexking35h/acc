@@ -52,6 +52,7 @@ static void reg_define(IrBasicBlock *bb, IrRegister *reg, int position)
 
     register_set_unmark(bb->live.entry, reg->index);
     reg->liveness.start = MIN(reg->liveness.start, position);
+    reg->liveness.finish = MAX(reg->liveness.finish, position);
 }
 
 // 'Define' a register. This removes a register from the 'entry' set in a BB.
@@ -62,6 +63,7 @@ static void reg_use(IrBasicBlock *bb, IrRegister *reg, int position)
         return;
 
     register_set_mark(bb->live.entry, reg->index);
+    reg->liveness.start = MIN(reg->liveness.start, position);
     reg->liveness.finish = MAX(reg->liveness.finish, position);
 }
 
