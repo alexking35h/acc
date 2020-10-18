@@ -138,7 +138,7 @@ static IrRegister *get_reg_any(IrGenerator *irgen)
 
     IrRegister *reg = calloc(1, sizeof(IrRegister));
     reg->type = REG_ANY;
-    reg->virtual_index = reg_idx;
+    reg->index = reg_idx;
     reg->liveness.start = -1;
     reg->liveness.finish = 0;
 
@@ -149,7 +149,7 @@ static IrRegister *get_reg_any(IrGenerator *irgen)
             sizeof(IrRegister**) * (irgen->current_function->registers.list_size += 32)
         );
     }
-    irgen->current_function->registers.list[reg_idx] = &reg;
+    irgen->current_function->registers.list[reg_idx] = reg;
 
     return reg;
 }
@@ -158,7 +158,7 @@ static IrRegister *get_reg_reserved(IrGenerator *irgen, int index)
 {
     IrRegister *reg = calloc(1, sizeof(IrRegister));
     reg->type = REG_RESERVED;
-    reg->virtual_index = index;
+    reg->index = index;
 
     return reg;
 }

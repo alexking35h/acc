@@ -50,7 +50,7 @@ static void reg_define(IrBasicBlock *bb, IrRegister *reg, int position)
     if (!reg)
         return;
 
-    register_set_unmark(bb->live.entry, reg->virtual_index);
+    register_set_unmark(bb->live.entry, reg->index);
     reg->liveness.start = MIN(reg->liveness.start, position);
 }
 
@@ -61,7 +61,7 @@ static void reg_use(IrBasicBlock *bb, IrRegister *reg, int position)
     if (!reg)
         return;
 
-    register_set_mark(bb->live.entry, reg->virtual_index);
+    register_set_mark(bb->live.entry, reg->index);
     reg->liveness.finish = MAX(reg->liveness.finish, position);
 }
 
@@ -115,7 +115,7 @@ static void function_end(IrFunction *function)
     {
         for(int i = 0;i < function->registers.count; i++)
         {
-            int reg_idx = function->registers.list[i]->virtual_index;
+            int reg_idx = function->registers.list[i]->index;
 
             // See if we have a register that is in the entry and exit
             // sets for this basic block.

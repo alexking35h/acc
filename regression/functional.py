@@ -136,12 +136,16 @@ class GccCompiler(Compiler):
 class AccIrCompiler(Compiler):
     """ACC (IR-only) compiler."""
 
-    def __init__(self, path, output):
+    def __init__(self, path, output, regalloc=False):
         super().__init__(output)
         self._path = path
+        self._regalloc = regalloc
 
     def compile(self, source, output):
-        cmd = [self._path, "-"]
+        if self._regalloc:
+            cmd = [self._path, "-i", "-", "-"]
+        else:
+            cmd = [self._path, "-i", "-", "-r", "-"]
         ir = subprocess.run(cmd, input=source.encode(), check=True, capture_output=True)
 
         gcc_cmd = [GCC_COMPILER, "-x", "c", "-o", output, "-"]

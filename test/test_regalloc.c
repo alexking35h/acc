@@ -7,9 +7,8 @@
 #include <cmocka.h>
 
 #include "ir.h"
+#include "regalloc.h"
 #include "liveness.h"
-
-void regalloc(IrFunction *, int[], int[]);
 
 static void regalloc_no_spill()
 {
@@ -36,19 +35,13 @@ static void regalloc_no_spill()
             .list = reg_list
         }
     };
-
-    regalloc(
-        &function,
-        (int[]){1,2,3,4,-1},
-        (int[]){5,6,-1}
-    );
+    regalloc(&function, 6);
     assert_true(reg_list[2] == &regC);
-    assert_true(regC.real.spill == 0);
 
     // Check the register allocations.
-    assert_true(regA.real.index == 6);
-    assert_true(regB.real.index == 5);
-    assert_true(regC.real.index == 5);
+    assert_true(regA.type == REG_ANY && regA.index == 9);
+    assert_true(regB.type == REG_ANY && regB.index == 8);
+    assert_true(regC.type == REG_ANY && regC.index == 8);
 }
 
 static void regalloc_no_fixup()
@@ -102,16 +95,15 @@ static void regalloc_no_fixup()
         .registers = {
             .count = 4,
             .list = reg_list
-        }
+        },
+        .stack_size = 0
     };
 
-    regalloc(
-        &function,
-        (int[]){1,2,3,4,-1},
-        (int[]){5,6,-1}
-    );
-    assert_true(regC.real.index == 5);
-    assert_true(regC.real.spill == 0);
+    regalloc(&function, 6);
+    assert_true(regA.type = REG_ANY && regA.index == 9);
+    assert_true(regC.type = REG_ANY && regC.index == 8);
+    assert_true(regB.type == REG_SPILL && regB.spill == 0);
+    assert_true(regD.type == REG_SPILL && regD.spill == 4);
 }
 
 static void compare_reg(IrRegister * regA, IrRegister * regB)
@@ -122,7 +114,7 @@ static void compare_reg(IrRegister * regA, IrRegister * regB)
     }
     else {
         assert_true(regB);
-        assert_true(regA->real.index == regB->real.index);
+        assert_true(regA->index == regB->index);
     }
 }
 
@@ -130,9 +122,9 @@ static void regalloc_fixup_store()
 {
     IrRegister regA = {
         .type = REG_ANY,
-        .virtual_index = 1,
+        .index = 1,
         .liveness = {
-            .start = 0,
+            .start = 1,
             .finish = 1
         }
     };
@@ -160,23 +152,19 @@ static void regalloc_fixup_store()
         .stack_size = 12
     };
 
-    regalloc(
-        &func,
-        (int[]){0,1,2,3,-1},
-        (int[]){-1}
-    );
+    regalloc(&func, 4);
 
     // Transformed code:
     // - LOADI reg1, 99
     // - LOADSO reg0, 12
     // - STORE32 reg0, reg1
     IrRegister reg0 = {
-        .type = REG_REAL,
-        .real.index = 0
+        .type = REG_ANY,
+        .index = 4
     };
     IrRegister reg1 = {
-        .type = REG_REAL,
-        .real.index = 1
+        .type = REG_ANY,
+        .index = 5
     };
     IrInstruction loadi_t = {
         .op = IR_LOADI,
@@ -226,7 +214,7 @@ static void regalloc_fixup_load()
     //  - ADD (?), regA, regA
     IrRegister regA = {
         .type = REG_ANY,
-        .virtual_index = 1,
+        .index = 1,
         .liveness = {
             .start = 0,
             .finish = 1
@@ -259,11 +247,7 @@ static void regalloc_fixup_load()
         .stack_size = 12
     };
     
-    regalloc(
-        &function,
-        (int[]){0,1,2,3},
-        (int[]){-1}
-    );
+    regalloc(&function, 4);
 
     // Transformed code:
     //  - LOADSO reg0, 12
@@ -272,16 +256,16 @@ static void regalloc_fixup_load()
     //  - LOAD32 reg3, reg0
     //  - ADD (?), reg2, reg3
     IrRegister reg0 = {
-        .type = REG_REAL,
-        .real.index = 0
+        .type = REG_ANY,
+        .index = 4
     };
     IrRegister reg2 = {
-        .type = REG_REAL,
-        .real.index = 2
+        .type = REG_ANY,
+        .index = 6
     };
     IrRegister reg3 = {
-        .type = REG_REAL,
-        .real.index = 3
+        .type = REG_ANY,
+        .index = 7
     };
     IrInstruction loadso_t1 = {
         .op = IR_LOADSO,

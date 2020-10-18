@@ -20,7 +20,7 @@ static void liveness_basic_block(void **state)
 
     // clang-format off
     IrRegister test_reg = {
-        .virtual_index = 0,
+        .index = 0,
         .type = REG_ANY,
         .liveness = {
             .start = -1,
@@ -92,7 +92,7 @@ static void liveness_loop(void **state)
 
     // clang-format off
     IrRegister test_reg = {
-        .virtual_index = 0,
+        .index = 0,
         .type = REG_ANY,
         .liveness = {
             .start = -1,

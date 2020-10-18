@@ -19,6 +19,6 @@
  * After calling this function, the 'enter' and 'exit' fields are set
  * in all REG_ANY registers used in the program.
  */
-// void Liveness_analysis(IrProgram *program);
+void Liveness_analysis(IrFunction *program);
 
 #endif

@@ -12,6 +12,8 @@
 #include "pretty_print.h"
 #include "scanner.h"
 #include "symbol.h"
+#include "liveness.h"
+#include "regalloc.h"
 
 #ifndef VERSION_MAJOR
 #define VERSION_MAJOR 0
@@ -377,8 +379,8 @@ int main(int argc, char **argv)
     // Register allocation
     if (!args.omit_regalloc)
     {
-        // Liveness_analysis(ir_program);
-        // regalloc(ir_program);
+        Liveness_analysis(ir_program);
+        regalloc(ir_program, REGS_ALLOCABLE_AARCH32);
     }
 
     if (args.ir_output && *args.ir_output != '-')

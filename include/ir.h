@@ -71,20 +71,17 @@ typedef enum
 {
     REG_RESERVED,
     REG_ANY,
-    REG_REAL
+    REG_SPILL
 } IrRegType;
 
 typedef struct IrRegister
 {
     IrRegType type;
 
-    int virtual_index;
-
-    struct 
-    {
+    union {
         int index;
         int spill;
-    } real;
+    };
 
     struct
     {
@@ -159,6 +156,9 @@ typedef struct IrFunction
         int count;
     } registers;
 
+    bool has_regalloc;
+    int regalloc_count;
+
     IrBasicBlock *head, *tail;
     struct IrFunction *next;
 } IrFunction;
@@ -173,8 +173,10 @@ void Ir_to_str(IrFunction *, FILE *);
  */
 void Ir_emit_instr(IrBasicBlock * bb, IrInstruction instr);
 
-void Ir_emit_instr_after(IrInstruction * prev, IrInstruction * instr);
-
-void Ir_emit_instr_before(IrInstruction * after, IrInstruction * instr);
+/*
+ * Insert a new instruction before/after another instruction.
+ */
+void Ir_emit_instr_after(IrInstruction * after, IrInstruction * instr);
+void Ir_emit_instr_before(IrInstruction * before, IrInstruction * instr);
 
 #endif

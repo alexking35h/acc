@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "ir.h"
+#include "regalloc.h"
 
 #define INDENT "    "
 
@@ -27,10 +28,10 @@ static void ir_register(FILE *fd, IrRegister *reg)
     switch (reg->type)
     {
     case REG_RESERVED:
-        fprintf(fd, "r%d", reg->virtual_index);
+        fprintf(fd, "r%d", reg->index);
         break;
     case REG_ANY:
-        fprintf(fd, "t%d", reg->virtual_index);
+        fprintf(fd, "t%d", reg->index);
         break;
     }
 }
@@ -286,9 +287,19 @@ static void function(FILE *fd, IrFunction *func)
     fprintf(fd, INDENT "_Alignas(4) uint8_t sp[%d];\n", func->stack_size);
 
     // Declare all registers used within this function.
-    for (int i = 0; i < func->registers.count; i++)
+    if(func->has_regalloc)
     {
-        fprintf(fd, INDENT "uint32_t t%d;\n", i);
+        for(int i = 0;i < func->regalloc_count;i++)
+        {
+            fprintf(fd, INDENT "uint32_t t%d;\n", REGS_RESERVED + i);
+        }
+    }
+    else 
+    {
+        for (int i = 0;i < func->registers.count;i++)
+        {
+            fprintf(fd, INDENT "uint32_t t%d;\n", func->registers.list[i]->index);
+        }
     }
 
     for (IrBasicBlock *bb = func->head; bb != NULL; bb = bb->next)
@@ -307,6 +318,7 @@ void Ir_to_str(IrFunction *ir, FILE *fd)
     for (int i = 0; i < 3; i++)
     {
         fprintf(fd, "uint32_t r%d = 0;\n", i);
+        fprintf(fd, "uint32_t t%d = 0;\n", i);
     }
 
     // Print out all functions.
