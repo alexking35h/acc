@@ -143,21 +143,24 @@ static int regalloc_spill(IrFunction * function)
 }
 
 
-static void regalloc_alloc(IrFunction * function, int free_regs)
+static void regalloc_alloc(IrFunction * function, int * free_regs)
 {
+    int free_registers_count = 0;
+    for(;free_regs[free_registers_count] != -1;free_registers_count++);
+
     FreeStack free = {
         .head = 0,
-        .stack = calloc(5, sizeof(int))
+        .stack = calloc(free_registers_count, sizeof(int))
     };
-    for(int i = 0;i < free_regs;i++)
+    for(int i = 0;i < free_registers_count;i++)
     {
-        stack_push(&free, i + REGS_RESERVED + REGS_SPILL);
+        stack_push(&free, free_regs[i]);
     }
 
     ActiveSet active = {
         .count = 0,
-        .max = 5,
-        .set = calloc(5, sizeof(IrRegister **))
+        .max = free_registers_count,
+        .set = calloc(free_registers_count, sizeof(IrRegister **))
     };
 
     registers_sort(function->registers.list, function->registers.count);
@@ -229,7 +232,7 @@ static void emit_spill_load(IrInstruction * before, int spill_loc, IrRegister * 
     Ir_emit_instr_before(before, load32);
 }
 
-static void regalloc_fixup(IrFunction * function)
+static void regalloc_fixup(IrFunction * function, int * fixup_regs)
 {
     // Create the spill register set.
     IrRegister * spill_regs[REGS_SPILL];
@@ -237,7 +240,7 @@ static void regalloc_fixup(IrFunction * function)
     {
         spill_regs[i] = calloc(1, sizeof(IrRegister));
         spill_regs[i]->type = REG_ANY;
-        spill_regs[i]->index = REGS_RESERVED + i;
+        spill_regs[i]->index = fixup_regs[i];
     }
     IrRegister * spill_src = spill_regs[1];
     IrRegister * spill_dest_left = spill_regs[2];
@@ -271,15 +274,16 @@ static void regalloc_fixup(IrFunction * function)
     }
 }
 
-void regalloc(IrFunction * function, int allocable_regs)
+void regalloc(IrFunction * function, int * free_registers)
 {
-    assert(allocable_regs >= REGS_SPILL);
+    for(int i = 0;i < REGS_SPILL;i++) assert(free_registers[i] != -1);
+
+    int * spill_regs = free_registers;
+    int * free_regs = free_registers + REGS_SPILL;
+
     for(;function;function=function->next)
     {
-        regalloc_alloc(function, allocable_regs - REGS_SPILL);
-        regalloc_fixup(function);
-
-        function->has_regalloc = true;
-        function->regalloc_count = allocable_regs;
+        regalloc_alloc(function, free_regs);
+        regalloc_fixup(function, spill_regs);
     }
 }

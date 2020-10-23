@@ -166,7 +166,7 @@ typedef struct IrFunction
 /*
  * Generate string-representation of the IR.
  */
-void Ir_to_str(IrFunction *, FILE *);
+void Ir_to_str(FILE *, IrFunction *, int *);
 
 /*
  * Append an instruction to a basic block.

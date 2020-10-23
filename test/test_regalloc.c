@@ -35,7 +35,7 @@ static void regalloc_no_spill()
             .list = reg_list
         }
     };
-    regalloc(&function, 6);
+    regalloc(&function, (int[]){4,5,6,7,8,9,-1});
     assert_true(reg_list[2] == &regC);
 
     // Check the register allocations.
@@ -99,7 +99,7 @@ static void regalloc_no_fixup()
         .stack_size = 0
     };
 
-    regalloc(&function, 6);
+    regalloc(&function, (int[]){4,5,6,7,8,9,-1});
     assert_true(regA.type = REG_ANY && regA.index == 9);
     assert_true(regC.type = REG_ANY && regC.index == 8);
     assert_true(regB.type == REG_SPILL && regB.spill == 0);
@@ -152,7 +152,7 @@ static void regalloc_fixup_store()
         .stack_size = 12
     };
 
-    regalloc(&func, 4);
+    regalloc(&func, (int[]){4,5,6,7,-1});
 
     // Transformed code:
     // - LOADI reg1, 99
@@ -247,7 +247,7 @@ static void regalloc_fixup_load()
         .stack_size = 12
     };
     
-    regalloc(&function, 4);
+    regalloc(&function, (int[]){4,5,6,7,-1});
 
     // Transformed code:
     //  - LOADSO reg0, 12

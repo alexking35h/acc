@@ -281,20 +281,20 @@ static void basic_block(FILE *fd, IrBasicBlock *bb)
     }
 }
 
-static void function(FILE *fd, IrFunction *func)
+static void function(FILE *fd, IrFunction *func, int * registers)
 {
     fprintf(fd, "void _%s(void)\n{\n", func->name);
     fprintf(fd, INDENT "_Alignas(4) uint8_t sp[%d];\n", func->stack_size);
 
     // Declare all registers used within this function.
-    if(func->has_regalloc)
+    if(registers)
     {
-        for(int i = 0;i < func->regalloc_count;i++)
+        for(int * reg = registers;*reg != -1;reg++)
         {
-            fprintf(fd, INDENT "uint32_t t%d;\n", REGS_RESERVED + i);
+            fprintf(fd, INDENT "uint32_t t%d;\n", *reg);
         }
     }
-    else 
+    else
     {
         for (int i = 0;i < func->registers.count;i++)
         {
@@ -314,12 +314,12 @@ static void function(FILE *fd, IrFunction *func)
     fprintf(fd, "}\n");
 }
 
-void Ir_to_str(IrFunction *ir, FILE *fd)
+void Ir_to_str(FILE * fd, IrFunction * ir, int * registers)
 {
     fprintf(fd, HEADER);
 
     // Declare all registers used within the program
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < REGS_RESERVED; i++)
     {
         fprintf(fd, "uint32_t r%d = 0;\n", i);
         fprintf(fd, "uint32_t t%d = 0;\n", i);
@@ -328,7 +328,7 @@ void Ir_to_str(IrFunction *ir, FILE *fd)
     // Print out all functions.
     for (IrFunction *func = ir;func != NULL;func = func->next)
     {
-        function(fd, func);
+        function(fd, func, registers);
     }
 
     // Add a main function/entry point.

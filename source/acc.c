@@ -377,21 +377,25 @@ int main(int argc, char **argv)
     IrFunction *ir_program = Ir_generate(ast_root);
     Liveness_analysis(ir_program);
 
+    // Register set.
+    int * free_register_set = NULL;
+
     // Register allocation
     if (!args.omit_regalloc)
     {
-        regalloc(ir_program, REGS_ALLOCABLE_AARCH32);
+        free_register_set = (int[]){4,5,6,7,8,9,10,11,12,-1};
+        regalloc(ir_program, free_register_set);
     }
 
     if (args.ir_output && *args.ir_output != '-')
     {
         FILE *ir_fh = fopen(args.ir_output, "w");
-        Ir_to_str(ir_program, ir_fh);
+        Ir_to_str(ir_fh, ir_program, free_register_set);
         fclose(ir_fh);
     }
     else
     {
-        Ir_to_str(ir_program, stdout);
+        Ir_to_str(stdout, ir_program, free_register_set);
     }
 
 tidyup:

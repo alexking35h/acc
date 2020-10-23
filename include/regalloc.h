@@ -21,28 +21,17 @@
 #define REGS_SPILL 4
 
 /*
- * Default number of registers available to the allocator, including REGS_SPILL.
- * This is determined by the target architecture.
+ * This function tries to allocate all REG_ANY registers in each function a register index in the set
+ * free_registers. Otherwise, registers are spilled to the stack, and store/load operations are
+ * substituted in the code.
  * 
- * For Aarch32, this is {R4, R5, R6, R7, R8, R9, R10, R11, R12}.
+ * The first four registers in free_registers are reserved for spill code (the first is used for holding 
+ * stack addresses in spill code; the remaining three are used for storing destination, left, and right
+ * instruction registers).
+ * 
+ * The free_registers set must include at least REGS_SPILL registers. If |free_registers| = REGS_SPILL, 
+ * all registers are spilled. free_registers is an array of integers, that must terminate in -1.
  */
-#define REGS_ALLOCABLE_AARCH32 9
-
-/*
- * Perform Register allocation
- * 
- * This function allocates all REG_ANY registers in each function, a register index in the range
- * (REGS_RESERVED + REG_SPILL, REGS_RESERVED + allocable_regs). Otherwise, registers are spilled
- * to the stack, and store/load operations are substituted in the code.
- * 
- * Register indexes are numbered from 0:
- *  - [0, REGS_RESERVED) - used by call arguments/return values
- *  - [REGS_RESERVED, REGS_RESERVED + REGS_SPILL) - used for storing/loading registers spilled to memory.
- *  - [REGS_RESERVED + REGS_SPILL, REGS_RESERVED + allocable_regs)
- * 
- * allocable_regs is the number of unreserved registers available to the allocator. allocable_regs must be
- * >= REGS_SPILL (if allocable_regs == REGS_SPILL, all registers are spilled to memory).
- */
-void regalloc(IrFunction * program, int allocable_regs);
+void regalloc(IrFunction * program, int * free_registers);
 
 #endif
