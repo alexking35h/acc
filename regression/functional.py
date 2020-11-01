@@ -3,6 +3,9 @@ import subprocess
 import json
 from os import path
 
+import aarch32
+import elftools.elf.elffile
+
 TEMPLATE_EXPRESSION = """
 int main() {{
     if({expression}) return 0;
@@ -179,8 +182,16 @@ class AccAsmCompiler(Compiler):
         print(f"Compiling source program: {src}")
         self.compile(src, self._output)
 
-        print(f"Running compiled program: {self._output}")
-        subprocess.run([self._output], check=True)
+        print(f"Emulating compiled program: {self._output}")
+
+        with open(self._output, 'rb') as elf_file:
+            elf = elftools.elf.elffile.ELFFile(elf_file)
+
+            vm = aarch32.Aarch32Vm()
+            vm.load_elf(elf)
+            vm.run(elf.header['e_entry'])
+
+            assert vm.exitcode == 0
 
     def error_check(self, source, expected_errors):
         raise NotImplemented
