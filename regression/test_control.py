@@ -19,7 +19,8 @@ ACC_PATH=os.environ.get("ACC_PATH", os.path.join(os.path.dirname(__file__), "../
 COMPILERS = [
     functional.GccCompiler,
     functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=True),
-    functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=False)
+    functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=False),
+    functools.partial(functional.AccAsmCompiler, ACC_PATH)
 ]
 
 
@@ -49,7 +50,6 @@ def test_break(cc):
     assert False
 
 
-@pytest.mark.skip("Broken!")
 def test_return(cc):
     source = "int func(int a, int b, int c) { return a * b * c; }"
     source += "int main() { return func(1,2,3) != 6; }"

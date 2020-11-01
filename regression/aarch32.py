@@ -1,7 +1,7 @@
 """ARM Aarch32 Emulator
 
 This module reads an ARM ELF file, and executes it on a basic Aarch32 VM.
-This emulator only supports static executables, and will not import any other
+This emulator -only supports static executables, and will not import any other
 library dependencies.
 
 This module reads an ARM ELF file, and executes it on a basic Aarch32 VM.
@@ -80,33 +80,33 @@ class Aarch32Vm:
         for ind, segment in enumerate(elf.iter_segments()):
             if segment.header['p_type'] not in ['PT_LOAD']:
                 logging.info("skipping segment %d: %s", ind, segment.header['p_type'])
+                continue
 
-            else:
-                addr = segment.header['p_vaddr']
-                size = segment.header['p_memsz']
+            addr = segment.header['p_vaddr']
+            size = segment.header['p_memsz']
 
-                if addr & (4096 - 1):
-                    new_addr = 4096 * math.floor(addr / 4096)
-                    size = size + (new_addr - addr)
-                    logging.error(
-                        "Segment %d address is not a multiple of 4096 (4KB), using 0x%x instead",
-                        ind,
-                        addr
-                    )
-                    addr = new_addr
+            if addr & (4096 - 1):
+                new_addr = 4096 * math.floor(addr / 4096)
+                size = size + (new_addr - addr)
+                logging.error(
+                    "Segment %d address is not a multiple of 4096 (4KB), using 0x%x instead",
+                    ind,
+                    addr
+                )
+                addr = new_addr
 
-                if size & (4096 - 1):
-                    size = 4096 * math.ceil(size / 4096) + 4096
-                    logging.warning(
-                        "Segment %d size is not a multiple of 4096 (4KB), mapping %d instead",
-                        ind,
-                        size
-                    )
-                
-                logging.info("Map segment %u 0x%x - 0x%x (0x%x bytes)", ind, addr, addr + size, size)
-                
-                self._emu.mem_map(addr, size)
-                self._emu.mem_write(addr, segment.data())
+            if size & (4096 - 1):
+                size = 4096 * math.ceil(size / 4096) + 4096
+                logging.warning(
+                    "Segment %d size is not a multiple of 4096 (4KB), mapping %d instead",
+                    ind,
+                    size
+                )
+            
+            logging.info("Map segment %u 0x%x - 0x%x (0x%x bytes)", ind, addr, addr + size, size)
+            
+            self._emu.mem_map(addr, size)
+            self._emu.mem_write(addr, segment.data())
 
     def _instr_hook(self, _, address, size, *args):
         """Instruction callback."""
@@ -189,7 +189,7 @@ def main():
         logging.info('exit code: %d', vm.exitcode)
 
         print(vm.stdout, end="")
-        exit(vm.exitcode)
+        exit(vm.exitcode) 
 
 if __name__ == "__main__":
     main()

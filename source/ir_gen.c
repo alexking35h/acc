@@ -124,10 +124,7 @@ static IrFunction *new_function(IrGenerator *irgen, char *name)
     IrFunction *function = calloc(1, sizeof(IrFunction));
     function->name = name;
 
-    for(IrFunction * tail = irgen->current_function;tail;tail=tail->next)
-    {
-        if(tail->next) tail->next = function;
-    }
+    function->next = irgen->current_function;
 
     return function;
 }

@@ -20,7 +20,8 @@ ACC_PATH=os.environ.get("ACC_PATH", os.path.join(os.path.dirname(__file__), "../
 COMPILERS = [
     functional.GccCompiler,
     functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=True),
-    functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=False)
+    functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=False),
+    functools.partial(functional.AccAsmCompiler, ACC_PATH)
 ]
 
 

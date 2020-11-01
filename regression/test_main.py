@@ -56,6 +56,6 @@ def test_file_input():
         with open(temp.name, 'w') as temp_file:
             temp_file.write("int main(){}")
         
-        proc = subprocess.run([ACC_PATH, temp.name], capture_output=True)
+        proc = subprocess.run([ACC_PATH, '-i', '-', temp.name], capture_output=True)
         assert proc.returncode == 0
         assert proc.stdout.decode().startswith("// === ACC IR ===")

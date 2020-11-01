@@ -18,6 +18,8 @@ int main() {{
 
 GCC_COMPILER = "/usr/bin/i686-linux-gnu-gcc"
 
+ARM_GCC_COMPILER = "/usr/bin/arm-linux-gnueabi-gcc-8"
+
 
 class CompilerError:
 
@@ -154,6 +156,34 @@ class AccIrCompiler(Compiler):
     def error_check(self, source, expected_errors):
         raise NotImplemented
 
+
+class AccAsmCompiler(Compiler):
+    """ACC assembly-output compiler.
+
+    Generates ARM assembly. Should be assembled with:
+    arm-linux-gnueabi-gcc-8
+    """
+    def __init__(self, path, output):
+        self._path = path
+        self._output = output
+    
+    def compile(self, source, output):
+        cmd = [self._path, '-', '-']
+        acc_proc = subprocess.run(cmd, input=source.encode(), check=True, capture_output=True)
+
+        cmd = [ARM_GCC_COMPILER, '-march=armv8-a', '-x', 'assembler', '-nostdlib', '-o', output, '-']
+        subprocess.run(cmd, input=acc_proc.stdout, check=True)
+    
+    def compile_and_run(self, expression=None, body=None, program=None):
+        src = self.get_source(expression, body, program)
+        print(f"Compiling source program: {src}")
+        self.compile(src, self._output)
+
+        print(f"Running compiled program: {self._output}")
+        subprocess.run([self._output], check=True)
+
+    def error_check(self, source, expected_errors):
+        raise NotImplemented
 
 class AccCheckOnlyCompiler(Compiler):
     
