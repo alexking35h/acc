@@ -160,6 +160,25 @@ class AccIrCompiler(Compiler):
         raise NotImplemented
 
 
+class ArmGccCompiler(Compiler):
+    def __init__(self, output, stdlib=True, opt="-O0"):
+        self._with_stdlib = stdlib
+        self._opt = opt
+
+    def __str__(self):
+        return f"GCC ({self._opt})"
+
+    def compile(self, source, output):
+        if self._with_stdlib:
+            cmd = [ARM_GCC_COMPILER, "-march=armv8-a", self._opt, "-x", "c", "-o", output, "-"]
+        else:
+            cmd = [ARM_GCC_COMPILER, "-march=armv8-a", self._opt, "-x", "c", "-o", output, "-nostdlib", "-"]
+        print(cmd)
+        subprocess.run(cmd, input=source.encode(), check=True)
+    
+    def error_check(self, source, expected_errors):
+        raise NotImplemented
+
 class AccAsmCompiler(Compiler):
     """ACC assembly-output compiler.
 
@@ -169,6 +188,9 @@ class AccAsmCompiler(Compiler):
     def __init__(self, path, output):
         self._path = path
         self._output = output
+    
+    def __str__(self):
+        return "ASM"
     
     def compile(self, source, output):
         cmd = [self._path, '-', '-']

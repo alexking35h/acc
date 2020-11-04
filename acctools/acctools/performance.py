@@ -1,18 +1,34 @@
 
 import functools
-
+import os
 import tempfile
 import elftools.elf.elffile
 
-from functional import (
-    GccCompiler,
+from matplotlib import pyplot
+
+from acctools.compilers import (
+    ArmGccCompiler,
     AccAsmCompiler
 )
+
+from acctools import aarch32
 
 CODE_BASIC = """
 int main()
 {
     return 0;
+}
+"""
+
+CODE_LOOP = """
+int main()
+{
+    int a = 0;
+    while(a < 1000)
+    {
+        a = a + 1;
+    }
+    return a;
 }
 """
 
@@ -23,92 +39,70 @@ int fib(int a)
     if(a == 2) return 1;
     return fib(a-1) + fib(a-2);
 }
-int main()
+int _start()
 {
-    return fib(500);
+    return fib(10);
 }
 """
 
-class PerformanceTest:
+ACC_PATH=os.environ.get("ACC_PATH", os.path.join(os.path.dirname(__file__), "../..//build/acc"))
 
-    def __init__(self, compiler):
-        with tempfile.NamedTemporaryFile() as fil:
-            compiler.compile(self.CODE, fil.name)
-            self._get_codesize(fil.name)
-    
-    def _get_cycles(self):
-        pass
-    
-    def _get_codesize(self, elf):
-        with open(elf, 'rb') as of:
-            elffile = elftools.elf.elffile.ELFFile(of)
-            self._codesize = len(elffile.get_section_by_name('.text').data())
-    
-    @property
-    def cycles(self):
-        raise NotImplemented
-    
-    @property
-    def codesize(self):
-        return self._codesize
-        raise NotImplemented
+def get_codesize(src, compiler):
+    with tempfile.NamedTemporaryFile() as fil:
+        compiler.compile(src, fil.name)
 
+        elffile = elftools.elf.elffile.ELFFile(fil)
+        return len(elffile.get_section_by_name('.text').data())
 
-class Basic(PerformanceTest):
-    CODE = CODE_BASIC
+def get_cycles(src, compiler):
+    with tempfile.NamedTemporaryFile() as fil:
+        compiler.compile(src, fil.name)
 
+        elffile = elftools.elf.elffile.ELFFile(fil)
 
-class Fibonacci(PerformanceTest):
-    CODE = CODE_FIBONACCI
+        vm = aarch32.Aarch32Vm()
+        vm.load_elf(elffile)
+        return vm.run(elffile.header['e_entry'])
 
-
-class ResultsTable:
-
-    def __init__(self):
-        self._results = dict()
-
-    def put(self, compiler, key, result):
-        self._results[(str(compiler),key)] = result
-
-    def get_csv(self):
-        keys = list(set([k for _,k in self._results.keys()]))
-        compilers = list(set([c for c,_ in self._results.keys()]))
-
-        csv = ','.join(['compilers'] + keys)
-
-        for compiler in compilers:
-            csv += '\n' + compiler
-            for key in keys:
-                result = self._results.get((compiler, key), '-')
-                csv += ',' + str(result)
-        
-        return csv
-
-def run_performance_tests(test, results):
-    compilers = [
-        GccCompiler,
-        functools.partial(AccAsmCompiler, "build/acc")
+def test_cycles():
+    target_compilers = [
+        ArmGccCompiler(None, stdlib=False, opt="-O0"),
+        ArmGccCompiler(None, stdlib=False, opt="-O1"),
+        AccAsmCompiler(ACC_PATH, None)
     ]
 
-    for compiler in compilers:
-        cc = compiler(None)
-        test_results = test(cc)
-        results.put(cc, 'code size', test_results.codesize)
+    results = dict()
+    for compiler in target_compilers:
+        cycles = get_cycles(CODE_LOOP, compiler)
+        results[str(compiler)] = cycles
+
+    return results
+
+def test_codesize(csv_file):
+    target_compilers = [
+        ArmGccCompiler(None, stdlib=False, opt="-O0"),
+        ArmGccCompiler(None, stdlib=False, opt="-Os"),
+        AccAsmCompiler(ACC_PATH, None)
+    ]
+
+    results = dict()
+    for compiler in target_compilers:
+        codesize = get_codesize(CODE_BASIC, compiler)
+        results[str(compiler)] = codesize
+
+    return results
 
 def main():
-    tests = [
-        Basic
-    ]
+    codesize_results = test_codesize(os.path.join(os.getcwd(), "codesize.csv"))
+    pyplot.subplot(2, 1, 1)
+    pyplot.ylabel('Code size (Bytes)')
+    pyplot.bar(codesize_results.keys(), codesize_results.values())
 
-    for test in tests:
-        results_table = ResultsTable()
-        results = run_performance_tests(test, results_table)
-    
-        print(results_table.get_csv())
+    cycles_results = test_cycles()
+    pyplot.subplot(2, 1, 2)
+    pyplot.ylabel('Code cycles (Instructions)')
+    pyplot.bar(cycles_results.keys(), cycles_results.values())
 
-if __name__ == "__main__":
-    main()
+    pyplot.savefig(os.path.join(os.getcwd(), "performance.png"))
 
-
-
-
+main()

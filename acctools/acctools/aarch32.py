@@ -75,6 +75,8 @@ class Aarch32Vm:
         self.stdout = ""
         self.exitcode = 0
 
+        self._cycles = 0
+
     def load_elf(self, elf):
         """Load an ARM ELF file into memory."""
         for ind, segment in enumerate(elf.iter_segments()):
@@ -116,6 +118,8 @@ class Aarch32Vm:
         md = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
         instr = list(md.disasm(mem, address))[0]
         logging.debug("Execute 0x%x: %s %s", address, instr.mnemonic, instr.op_str)
+
+        self._cycles += 1
 
     def _interrupt_hook(self, _, no, *args):
         """Interrupt hook."""
@@ -161,6 +165,8 @@ class Aarch32Vm:
         
         if self._emu.reg_read(unicorn.arm_const.UC_ARM_REG_PC) == 1 * 1024 * 1024 - 4:
             logging.warning("Did not receive exit() system call")
+        
+        return self._cycles
 
 def main():
     """main entry point."""
