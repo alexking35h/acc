@@ -3,7 +3,7 @@ import subprocess
 import json
 from os import path
 
-import aarch32
+from acctools import aarch32
 import elftools.elf.elffile
 
 TEMPLATE_EXPRESSION = """

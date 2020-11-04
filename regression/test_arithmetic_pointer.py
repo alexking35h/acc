@@ -9,19 +9,20 @@ includes:
  - Assignment: =, +=, -= (6.5.16)
 """
 
-import functional
 import pytest
 import tempfile
 import functools
 import os
 
+from acctools import compilers
+
 ACC_PATH=os.environ.get("ACC_PATH", os.path.join(os.path.dirname(__file__), "../build/acc"))
 
 COMPILERS = [
-    functional.GccCompiler,
-    functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=True),
-    functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=False),
-    functools.partial(functional.AccAsmCompiler, ACC_PATH)
+    compilers.GccCompiler,
+    functools.partial(compilers.AccIrCompiler, ACC_PATH, regalloc=True),
+    functools.partial(compilers.AccIrCompiler, ACC_PATH, regalloc=False),
+    functools.partial(compilers.AccAsmCompiler, ACC_PATH)
 ]
 
 
