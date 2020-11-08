@@ -16,18 +16,18 @@ from acctools import aarch32
 CODE = """
 int main()
 {
-    int fib[20];
+    int fib[200];
     fib[0] = 1;
     fib[1] = 1;
     int i = 2;
-    while(i < 20)
+    while(i < 200)
     {
         fib[i] = fib[i-1] + fib[i-2];
         i++;
     }
     int total = 0;
     i = 0;
-    while(i < 20)
+    while(i < 200)
     {
         total += fib[i];
         i++;
@@ -36,7 +36,7 @@ int main()
 }
 """
 
-ACC_PATH=os.environ.get("ACC_PATH", os.path.join(os.path.dirname(__file__), "../build/acc"))
+ACC_PATH=os.environ["ACC_PATH"]
 
 def get_codesize(src, compiler):
     with tempfile.NamedTemporaryFile() as fil:
