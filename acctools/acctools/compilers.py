@@ -166,7 +166,7 @@ class ArmGccCompiler(Compiler):
         self._opt = opt
 
     def __str__(self):
-        return f"GCC ({self._opt})"
+        return f"{self._opt}"
 
     def compile(self, source, output):
         if self._with_stdlib:
@@ -190,7 +190,7 @@ class AccAsmCompiler(Compiler):
         self._output = output
     
     def __str__(self):
-        return "ASM"
+        return "ACC"
     
     def compile(self, source, output):
         cmd = [self._path, '-', '-']

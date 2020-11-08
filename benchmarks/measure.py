@@ -13,39 +13,30 @@ from acctools.compilers import (
 
 from acctools import aarch32
 
-CODE_BASIC = """
+CODE = """
 int main()
 {
-    return 0;
-}
-"""
-
-CODE_LOOP = """
-int main()
-{
-    int a = 0;
-    while(a < 1000)
+    int fib[20];
+    fib[0] = 1;
+    fib[1] = 1;
+    int i = 2;
+    while(i < 20)
     {
-        a = a + 1;
+        fib[i] = fib[i-1] + fib[i-2];
+        i++;
     }
-    return a;
+    int total = 0;
+    i = 0;
+    while(i < 20)
+    {
+        total += fib[i];
+        i++;
+    }
+    return total;
 }
 """
 
-CODE_FIBONACCI = """
-int fib(int a)
-{
-    if(a == 1) return 1;
-    if(a == 2) return 1;
-    return fib(a-1) + fib(a-2);
-}
-int _start()
-{
-    return fib(10);
-}
-"""
-
-ACC_PATH=os.environ.get("ACC_PATH", os.path.join(os.path.dirname(__file__), "../..//build/acc"))
+ACC_PATH=os.environ.get("ACC_PATH", os.path.join(os.path.dirname(__file__), "../build/acc"))
 
 def get_codesize(src, compiler):
     with tempfile.NamedTemporaryFile() as fil:
@@ -54,7 +45,7 @@ def get_codesize(src, compiler):
         elffile = elftools.elf.elffile.ELFFile(fil)
         return len(elffile.get_section_by_name('.text').data())
 
-def get_cycles(src, compiler):
+def get_runtime_performance(src, compiler):
     with tempfile.NamedTemporaryFile() as fil:
         compiler.compile(src, fil.name)
 
@@ -64,17 +55,19 @@ def get_cycles(src, compiler):
         vm.load_elf(elffile)
         return vm.run(elffile.header['e_entry'])
 
-def test_cycles():
+def test_runtime_performance():
     target_compilers = [
         ArmGccCompiler(None, stdlib=False, opt="-O0"),
         ArmGccCompiler(None, stdlib=False, opt="-O1"),
+        ArmGccCompiler(None, stdlib=False, opt="-O2"),
+        ArmGccCompiler(None, stdlib=False, opt="-O3"),
         AccAsmCompiler(ACC_PATH, None)
     ]
 
     results = dict()
     for compiler in target_compilers:
-        cycles = get_cycles(CODE_LOOP, compiler)
-        results[str(compiler)] = cycles
+        metrics = get_runtime_performance(CODE, compiler)
+        results[str(compiler)] = metrics
 
     return results
 
@@ -87,22 +80,38 @@ def test_codesize(csv_file):
 
     results = dict()
     for compiler in target_compilers:
-        codesize = get_codesize(CODE_BASIC, compiler)
+        codesize = get_codesize(CODE, compiler)
         results[str(compiler)] = codesize
 
     return results
 
 def main():
     codesize_results = test_codesize(os.path.join(os.getcwd(), "codesize.csv"))
-    pyplot.subplot(2, 1, 1)
+    pyplot.subplot(2, 2, 1)
     pyplot.ylabel('Code size (Bytes)')
     pyplot.bar(codesize_results.keys(), codesize_results.values())
 
-    cycles_results = test_cycles()
-    pyplot.subplot(2, 1, 2)
-    pyplot.ylabel('Code cycles (Instructions)')
-    pyplot.bar(cycles_results.keys(), cycles_results.values())
+    runtime_metrics = test_runtime_performance()
 
-    pyplot.savefig(os.path.join(os.getcwd(), "performance.png"))
+    # Instruction cycles
+    pyplot.subplot(2, 2, 2)
+    pyplot.ylabel('Code cycles (Instructions)')
+    pyplot.bar(runtime_metrics.keys(), [v['cycles'] for v in runtime_metrics.values()])
+
+    # Load instructions
+    pyplot.subplot(2, 2, 3)
+    pyplot.ylabel('Load instructions')
+    pyplot.bar(runtime_metrics.keys(), [v['loads'] for v in runtime_metrics.values()])
+
+    # Store instructions
+    pyplot.subplot(2, 2, 4)
+    pyplot.ylabel('Store instructions')
+    pyplot.bar(runtime_metrics.keys(), [v['stores'] for v in runtime_metrics.values()])
+
+    pyplot.subplots_adjust(wspace=0.4, hspace=0.3)
+
+    fig = pyplot.gcf()
+    fig.set_size_inches(7,4)
+    fig.savefig(os.path.join(os.path.dirname(__file__), "benchmarks.png"), dpi=200)
 
 main()

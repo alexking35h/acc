@@ -49,6 +49,56 @@ ADDRESS_STACK_END = ADDRESS_STACK_START + ADDRESS_STACK_SIZE
 
 EXIT_ADDRESS = 0
 
+LOAD_INSTRUCTIONS = [
+    "LDMDA",
+    "LDMDB",
+    "LDM",
+    "LDMIB",
+    "LDRBT",
+    "LDRB",
+    "LDRD",
+    "LDREX",
+    "LDREXB",
+    "LDREXD",
+    "LDREXH",
+    "LDRH",
+    "LDRHT",
+    "LDRSB",
+    "LDRSBT",
+    "LDRSH",
+    "LDRSHT",
+    "LDRT",
+    "LDR"
+]
+
+STORE_INSTRUCTIONS = [
+    "STC",
+    "STL",
+    "STLB",
+    "STLEX",
+    "STLEXB",
+    "STLEXD",
+    "STLEXH",
+    "STLH",
+    "STMDA",
+    "STMDB",
+    "STM",
+    "STMIB",
+    "STRBT",
+    "STRB",
+    "STRD",
+    "STREX",
+    "STREXB",
+    "STREXD",
+    "STREXH",
+    "STRH",
+    "STRHT",
+    "STRT",
+    "STR"
+]
+
+
+
 class Aarch32Vm:
     """Virtual Machine for ARM Aarch 32."""
 
@@ -75,7 +125,11 @@ class Aarch32Vm:
         self.stdout = ""
         self.exitcode = 0
 
-        self._cycles = 0
+        self._metrics = {
+            'cycles': 0,
+            'loads': 0,
+            'stores': 0
+        }
 
     def load_elf(self, elf):
         """Load an ARM ELF file into memory."""
@@ -119,7 +173,13 @@ class Aarch32Vm:
         instr = list(md.disasm(mem, address))[0]
         logging.debug("Execute 0x%x: %s %s", address, instr.mnemonic, instr.op_str)
 
-        self._cycles += 1
+        # Metrics
+        self._metrics['cycles'] += 1
+
+        if instr.insn_name().upper() in LOAD_INSTRUCTIONS:
+            self._metrics['loads'] += 1
+        elif instr.insn_name().upper() in STORE_INSTRUCTIONS:
+            self._metrics['stores'] += 1
 
     def _interrupt_hook(self, _, no, *args):
         """Interrupt hook."""
@@ -166,7 +226,7 @@ class Aarch32Vm:
         if self._emu.reg_read(unicorn.arm_const.UC_ARM_REG_PC) == 1 * 1024 * 1024 - 4:
             logging.warning("Did not receive exit() system call")
         
-        return self._cycles
+        return self._metrics
 
 def main():
     """main entry point."""

@@ -378,7 +378,6 @@ int main(int argc, char **argv)
 
     // Compiler to IR
     IrFunction *ir_program = Ir_generate(ast_root);
-    Liveness_analysis(ir_program);
 
     // Register set.
     int * free_register_set = NULL;
@@ -386,6 +385,7 @@ int main(int argc, char **argv)
     // Register allocation
     if (!args.omit_regalloc)
     {
+        Liveness_analysis(ir_program);
         free_register_set = (int[]){4,5,6,7,8,9,10,11,12,-1};
         regalloc(ir_program, free_register_set);
     }
