@@ -94,7 +94,7 @@ static int basic_block(IrBasicBlock *bb, int sz)
     {
         changed += register_set_union(bb->cfg_entry[0]->live.exit, bb->live.entry, sz) ? 1 : 0;
     }
-    else if (bb->cfg_entry[1])
+    if (bb->cfg_entry[1])
     {
         changed += register_set_union(bb->cfg_entry[1]->live.exit, bb->live.entry, sz) ? 1 : 0;
     }

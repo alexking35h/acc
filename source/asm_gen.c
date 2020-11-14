@@ -26,7 +26,7 @@ static void function_exit(FILE * fd, IrFunction * function)
 
     // Function postamble.
     // Pop all registers except r0, r1, r2, r3 off the stack and branch.
-    fprintf(fd, INDENT "pop {r4,r5,r6,r7,r8,r9,r10,r11,lr}\n");
+    fprintf(fd, INDENT "pop {r4,r5,r6,r7,r8,r9,r10,r11,r12,lr}\n");
     fprintf(fd, INDENT "bx lr\n");
 }
 
@@ -334,7 +334,7 @@ static void function(FILE * fd, IrFunction * function)
 
     // Function preamble:
     // Store all registers except r0, r1, r2, r3.
-    fprintf(fd, INDENT "push {r4,r5,r6,r7,r8,r9,r10,r11,lr}\n");
+    fprintf(fd, INDENT "push {r4,r5,r6,r7,r8,r9,r10,r11,r12,lr}\n");
 
     // Decrement the stack pointer.
     fprintf(fd, INDENT "sub sp, sp, #%u\n", function->stack_size);
@@ -349,7 +349,7 @@ static void function(FILE * fd, IrFunction * function)
 
     // Function postamble.
     // Pop all registers except r0, r1, r2, r3 off the stack and branch.
-    fprintf(fd, INDENT "pop {r4,r5,r6,r7,r8,r9,r10,r11,lr}\n");
+    fprintf(fd, INDENT "pop {r4,r5,r6,r7,r8,r9,r10,r11,r12,lr}\n");
     fprintf(fd, INDENT "bx lr\n");
 }
 

@@ -272,9 +272,21 @@ static void instruction(FILE *fd, IrInstruction *instr)
     }
 }
 
-static void basic_block(FILE *fd, IrBasicBlock *bb)
+static void basic_block(FILE *fd, IrBasicBlock *bb, IrFunction * func)
 {
-    fprintf(fd, "bb_%d:\n", bb->index);
+    fprintf(fd, "bb_%d: //LiveEntry=", bb->index);
+
+    for(int i = 0;i < func->registers.count;i++)
+    {
+        if(bb->live.entry[i/8] & (1 << (i % 8))) fprintf(fd, "t%d,", i);
+    }
+    fprintf(fd, " //LiveExit=");
+    for(int i = 0;i < func->registers.count;i++)
+    {
+        if(bb->live.exit[i/8] & (1 << (i % 8))) fprintf(fd, "t%d,", i);
+    }
+    fprintf(fd, "\n");
+
     for (IrInstruction *instr = bb->head; instr != NULL; instr = instr->next)
     {
         instruction(fd, instr);
@@ -308,7 +320,7 @@ static void function(FILE *fd, IrFunction *func, int * registers)
 
     for (IrBasicBlock *bb = func->head; bb != NULL; bb = bb->next)
     {
-        basic_block(fd, bb);
+        basic_block(fd, bb, func);
     }
 
     fprintf(fd, "}\n");

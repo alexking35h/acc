@@ -66,7 +66,7 @@ class Compiler(abc.ABC):
         else:
             raise ValueError("Missing expression, body, or program argument.")
         
-    def compile_and_run(self, expression=None, body=None, program=None):
+    def compile_and_run(self, expression=None, body=None, program=None, returncode=0):
         """Compile a source program and check the result.
 
         The test source code can be a single expression, or a statement block
@@ -82,25 +82,26 @@ class Compiler(abc.ABC):
         print(f"Compiling source program: {source}")
 
         self.compile(source, self.output)
-        subprocess.run(self.output, check=True)
+        proc = subprocess.run(self.output, check=False)
+        assert proc.returncode == returncode
     
-    def expression(self, expression, expected_errors=None):
+    def expression(self, expression, expected_errors=None, returncode=0):
         if expected_errors:
             self.error_check(self.get_source(expression=expression), expected_errors)
         else:
-            self.compile_and_run(expression=expression)
+            self.compile_and_run(expression=expression, returncode=returncode)
 
-    def body(self, body, expected_errors=None):
+    def body(self, body, expected_errors=None, returncode=0):
         if expected_errors:
             self.error_check(self.get_source(body=body), expected_errors)
         else:
-            self.compile_and_run(body=body)
+            self.compile_and_run(body=body, returncode=returncode)
 
-    def program(self, program, expected_errors=None):
+    def program(self, program, expected_errors=None, returncode=0):
         if expected_errors:
             self.error_check(self.get_source(program=program), expected_errors)
         else:
-            self.compile_and_run(program=program)
+            self.compile_and_run(program=program, returncode=returncode)
 
     @abc.abstractmethod
     def compile(self, source, output):
@@ -199,7 +200,7 @@ class AccAsmCompiler(Compiler):
         cmd = [ARM_GCC_COMPILER, '-march=armv8-a', '-x', 'assembler', '-nostdlib', '-o', output, '-']
         subprocess.run(cmd, input=acc_proc.stdout, check=True)
     
-    def compile_and_run(self, expression=None, body=None, program=None):
+    def compile_and_run(self, expression=None, body=None, program=None, returncode=0):
         src = self.get_source(expression, body, program)
         print(f"Compiling source program: {src}")
         self.compile(src, self._output)
@@ -213,7 +214,7 @@ class AccAsmCompiler(Compiler):
             vm.load_elf(elf)
             vm.run(elf.header['e_entry'])
 
-            assert vm.exitcode == 0
+            assert vm.exitcode == returncode
 
     def error_check(self, source, expected_errors):
         raise NotImplemented

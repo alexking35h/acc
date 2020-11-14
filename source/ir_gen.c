@@ -360,7 +360,11 @@ static IrRegister *walk_expr_postfix_call(IrGenerator *irgen, ExprAstNode *node)
             EMIT(irgen, IR_MOV, .dest = param_reg, .left = arg_reg);
         }
         EMIT(irgen, IR_CALL, .control.callee = func);
-        return get_reg_reserved(irgen, 0);
+
+        // We need to copy out the return value.
+        IrRegister * ret = get_reg_any(irgen);
+        EMIT(irgen, IR_MOV, .dest=ret, .left=get_reg_reserved(irgen, 0));
+        return ret;
     }
 }
 

@@ -74,9 +74,9 @@ build/test_liveness: $(ACC_OBJECTS) build/test_liveness.o
 build/test_regalloc: $(ACC_OBJECTS) build/test_regalloc.o
 	$(CC) $^ -o $@ $(CFLAGS)
 
-regression_test: build/acc
+functional_test: build/acc
 	pip3 install acctools/
-	ACC_PATH=$^ pytest regression/
+	ACC_PATH=$^ pytest functional/
 	gcov -o build source/*.c -i |sed -n 's/.*uted:\([0-9][0-9]*\).*of \([0-9][0-9]*\)/\1 \2/p' | awk '{t+=$$2;a+=(.01*$$1*$$2)}END{printf "\n** Test coverage: %f0.2%% **\n\n",100*a/t}'
 
 benchmark: build/acc
