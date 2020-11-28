@@ -14,12 +14,7 @@
 #include "symbol.h"
 #include "liveness.h"
 #include "regalloc.h"
-
-#ifndef VERSION_MAJOR
-#define VERSION_MAJOR 0
-#define VERSION_MINOR 0
-#define VERSION_PATCH 0
-#endif
+#include "version.h"
 
 #ifndef GIT_COMMIT
 #define GIT_COMMIT "0000000"

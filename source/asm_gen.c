@@ -1,9 +1,10 @@
 #include <stdlib.h>
 
 #include "ir.h"
+#include "version.h"
 
 #define HEADER                \
-    "# == ACC ASSEMBLY == \n" \
+    "# == ACC (" VERSION_STRING ") == \n" \
     "#\n"                       \
     "# Date: " __DATE__ "\n"  \
     "# Time: " __TIME__ "\n\n"  \

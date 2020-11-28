@@ -4,11 +4,12 @@
 
 #include "ir.h"
 #include "regalloc.h"
+#include "version.h"
 
 #define INDENT "    "
 
 #define HEADER                                                                           \
-    "// === ACC IR === \n//\n"                                                           \
+    "// === ACC (" VERSION_STRING ") IR === \n//\n"                                                           \
     "// Date: " __DATE__ "\n"                                                            \
     "// Time: " __TIME__ "\n\n"                                                          \
     "typedef unsigned int uint32_t;\n"                                                   \
