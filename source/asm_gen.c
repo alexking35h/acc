@@ -22,7 +22,10 @@ static void function_enter(FILE * fd, IrFunction * function)
 static void function_exit(FILE * fd, IrFunction * function)
 {
     // Increment the stack pointer.
-    fprintf(fd, INDENT "add sp, sp, #%u\n", function->stack_size);
+    for(int shift=0;shift < 32;shift += 8)
+    {
+        fprintf(fd, INDENT "add sp, sp, #%u\n", function->stack_size & (0xFF << shift));
+    }
 
     // Function postamble.
     // Pop all registers except r0, r1, r2, r3 off the stack and branch.
@@ -175,6 +178,7 @@ static void store(FILE * fd, IrInstruction * instr)
     }
 }
 
+
 /*
  * Load instructions
  * - IR_LOAD8
@@ -197,21 +201,35 @@ static void load(FILE * fd, IrInstruction * instr)
     }
 }
 
+static void load_constant(FILE * fd, IrRegister * reg, int constant)
+{
+    bool movop = true;
+    for(int shift = 0;shift < 32;shift += 8)
+    {
+        int imm = constant & (0xFF << shift);
+        if(movop && imm)
+        {
+            fprintf(fd, INDENT "mov r%d, #%d\n", reg->index, imm);
+            movop = false;
+        }
+        else if(imm)
+        {
+            fprintf(fd, INDENT "orr r%d, r%d, #%d\n", reg->index, reg->index, imm);
+        }
+    }
+    if(movop)
+    {
+        // Load all zero's.
+        fprintf(fd, INDENT "mov r%d, #0\n", reg->index);
+    }
+}
+
 /*
  * IR_LOADI instruction
  */
 static void loadi(FILE * fd, IrInstruction * instr)
 {
-    if(instr->value > 0xFFFF)
-    {
-        fprintf(fd, INDENT "mov r%d, #%d\n", instr->dest->index, instr->value >> 16);
-        fprintf(fd, INDENT "lsl r%d, r%d, #16\n", instr->dest->index, instr->dest->index);
-        fprintf(fd, INDENT "orr r%d, #%d\n", instr->dest->index, instr->value & 0xFFFF);
-    } 
-    else
-    {
-        fprintf(fd, INDENT "mov r%d, #%d\n", instr->dest->index, instr->value);
-    }
+    load_constant(fd, instr->dest, instr->value);
 }
 
 /*
@@ -219,7 +237,11 @@ static void loadi(FILE * fd, IrInstruction * instr)
  */
 static void loadso(FILE * fd, IrInstruction * instr)
 {
-    fprintf(fd, INDENT "add r%d, sp, #%d\n", instr->dest->index, instr->value);
+    // Load the offset first.
+    load_constant(fd, instr->dest, instr->value);
+    
+    // Add the SP
+    fprintf(fd, INDENT "add r%d, r%d, sp\n", instr->dest->index, instr->dest->index);
 }
 
 /* 
@@ -337,7 +359,10 @@ static void function(FILE * fd, IrFunction * function)
     fprintf(fd, INDENT "push {r4,r5,r6,r7,r8,r9,r10,r11,r12,lr}\n");
 
     // Decrement the stack pointer.
-    fprintf(fd, INDENT "sub sp, sp, #%u\n", function->stack_size);
+    for(int shift=0;shift < 32;shift += 8)
+    {
+        fprintf(fd, INDENT "sub sp, sp, #%u\n", function->stack_size & (0xFF << shift));
+    }
 
     for(IrBasicBlock * bb = function->head;bb != NULL;bb = bb->next)
     {
@@ -345,7 +370,10 @@ static void function(FILE * fd, IrFunction * function)
     }
 
     // Increment the stack pointer.
-    fprintf(fd, INDENT "add sp, sp, #%u\n", function->stack_size);
+    for(int shift=0;shift < 32;shift += 8)
+    {
+        fprintf(fd, INDENT "add sp, sp, #%u\n", function->stack_size & (0xFF << shift));
+    }
 
     // Function postamble.
     // Pop all registers except r0, r1, r2, r3 off the stack and branch.

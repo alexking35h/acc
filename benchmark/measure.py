@@ -16,18 +16,18 @@ from acctools import aarch32
 CODE = """
 int main()
 {
-    int fib[200];
+    int fib[500];
     fib[0] = 1;
     fib[1] = 1;
     int i = 2;
-    while(i < 200)
+    while(i < 500)
     {
         fib[i] = fib[i-1] + fib[i-2];
         i++;
     }
     int total = 0;
     i = 0;
-    while(i < 200)
+    while(i < 500)
     {
         total += fib[i];
         i++;
