@@ -124,10 +124,7 @@ static IrFunction *new_function(IrGenerator *irgen, char *name)
     IrFunction *function = calloc(1, sizeof(IrFunction));
     function->name = name;
 
-    for(IrFunction * tail = irgen->current_function;tail;tail=tail->next)
-    {
-        if(tail->next) tail->next = function;
-    }
+    function->next = irgen->current_function;
 
     return function;
 }
@@ -363,7 +360,11 @@ static IrRegister *walk_expr_postfix_call(IrGenerator *irgen, ExprAstNode *node)
             EMIT(irgen, IR_MOV, .dest = param_reg, .left = arg_reg);
         }
         EMIT(irgen, IR_CALL, .control.callee = func);
-        return get_reg_reserved(irgen, 0);
+
+        // We need to copy out the return value.
+        IrRegister * ret = get_reg_any(irgen);
+        EMIT(irgen, IR_MOV, .dest=ret, .left=get_reg_reserved(irgen, 0));
+        return ret;
     }
 }
 

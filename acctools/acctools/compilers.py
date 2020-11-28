@@ -3,6 +3,9 @@ import subprocess
 import json
 from os import path
 
+from acctools import aarch32
+import elftools.elf.elffile
+
 TEMPLATE_EXPRESSION = """
 int main() {{
     if({expression}) return 0;
@@ -17,6 +20,8 @@ int main() {{
 """
 
 GCC_COMPILER = "/usr/bin/i686-linux-gnu-gcc"
+
+ARM_GCC_COMPILER = "/usr/bin/arm-linux-gnueabi-gcc-8"
 
 
 class CompilerError:
@@ -61,7 +66,7 @@ class Compiler(abc.ABC):
         else:
             raise ValueError("Missing expression, body, or program argument.")
         
-    def compile_and_run(self, expression=None, body=None, program=None):
+    def compile_and_run(self, expression=None, body=None, program=None, returncode=0):
         """Compile a source program and check the result.
 
         The test source code can be a single expression, or a statement block
@@ -77,25 +82,26 @@ class Compiler(abc.ABC):
         print(f"Compiling source program: {source}")
 
         self.compile(source, self.output)
-        subprocess.run(self.output, check=True)
+        proc = subprocess.run(self.output, check=False)
+        assert proc.returncode == returncode
     
-    def expression(self, expression, expected_errors=None):
+    def expression(self, expression, expected_errors=None, returncode=0):
         if expected_errors:
             self.error_check(self.get_source(expression=expression), expected_errors)
         else:
-            self.compile_and_run(expression=expression)
+            self.compile_and_run(expression=expression, returncode=returncode)
 
-    def body(self, body, expected_errors=None):
+    def body(self, body, expected_errors=None, returncode=0):
         if expected_errors:
             self.error_check(self.get_source(body=body), expected_errors)
         else:
-            self.compile_and_run(body=body)
+            self.compile_and_run(body=body, returncode=returncode)
 
-    def program(self, program, expected_errors=None):
+    def program(self, program, expected_errors=None, returncode=0):
         if expected_errors:
             self.error_check(self.get_source(program=program), expected_errors)
         else:
-            self.compile_and_run(program=program)
+            self.compile_and_run(program=program, returncode=returncode)
 
     @abc.abstractmethod
     def compile(self, source, output):
@@ -154,6 +160,64 @@ class AccIrCompiler(Compiler):
     def error_check(self, source, expected_errors):
         raise NotImplemented
 
+
+class ArmGccCompiler(Compiler):
+    def __init__(self, output, stdlib=True, opt="-O0"):
+        self._with_stdlib = stdlib
+        self._opt = opt
+
+    def __str__(self):
+        return f"{self._opt}"
+
+    def compile(self, source, output):
+        if self._with_stdlib:
+            cmd = [ARM_GCC_COMPILER, "-march=armv8-a", self._opt, "-x", "c", "-o", output, "-"]
+        else:
+            cmd = [ARM_GCC_COMPILER, "-march=armv8-a", self._opt, "-x", "c", "-o", output, "-nostdlib", "-"]
+        print(cmd)
+        subprocess.run(cmd, input=source.encode(), check=True)
+    
+    def error_check(self, source, expected_errors):
+        raise NotImplemented
+
+class AccAsmCompiler(Compiler):
+    """ACC assembly-output compiler.
+
+    Generates ARM assembly. Should be assembled with:
+    arm-linux-gnueabi-gcc-8
+    """
+    def __init__(self, path, output):
+        self._path = path
+        self._output = output
+    
+    def __str__(self):
+        return "ACC"
+    
+    def compile(self, source, output):
+        cmd = [self._path, '-', '-']
+        acc_proc = subprocess.run(cmd, input=source.encode(), check=True, capture_output=True)
+
+        cmd = [ARM_GCC_COMPILER, '-march=armv8-a', '-x', 'assembler', '-nostdlib', '-o', output, '-']
+        subprocess.run(cmd, input=acc_proc.stdout, check=True)
+    
+    def compile_and_run(self, expression=None, body=None, program=None, returncode=0):
+        src = self.get_source(expression, body, program)
+        print(f"Compiling source program: {src}")
+        self.compile(src, self._output)
+
+        print(f"Emulating compiled program: {self._output}")
+
+        with open(self._output, 'rb') as elf_file:
+            elf = elftools.elf.elffile.ELFFile(elf_file)
+
+            vm = aarch32.Aarch32Vm()
+            vm.load_elf(elf)
+            vm.run(elf.header['e_entry'])
+
+            assert vm.exitcode == returncode
+
+    def error_check(self, source, expected_errors):
+        raise NotImplemented
 
 class AccCheckOnlyCompiler(Compiler):
     

@@ -45,6 +45,9 @@ extern int errno;
 // can override it.
 int main(int, char **) __attribute__((weak));
 
+void assembly_gen(FILE * fd, IrFunction * program);
+
+
 typedef struct CommandLineArgs_t
 {
     const char *source_file;
@@ -387,16 +390,22 @@ int main(int argc, char **argv)
         regalloc(ir_program, free_register_set);
     }
 
-    if (args.ir_output && *args.ir_output != '-')
+    if (args.ir_output)
     {
-        FILE *ir_fh = fopen(args.ir_output, "w");
-        Ir_to_str(ir_fh, ir_program, free_register_set);
-        fclose(ir_fh);
+        if(strcmp(args.ir_output, "-") == 0)
+        {
+            Ir_to_str(stdout, ir_program, free_register_set);
+        }
+        else
+        {
+            FILE *ir_fh = fopen(args.ir_output, "w");
+            Ir_to_str(ir_fh, ir_program, free_register_set);
+            fclose(ir_fh);
+        }
+        return 0;
     }
-    else
-    {
-        Ir_to_str(stdout, ir_program, free_register_set);
-    }
+
+    assembly_gen(stdout, ir_program);
 
 tidyup:
     compiler_destroy(compiler);

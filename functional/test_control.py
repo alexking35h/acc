@@ -8,18 +8,20 @@ This includes:
  - Logical And/Or expressions - 6.5.13, 6.5.14
 """
 
-import functional
 import pytest
 import tempfile
 import functools
 import os
 
+from acctools import compilers
+
 ACC_PATH=os.environ.get("ACC_PATH", os.path.join(os.path.dirname(__file__), "../build/acc"))
 
 COMPILERS = [
-    functional.GccCompiler,
-    functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=True),
-    functools.partial(functional.AccIrCompiler, ACC_PATH, regalloc=False)
+    compilers.GccCompiler,
+    functools.partial(compilers.AccIrCompiler, ACC_PATH, regalloc=True),
+    functools.partial(compilers.AccIrCompiler, ACC_PATH, regalloc=False),
+    functools.partial(compilers.AccAsmCompiler, ACC_PATH)
 ]
 
 
@@ -49,7 +51,6 @@ def test_break(cc):
     assert False
 
 
-@pytest.mark.skip("Broken!")
 def test_return(cc):
     source = "int func(int a, int b, int c) { return a * b * c; }"
     source += "int main() { return func(1,2,3) != 6; }"

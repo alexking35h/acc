@@ -78,6 +78,13 @@ error handling. The tests themselves are parameterized, and run against ACC's IR
 register allocation), assembly output, and GCC (used as a reference, to verify the tests). Calling 
 `make functional_test` within the top-level directory runs the functional tests.
 
+## Benchmarks
+
+Benchmark tests against `GCC` `-Os`, `-O0`, `-O1`,`-O2`,`-O3`; measuring compile size (size of the `.text` ELF section),
+runtime (measured in instruction cycles), and number of loads/stores.
+
+![Benchmarks](benchmark/benchmarks.png "ACC and GCC benchmark test results")
+
 ## Missing
 
 Generally speaking, I've implemented language features depth-first in the front-end (how very Agile!), 

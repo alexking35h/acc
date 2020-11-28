@@ -37,8 +37,14 @@ static _Bool register_set_union(uint8_t *set_A, uint8_t *set_B, int sz)
     uint8_t changed = 0;
     for(int i = 0;i < sz / 8 + 1;i++)
     {
-        changed += (set_A[i] == set_B[i] ? 0 : 1);
-        set_A[i] |= set_B[i];
+        // Alex - should this be == ? What if a node has two parents?
+        // The parents can have different ENTRY sets...
+        uint8_t t = set_A[i] | set_B[i];
+        if(t != set_A[i]) 
+        {
+            changed++;
+            set_A[i] = t;
+        }
     }
     return changed != 0;
 }
@@ -88,11 +94,10 @@ static int basic_block(IrBasicBlock *bb, int sz)
     {
         changed += register_set_union(bb->cfg_entry[0]->live.exit, bb->live.entry, sz) ? 1 : 0;
     }
-    else if (bb->cfg_entry[1])
+    if (bb->cfg_entry[1])
     {
         changed += register_set_union(bb->cfg_entry[1]->live.exit, bb->live.entry, sz) ? 1 : 0;
     }
-
     return changed;
 }
 
