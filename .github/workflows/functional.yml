@@ -13,4 +13,4 @@ jobs:
       id: build
       with:
         entrypoint: make
-        args: regression_test
+        args: functional_test
