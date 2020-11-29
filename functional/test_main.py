@@ -40,7 +40,7 @@ def test_intermediate_output_stdout():
     src = "int main(){}"
     proc = subprocess.run([ACC_PATH, '-i', '-', '-'], capture_output=True, input=src.encode())
     assert proc.returncode == 0
-    assert proc.stdout.decode().startswith("// === ACC IR ===")
+    assert re.match(r'// === ACC \(\d\.\d\.\d\) IR ===', proc.stdout.decode())
 
 def test_intermediate_output_file():
     """Passing -i [FILE] should write intermediate output to file."""
@@ -48,7 +48,8 @@ def test_intermediate_output_file():
     with tempfile.NamedTemporaryFile() as temp:
         proc = subprocess.run([ACC_PATH, '-i', temp.name, '-'], input=src.encode())
         assert proc.returncode == 0
-        assert open(temp.name, 'r').read().startswith("// === ACC IR ===")
+        with open(temp.name, 'r') as tempfd:
+            assert re.match(r'// === ACC \(\d\.\d\.\d\) IR ===', tempfd.read())
 
 def test_file_input():
     """Test reading input from file (not '-')."""
@@ -58,4 +59,4 @@ def test_file_input():
         
         proc = subprocess.run([ACC_PATH, '-i', '-', temp.name], capture_output=True)
         assert proc.returncode == 0
-        assert proc.stdout.decode().startswith("// === ACC IR ===")
+        assert re.match(r'// === ACC \(\d\.\d\.\d\) IR ===', proc.stdout.decode())
