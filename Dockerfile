@@ -17,11 +17,6 @@ RUN apt-get -y install python3-pip
 RUN pip3 install black
 RUN pip3 install pytest
 
-# A32 Emulator requirements
-RUN pip3 install unicorn
-RUN pip3 install capstone
-RUN pip3 install pyelftools
-
 # Download & install cmocka
 RUN apt-get -y install curl cmake
 RUN curl https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz -o /root/cmocka-1.1.5.tar.xz

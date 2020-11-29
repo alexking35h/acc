@@ -10,5 +10,10 @@ setup(
         'console_scripts': [
             'aarch32=acctools.aarch32:main',
         ]
-    }
+    },
+    install_requires=[
+        'unicorn>=1.0.2',
+        'capstone>=4.0.2',
+        'pyelftools>=0.26'
+    ]
 )
