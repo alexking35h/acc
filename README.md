@@ -10,6 +10,8 @@ The goals of ACC are:
 * Helpful error messages and user interface
 * High test coverage
 
+![ACC User Interace](screenshot.png)
+
 ACC targets ARM A32, and makes no effort to optimise the generated code. ACC is not
 designed with extensibility/portability in mind.
 
