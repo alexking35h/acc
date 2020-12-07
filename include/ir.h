@@ -120,7 +120,12 @@ typedef struct IrInstruction
     struct {
         IrBasicBlock * jump_true;
         IrBasicBlock * jump_false;
-        IrFunction * callee;
+        union
+        {
+            IrFunction * callee;
+            char * callee_name;
+        };
+        
     } control;
 
     int live_position;

@@ -101,3 +101,14 @@ def test_invalid_assignment(cc):
     )
     err = compilers.CompilerError("ANALYSIS", 3, err_msg)
     cc.body("char * b;b = 12;", [err])
+
+def test_incompatible_function_declaration(cc):
+    err_msg = "function definition does not match prior declaration"
+    err = compilers.CompilerError("ANALYSIS", 1, err_msg)
+    cc.program("int f(char a, int b);int f(char a, int * b){}", [err])
+
+@pytest.mark.skip("Not implemented yet")
+def test_missing_function_definition(cc):
+    err_msg = "Missing function definition 'missing'"
+    err = compilers.CompilerError("ANALYSIS", 1, err_msg)
+    cc.program("int a();int main(){return a;}", [err])

@@ -351,7 +351,7 @@ static IrRegister *walk_expr_postfix_call(IrGenerator *irgen, ExprAstNode *node)
     else
     {
         // This is just a straight up function call :-)
-        IrFunction *func = node->postfix.left->primary.symbol->ir.function;
+        char * fun_name = node->postfix.left->primary.symbol->name;
         int i = 0;
         for (ArgumentListItem *arg = node->postfix.args; arg != NULL; arg = arg->next)
         {
@@ -359,7 +359,7 @@ static IrRegister *walk_expr_postfix_call(IrGenerator *irgen, ExprAstNode *node)
             IrRegister *param_reg = get_reg_reserved(irgen, i++);
             EMIT(irgen, IR_MOV, .dest = param_reg, .left = arg_reg);
         }
-        EMIT(irgen, IR_CALL, .control.callee = func);
+        EMIT(irgen, IR_CALL, .control.callee_name=fun_name);
 
         // We need to copy out the return value.
         IrRegister * ret = get_reg_any(irgen);
@@ -644,10 +644,25 @@ static void walk_stmt(IrGenerator *irgen, StmtAstNode *node)
     walk_stmt(irgen, node->next);
 }
 
-IrFunction *Ir_generate(DeclAstNode *ast_root)
+IrFunction *Ir_generate(DeclAstNode *ast_root, SymbolTable * tab)
 {
     IrGenerator irgen = {NULL, NULL};
 
     walk_decl(&irgen, ast_root);
+
+    // We have to fix up all function call references now.
+    // Todo: make this not terrible.
+    for(IrFunction * fp = irgen.current_function;fp;fp=fp->next)
+    {
+        for(IrBasicBlock * bp = fp->head;bp;bp=bp->next)
+        {
+            for(IrInstruction * ip = bp->head;ip;ip=ip->next)
+            {
+                if(ip->op != IR_CALL) continue;
+                ip->control.callee = symbol_table_get(tab, ip->control.callee_name, false)->ir.function;
+            }
+        }
+    }
+
     return irgen.current_function;
 }

@@ -58,6 +58,7 @@ typedef struct AccCompiler_t
     ErrorReporter *error_reporter;
     Scanner *scanner;
     Parser *parser;
+    SymbolTable * tab;
 } AccCompiler;
 
 static void help(const char *exe_path)
@@ -224,6 +225,7 @@ static AccCompiler *compiler_init(const char *path)
     compiler->error_reporter = Error_init();
     compiler->scanner = Scanner_init(src, compiler->error_reporter);
     compiler->parser = Parser_init(compiler->scanner, compiler->error_reporter);
+    compiler->tab = symbol_table_create(NULL);
 
     return compiler;
 }
@@ -235,8 +237,7 @@ static DeclAstNode *compiler_parse(AccCompiler *compiler)
 
 static void compiler_analysis(AccCompiler *compiler, DeclAstNode *ast_root)
 {
-    SymbolTable *global = symbol_table_create(NULL);
-    analysis_ast_walk(compiler->error_reporter, ast_root, NULL, NULL, global);
+    analysis_ast_walk(compiler->error_reporter, ast_root, NULL, NULL, compiler->tab);
 }
 
 static void print_error_json(ErrorType type, int line, int pos, char *msg)
@@ -372,7 +373,7 @@ int main(int argc, char **argv)
     }
 
     // Compiler to IR
-    IrFunction *ir_program = Ir_generate(ast_root);
+    IrFunction *ir_program = Ir_generate(ast_root, compiler->tab);
     Liveness_analysis(ir_program);
 
     // Register set.
