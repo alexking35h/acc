@@ -1,9 +1,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
-#include "ctype.h"
 #include "token.h"
+#include "ctype.h"
 
 #define TYPE_SIGNEDNESS (TYPE_SIGNED | TYPE_UNSIGNED)
 #define TYPE_SPECIFIERS (TYPE_VOID | TYPE_CHAR | TYPE_INT)
@@ -209,6 +210,39 @@ char *ctype_str(const CType *type)
     }
     buf[len - 1] = '\0';
     return buf;
+}
+
+bool ctype_eq(CType *a, CType *b)
+{
+    if(a->type != b->type)
+    {
+        return false;
+    }
+    if(a->type == TYPE_BASIC)
+    {
+        return a->basic.type_specifier == b->basic.type_specifier;
+    }
+    else if(a->type == TYPE_ARRAY || a->type == TYPE_POINTER)
+    {
+        return ctype_eq(a->derived.type, b->derived.type);
+    }
+    else
+    {
+        if(!ctype_eq(a->derived.type, b->derived.type)) return false;
+
+        ParameterListItem * a_param = a->derived.params;
+        ParameterListItem * b_param = b->derived.params;
+
+        while(a_param && b_param)
+        {
+            if(!ctype_eq(a_param->type, b_param->type)) return false;
+
+            a_param = a_param->next;
+            b_param = b_param->next;
+        }
+
+        return a_param == NULL && b_param == NULL;
+    }
 }
 
 /*

@@ -542,10 +542,10 @@ static void walk_decl_object(IrGenerator *irgen, DeclAstNode *node)
 
 static void walk_decl(IrGenerator *irgen, DeclAstNode *node)
 {
-    if (node->body)
+    if(CTYPE_IS_FUNCTION(node->type))
     {
         // We are declaring a new function
-        walk_decl_function(irgen, node);
+        if(node->body) walk_decl_function(irgen, node);
     }
     else
     {
