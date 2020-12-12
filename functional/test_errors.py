@@ -111,4 +111,4 @@ def test_incompatible_function_declaration(cc):
 def test_missing_function_definition(cc):
     err_msg = "Missing function definition 'missing'"
     err = compilers.CompilerError("ANALYSIS", 1, err_msg)
-    cc.program("int a();int main(){return a;}", [err])
+    cc.program("int a();int main(){return a();}", [err])

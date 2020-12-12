@@ -124,8 +124,6 @@ static IrFunction *new_function(IrGenerator *irgen, char *name)
     IrFunction *function = calloc(1, sizeof(IrFunction));
     function->name = name;
 
-    function->next = irgen->current_function;
-
     return function;
 }
 
@@ -351,7 +349,6 @@ static IrRegister *walk_expr_postfix_call(IrGenerator *irgen, ExprAstNode *node)
     else
     {
         // This is just a straight up function call :-)
-        char * fun_name = node->postfix.left->primary.symbol->name;
         int i = 0;
         for (ArgumentListItem *arg = node->postfix.args; arg != NULL; arg = arg->next)
         {
@@ -359,7 +356,7 @@ static IrRegister *walk_expr_postfix_call(IrGenerator *irgen, ExprAstNode *node)
             IrRegister *param_reg = get_reg_reserved(irgen, i++);
             EMIT(irgen, IR_MOV, .dest = param_reg, .left = arg_reg);
         }
-        EMIT(irgen, IR_CALL, .control.callee_name=fun_name);
+        EMIT(irgen, IR_CALL, .control.callee=node->postfix.left->primary.symbol->ir.function);
 
         // We need to copy out the return value.
         IrRegister * ret = get_reg_any(irgen);
@@ -485,12 +482,12 @@ static IrRegister *walk_expr(IrGenerator *irgen, ExprAstNode *node)
 
 static void walk_decl_function(IrGenerator *irgen, DeclAstNode *node)
 {
-    IrFunction *func = new_function(irgen, node->identifier->lexeme);
+    IrFunction *func = node->symbol->ir.function;
 
     func->registers.list = calloc(sizeof(IrRegister**), 32);
     func->registers.list_size = 32;
 
-    node->symbol->ir.function = func;
+    // node->symbol->ir.function = func;
     irgen->current_function = func;
 
     irgen->current_basic_block = new_bb(irgen, func);
@@ -647,22 +644,19 @@ static void walk_stmt(IrGenerator *irgen, StmtAstNode *node)
 IrFunction *Ir_generate(DeclAstNode *ast_root, SymbolTable * tab)
 {
     IrGenerator irgen = {NULL, NULL};
+    IrFunction * head = NULL;
+
+    for(DeclAstNode * f = ast_root;f;f=f->next)
+    {
+        if(!CTYPE_IS_FUNCTION(f->type) || f->symbol->ir.function) continue;
+
+        IrFunction * function = new_function(&irgen, f->identifier->lexeme);
+        f->symbol->ir.function = function;
+        function->next = head;
+        head = function;
+    }   
 
     walk_decl(&irgen, ast_root);
 
-    // We have to fix up all function call references now.
-    // Todo: make this not terrible.
-    for(IrFunction * fp = irgen.current_function;fp;fp=fp->next)
-    {
-        for(IrBasicBlock * bp = fp->head;bp;bp=bp->next)
-        {
-            for(IrInstruction * ip = bp->head;ip;ip=ip->next)
-            {
-                if(ip->op != IR_CALL) continue;
-                ip->control.callee = symbol_table_get(tab, ip->control.callee_name, false)->ir.function;
-            }
-        }
-    }
-
-    return irgen.current_function;
+    return head;
 }

@@ -120,11 +120,7 @@ typedef struct IrInstruction
     struct {
         IrBasicBlock * jump_true;
         IrBasicBlock * jump_false;
-        union
-        {
-            IrFunction * callee;
-            char * callee_name;
-        };
+        IrFunction * callee;
         
     } control;
 
