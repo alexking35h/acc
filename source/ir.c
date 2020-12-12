@@ -338,6 +338,12 @@ void Ir_to_str(FILE * fd, IrFunction * ir, int * registers)
         fprintf(fd, "uint32_t t%d = 0;\n", i);
     }
 
+    // Forward declare all functions.
+    for(IrFunction *func = ir;func != NULL;func = func->next)
+    {
+        fprintf(fd, "void _%s();\n", func->name);
+    }
+
     // Print out all functions.
     for (IrFunction *func = ir;func != NULL;func = func->next)
     {

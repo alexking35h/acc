@@ -171,6 +171,62 @@ void previously_declared(void **state)
                            MOCK_SYMBOL_TABLE);
 }
 
+void function_prototype(void ** state)
+{
+    // If a function's prototype has already been declared, we should check that it
+    // is compatible with the function's definition.
+    CType int_type = 
+    {
+        .type = TYPE_BASIC,
+        .basic.type_specifier = TYPE_SIGNED_INT
+    };
+    ParameterListItem params = 
+    {
+        .name=NULL,
+        .type=&int_type,
+        .next=NULL
+    };
+
+    // Function type: 'int ()(int)'
+    CType function_type = 
+    {
+        .type = TYPE_FUNCTION,
+        .derived =
+        {
+            .type = &int_type,
+            .params = &params
+        }
+    };
+
+    Symbol p, f = 
+    {
+        .type=&function_type
+    };
+
+    // Test with compatible function definition. Expect:
+    // - get symbol
+    // - create function symbol table and add argument 'a'
+    expect_get(MOCK_SYMBOL_TABLE, "f", false, &f);
+    expect_function_call(__wrap_symbol_table_create);
+    expect_value(__wrap_symbol_table_create, parent, MOCK_SYMBOL_TABLE);
+    will_return(__wrap_symbol_table_create, MOCK_SYMBOL_TABLE);
+    expect_put(MOCK_SYMBOL_TABLE, "a", &p);
+
+    analysis_ast_walk_decl(MOCK_ERROR_REPORTER,
+                           parse_decl("int f(int a){}"),
+                           MOCK_SYMBOL_TABLE);
+    
+    // Test with incompatible function definition. Expect:
+    // - get_symbol
+    // - report error.
+    expect_get(MOCK_SYMBOL_TABLE, "f", false, &f);
+    expect_report_error(ANALYSIS, 1, 4,
+                            "function definition does not match prior declaration");
+    analysis_ast_walk_decl(MOCK_ERROR_REPORTER,
+                           parse_decl("int f(char b){}"),
+                           MOCK_SYMBOL_TABLE);
+}
+
 void nested_function(void **state)
 {
     Symbol t1;
@@ -198,6 +254,7 @@ int main(void)
                                        cmocka_unit_test(automatic_allocation),
                                        cmocka_unit_test(argument_allocation),
                                        cmocka_unit_test(previously_declared),
-                                       cmocka_unit_test(nested_function)};
+                                       cmocka_unit_test(nested_function),
+                                       cmocka_unit_test(function_prototype)};
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

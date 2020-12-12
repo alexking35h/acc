@@ -548,12 +548,38 @@ static CType *walk_expr(ErrorReporter *error, ExprAstNode *node, SymbolTable *ta
 
 static void walk_decl_function(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab)
 {
+    Symbol * fn = symbol_table_get(tab, node->identifier->lexeme, false);
+
+    if(fn)
+    {
+        if(!ctype_eq(fn->type, node->type))
+        {
+            Error_report_error(
+                error,
+                ANALYSIS,
+                node->pos,
+                "function definition does not match prior declaration"
+            );
+            return;
+        }
+        else
+        {
+            node->symbol = fn;
+        }
+        
+    }
+    else if(!fn)
+    {
+        node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
+        node->symbol->type = node->type;
+    }
+    
     if (node->body)
     {
         SymbolTable *ft = symbol_table_create(tab);
 
         // Add entries to the function's symbol table for each parameter in the
-        // declaration.
+        // definition.
         ActualParameterListItem **ptr = &(node->args);
         for (ParameterListItem *param = node->type->derived.params; param != NULL;
              param = param->next)
@@ -569,6 +595,19 @@ static void walk_decl_function(ErrorReporter *error, DeclAstNode *node, SymbolTa
 
 static void walk_decl_object(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab)
 {
+    if(symbol_table_get(tab, node->identifier->lexeme, false))
+    {
+        // Check if there is already a symbol table entry for this
+        // identifier within the current scope.
+        char *err =
+            STR_CONCAT("Previously declared identifier '", node->identifier->lexeme, "'");
+        Error_report_error(error, ANALYSIS, node->pos, err);
+        return;
+    }
+
+    node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
+    node->symbol->type = node->type;
+
     if (node->initializer)
     {
         CType *type = walk_expr(error, node->initializer, tab, false);
@@ -599,19 +638,8 @@ static void walk_decl(ErrorReporter *error, DeclAstNode *node, SymbolTable *tab,
                                node->identifier->lexeme, "'). Try Rust?");
         Error_report_error(error, ANALYSIS, node->pos, err);
     }
-    else if (symbol_table_get(tab, node->identifier->lexeme, false))
-    {
-        // Check if there is already a symbol table entry for this
-        // identifier within the current scope.
-        char *err =
-            STR_CONCAT("Previously declared identifier '", node->identifier->lexeme, "'");
-        Error_report_error(error, ANALYSIS, node->pos, err);
-    }
     else
     {
-        node->symbol = symbol_table_put(tab, node->identifier->lexeme, node->type);
-        node->symbol->type = node->type;
-
         if (CTYPE_IS_FUNCTION(node->type))
         {
             walk_decl_function(error, node, tab);

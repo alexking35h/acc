@@ -104,3 +104,13 @@ def test_logical_or(cc):
     cc.body(
         source + "if(!(a++ == 1 || b++)) return 1; if(a != 2) return 1; return b != 11;"
     )
+
+def test_functions(cc):
+    source = "\n".join([
+        "int a(int, int);",
+        "char b(int, char);",
+        "int main(){return b(1, 2) != 33;}",
+        "char b(int x, char y){return a(11, 22);}",
+        "int a(int u, int i){return u + i;}"
+    ])
+    cc.program(source)

@@ -161,6 +161,8 @@ CTypeRank ctype_rank(CType *type);
  */
 char *ctype_str(const CType *type);
 
+bool ctype_eq(CType *, CType *);
+
 /*
  * Check if two pointers are compatible.
  */
