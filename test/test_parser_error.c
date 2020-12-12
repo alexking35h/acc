@@ -52,7 +52,7 @@ static void panic_mode_declaration(void **state)
 
     // Declarators must have an identifier (6.7.6)
     expect_report_error(PARSER, 1, 1, "Missing identifier in declaration");
-    assert_true(test_parse_compare_ast(" int static long [23];", "", TEST_DECL));
+    assert_true(test_parse_compare_ast(" int static short [23];", "", TEST_DECL));
 }
 
 static void panic_mode_parameter_list(void **state)
@@ -108,8 +108,6 @@ static void type_error(void **state)
     assert_true(test_parse_compare_ast("static extern int a;", "", TEST_DECL));
 
     // // Invalid primitive type.
-    expect_report_error(PARSER, 1, 0, "Invalid type");
-    assert_true(test_parse_compare_ast("short long int p;", "", TEST_DECL));
     expect_report_error(PARSER, 1, 0, "Invalid type");
     assert_true(test_parse_compare_ast("signed unsigned a;", "", TEST_DECL));
     expect_report_error(PARSER, 1, 0, "Invalid type");

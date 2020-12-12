@@ -59,7 +59,6 @@ void expect_report_error(ErrorType, int, int, char*);
  * - symbol_table_teardown()
  */
 Symbol *_int;
-Symbol *_long_int;
 Symbol *_char;
 Symbol *_ptr;
 Symbol *_ptr_ptr;

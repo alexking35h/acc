@@ -158,29 +158,18 @@ static CType *integer_promote(ExprAstNode **node, CType *ctype)
     // represent all values of the original type, the value is converted to an int
     // (We assume that this is always the case in ACC).
 
-    if (ctype == NULL || !CTYPE_IS_BASIC(ctype))
+    if (ctype == NULL || !CTYPE_IS_BASIC(ctype) || ctype->basic.type_specifier == TYPE_VOID)
     {
         return ctype;
     }
 
-    switch (ctype->basic.type_specifier)
+    if (ctype->basic.type_specifier == TYPE_SIGNED_INT
+        || ctype->basic.type_specifier == TYPE_UNSIGNED_INT)
     {
-    case TYPE_UNSIGNED_INT:
-    case TYPE_SIGNED_INT:
         return ctype;
-
-    case TYPE_SIGNED_LONG_INT:
-    case TYPE_UNSIGNED_LONG_INT:
-    case TYPE_VOID:
-        return ctype;
-
-    case TYPE_SIGNED_CHAR:
-    case TYPE_UNSIGNED_CHAR:
-    case TYPE_SIGNED_SHORT_INT:
-    case TYPE_UNSIGNED_SHORT_INT:
-    default:
-        break;
     }
+
+    // Since ACC doesn't support long, all other types have a lower rank than int.
     CType *cast_type = calloc(1, sizeof(CType));
     cast_type->type = TYPE_BASIC;
     cast_type->basic.type_specifier = TYPE_SIGNED_INT;
@@ -204,7 +193,7 @@ static CType *type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode 
     //
     // ctype_rank implements (2) by by ensuring that the unsigned rank > signed rank, for
     // the same type. ACC assumes that (3) is always true whenever casting to a signed int
-    // with a greater rank.
+    // with a greater rank (e.g. 'int' > 'unsigned short').
     if (ctype_a->basic.type_specifier == ctype_b->basic.type_specifier)
         return ctype_a;
 

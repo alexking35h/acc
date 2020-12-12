@@ -23,14 +23,6 @@ static void arch_basic(void **state)
     assert_true(arch_get_size(&_int) == 4);
     assert_true(arch_get_align(&_int) == 4);
     assert_false(arch_get_signed(&_int));
-
-    CType _long = {TYPE_BASIC, .basic.type_specifier = TYPE_UNSIGNED_LONG_INT};
-    assert_true(arch_get_size(&_long) == 4);
-    assert_true(arch_get_align(&_long) == 4);
-    assert_false(arch_get_signed(&_long));
-
-    CType _signed = {TYPE_BASIC, .basic.type_specifier = TYPE_SIGNED_LONG_INT};
-    assert_true(arch_get_signed(&_signed));
 }
 
 static void arch_pointer(void **state)

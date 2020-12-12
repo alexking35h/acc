@@ -246,7 +246,7 @@ static void bitwise_operators(void **state)
 {
     // &, |, ^  6.5.10, 6.5.11, 6.5.12 - operators must be arithmetic.
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER,
-                           parse_expr("_int & _char | _long_int ^ _int"),
+                           parse_expr("_int & _char | _int ^ _int"),
                            test_symbol_table);
     expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int & _ptr"),
@@ -255,14 +255,14 @@ static void bitwise_operators(void **state)
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int | _ptr"),
                            test_symbol_table);
     expect_report_error(ANALYSIS, 1, 9, "Invalid operand type to binary operator");
-    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr_ptr ^ _long_int"),
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr_ptr ^ _short_int"),
                            test_symbol_table);
 }
 
 static void logical_operators(void **state)
 {
     // &&, || 6.5.13, 6.5.14 - must be scalar (arithmetic & pointer)
-    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int && _char || _long_int"),
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_int && _char || _short_int"),
                            test_symbol_table);
     analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr && _char || _ptr"),
                            test_symbol_table);

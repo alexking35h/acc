@@ -8,7 +8,7 @@
 
 #define TYPE_SIGNEDNESS (TYPE_SIGNED | TYPE_UNSIGNED)
 #define TYPE_SPECIFIERS (TYPE_VOID | TYPE_CHAR | TYPE_INT)
-#define TYPE_SIZE (TYPE_LONG | TYPE_SHORT)
+#define TYPE_SIZE (TYPE_SHORT)
 
 static void ctype_set_basic_finalise(CType *type, char **err);
 
@@ -42,10 +42,6 @@ static void ctype_set_basic_finalise(CType *type, char **error)
 
     // Check for at most one signedness specifier (signed/unsigned)
     if (((*specifier & TYPE_SIGNEDNESS) - 1) & (*specifier & TYPE_SIGNEDNESS))
-        goto err;
-
-    // Check for at most one size specifier (short/long)
-    if (((*specifier & TYPE_SIZE) - 1) & (*specifier & TYPE_SIZE))
         goto err;
 
     // Check that at most one storage-class specifier (extern/static) is provided.
@@ -139,11 +135,6 @@ CTypeRank ctype_rank(CType *type)
         return 5;
     case TYPE_UNSIGNED_INT:
         return 6;
-
-    case TYPE_SIGNED_LONG_INT:
-        return 7;
-    case TYPE_UNSIGNED_LONG_INT:
-        return 8;
     default:
         return 0;
     }
@@ -191,9 +182,6 @@ char *ctype_str(const CType *type)
                     break;
                 case TYPE_INT:
                     len += snprintf(buf + len, 250 - len, "int ");
-                    break;
-                case TYPE_LONG:
-                    len += snprintf(buf + len, 250 - len, "long ");
                     break;
                 case TYPE_SIGNED:
                     len += snprintf(buf + len, 250 - len, "signed ");

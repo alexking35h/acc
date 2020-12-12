@@ -20,7 +20,6 @@ static void primitive_declaration(void **state)
         // Integer types (signed by default)
         {"int c;", "(D [signed int], c)"},
         {"short int c;", "(D [signed short int], c)"},
-        {"long int c;", "(D [signed long int], c)"},
         {"signed int c;", "(D [signed int], c)"},
         {"unsigned int c;", "(D [unsigned int], c)"},
 

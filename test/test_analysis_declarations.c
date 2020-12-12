@@ -80,7 +80,7 @@ void basic_type(void **state)
 {
     // Test object declarations of basic types:
     // char, short, int, long.
-    Symbol t1, t2, t3, t4, t5;
+    Symbol t1, t2, t3, t4;
     expect_get(MOCK_SYMBOL_TABLE, "var1", false, NULL);
     expect_put(MOCK_SYMBOL_TABLE, "var1", &t1);
     expect_get(MOCK_SYMBOL_TABLE, "var2", false, NULL);
@@ -89,10 +89,8 @@ void basic_type(void **state)
     expect_put(MOCK_SYMBOL_TABLE, "var3", &t3);
     expect_get(MOCK_SYMBOL_TABLE, "var4", false, NULL);
     expect_put(MOCK_SYMBOL_TABLE, "var4", &t4);
-    expect_get(MOCK_SYMBOL_TABLE, "var5", false, NULL);
-    expect_put(MOCK_SYMBOL_TABLE, "var5", &t5);
     DeclAstNode *decl =
-        parse_decl("char var1;short var2;int var3;long int var4; char var5;");
+        parse_decl("char var1;short var2;int var3;char var4;");
     analysis_ast_walk_decl(MOCK_ERROR_REPORTER, decl, MOCK_SYMBOL_TABLE);
 }
 

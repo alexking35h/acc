@@ -137,8 +137,6 @@ SymbolTable *test_symbol_table;
 static CType _int_type = {.type = TYPE_BASIC, .basic.type_specifier = TYPE_SIGNED_INT};
 static CType _short_type = {.type = TYPE_BASIC,
                             .basic.type_specifier = TYPE_SIGNED_SHORT_INT};
-static CType _long_int_type = {.type = TYPE_BASIC,
-                               .basic.type_specifier = TYPE_SIGNED_LONG_INT};
 static CType _char_type = {.type = TYPE_BASIC,
                            .basic.type_specifier = TYPE_UNSIGNED_CHAR};
 static CType _ptr_type = {.type = TYPE_POINTER, .derived.type = &_int_type};
@@ -151,7 +149,7 @@ static CType _short_ptr_type = {.type = TYPE_POINTER, .derived.type = &_short_ty
 static CType _char_ptr_type = {.type = TYPE_POINTER, .derived.type = &_char_type};
 
 Symbol *_int;
-Symbol *_long_int;
+Symbol *_short_int;
 Symbol *_char;
 Symbol *_ptr;
 Symbol *_ptr_ptr;
@@ -163,7 +161,7 @@ void test_symbol_table_setup()
 {
     test_symbol_table = symbol_table_create(NULL);
     _int = symbol_table_put(test_symbol_table, "_int", &_int_type);
-    _long_int = symbol_table_put(test_symbol_table, "_long_int", &_long_int_type);
+    _short_int = symbol_table_put(test_symbol_table, "_short_int", &_short_type);
     _char = symbol_table_put(test_symbol_table, "_char", &_char_type);
     _ptr = symbol_table_put(test_symbol_table, "_ptr", &_ptr_type);
     _ptr_ptr = symbol_table_put(test_symbol_table, "_ptr_ptr", &_ptr_ptr_type);

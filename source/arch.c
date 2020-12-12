@@ -7,8 +7,7 @@ typedef struct ArchTypeLookup
     int align;
 } ArchTypeLookup;
 
-ArchTypeLookup arch_type[] = {{TYPE_LONG, 4, 4},
-                              {TYPE_SHORT, 2, 2},
+ArchTypeLookup arch_type[] = {{TYPE_SHORT, 2, 2},
                               {TYPE_CHAR, 1, 1},
                               {TYPE_INT, 4, 4},
                               {0, 0, 0}};

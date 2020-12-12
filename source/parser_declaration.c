@@ -140,9 +140,6 @@ static CType *declaration_specifiers(Parser *parser)
         case SHORT:
             ctype_set_basic_specifier(type, TYPE_SHORT);
             break;
-        case LONG:
-            ctype_set_basic_specifier(type, TYPE_LONG);
-            break;
 
         case SIGNED:
             ctype_set_basic_specifier(type, TYPE_SIGNED);

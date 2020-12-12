@@ -35,9 +35,6 @@ def test_parser_invalid_type(cc):
     # Multiple signedness specifiers
     cc.program("signed unsigned b", [err])
 
-    # Multiple size specifiers 
-    cc.program("short long int b;", [err])
-
     # Multiple storage class specifiers
     cc.program("extern static int q;", [err])
 

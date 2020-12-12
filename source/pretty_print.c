@@ -427,10 +427,6 @@ static void pp_type_basic(CType *type, StringBuffer *buf)
     {
         pp_printf(buf, "short ");
     }
-    else if (type->basic.type_specifier & TYPE_LONG)
-    {
-        pp_printf(buf, "long ");
-    }
 
     if (type->basic.type_specifier & TYPE_VOID)
     {
