@@ -1,6 +1,8 @@
-FROM ubuntu:19.10
+FROM ubuntu:focal
 
 WORKDIR /home/
+
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get -y update
 RUN apt-get -y install gcc
