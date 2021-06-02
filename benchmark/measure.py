@@ -1,3 +1,10 @@
+"""Measure ACC performance.
+
+This script compares the compiled output of ACC and GCC for an example program.
+
+The generated Aarch32 ELF file is emulated, and instruction cycles, and read/writes are recorded.
+This script also compares the size of the generated binary (size of .text).
+"""
 
 import functools
 import os
