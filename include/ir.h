@@ -1,3 +1,7 @@
+/*
+ * ACC's Intermediate Representation (IR)
+ */
+
 #ifndef __IR___
 #define __IR___
 

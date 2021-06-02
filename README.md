@@ -2,8 +2,8 @@
 
 # Alex's C Compiler
 
-Welcome! ACC is a work-in-progress C99 compiler, written in C. This is a hobby project
-I started during lockdown to brush up on C, and learn more about compilers.
+Welcome! ACC is a C99-subset compiler, written in C. This is a hobby project I started
+during the UK's Coronavirus lockdown to brush up on C, and learn more about compilers.
 
 The goals of ACC are:
 * Hand-coded everything, including lexer and parser
@@ -12,7 +12,7 @@ The goals of ACC are:
 
 ![ACC User Interace](screenshot.png)
 
-ACC targets ARM A32, and makes no effort to optimise the generated code. ACC is not
+ACC targets ARM Aarch32, and makes no effort to optimise the generated code. ACC is not
 designed with extensibility/portability in mind.
 
 ## Design
@@ -63,7 +63,7 @@ int main()
 
 ## Testing
 
-ACC has unit tests - which test components listed above individually, and functional test - 
+ACC has unit tests - which test components listed above individually, and functional tests - 
 which test the compiler end-to-end. Both run on-commit in GitHub.
 
 ### Unit Tests
@@ -89,7 +89,7 @@ runtime (measured in instruction cycles), and number of loads/stores.
 
 ## Missing
 
-Generally speaking, I've implemented language features depth-first in the front-end (how very Agile!), 
+Generally speaking, I've implemented language features depth-first in the front-end, 
 adding support for incremental subsets of the grammar in the parser and type system. Unfortunately,
 this means it's missing some (many) features of the C99 grammar. Let's call it C--.
 
@@ -101,7 +101,7 @@ this means it's missing some (many) features of the C99 grammar. Let's call it C
 
 ### Parser
 
- * `struct` or `union` are not implemented in the parser. These will definitely be added in later.
+ * `struct` or `union` are not implemented in the parser.
  
  * No support for `typedef`. 
 
