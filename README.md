@@ -15,6 +15,24 @@ The goals of ACC are:
 ACC targets ARM Aarch32, and makes no effort to optimise the generated code. ACC is not
 designed with extensibility/portability in mind.
 
+## Building
+
+The provided `Dockerfile` includes all the required dependencies for building and testing.
+
+```
+Build the Docker container
+$ make docker_build
+
+Start the Docker container
+$ make docker_sh
+
+Build acc
+$ make build/acc
+
+Run unit tests and functional tests
+$ make test functional_test
+```
+
 ## Design
 
 The compiler front-end produces an [Abstract Syntax Tree](include/ast.h) representing input. 
