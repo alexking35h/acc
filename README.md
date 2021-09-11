@@ -10,7 +10,7 @@ The goals of ACC are:
 * Helpful error messages and user interface
 * High test coverage
 
-![ACC User Interace](screenshot.png)
+![ACC User Interface](screenshot.png)
 
 ACC targets ARM Aarch32, and makes no effort to optimise the generated code. ACC is not
 designed with extensibility/portability in mind.
@@ -38,14 +38,14 @@ $ make test functional_test
 The compiler front-end produces an [Abstract Syntax Tree](include/ast.h) representing input. 
 
  * [Scanner](include/scanner.h) - Generates a flat sequence of tokens from source input.
- * [Parser](include/parser.h) - Recusrive descent parser generates an AST from the output of the scanner based on C99's grammar.
+ * [Parser](include/parser.h) - Recursive descent parser generates an AST from the output of the scanner based on C99's grammar.
 
 During [Context-sensitive analysis](include/analysis.h), ACC:
  * Annotates the AST with type information
  * Check for semantic errors
  * Handle type conversions
 
-Seperately, parts of the C language are implemented independently to support compilation:
+Separately, parts of the C language are implemented independently to support compilation:
  * [Types](include/ctype.h) - Handle type-declaration syntax, and dealing with C types.
  * [Symbols](include/symbol.h) - Handle symbol tables used for storing object names, types, and locations.
  * [Pretty-print](include/pretty_print.h) - Generate concise textual representations of ASTs for debugging/testing.
@@ -94,7 +94,7 @@ tests.
 ### Functional Tests
 
 Functional tests are written in Python 3 using PyTest, and verify expected program behaviour and
-error handling. The tests themselves are parameterized, and run against ACC's IR output (with and without
+error handling. The tests themselves are parameterised, and run against ACC's IR output (with and without
 register allocation), assembly output, and GCC (used as a reference, to verify the tests). Calling 
 `make functional_test` within the top-level directory runs the functional tests.
 
@@ -124,7 +124,7 @@ this means it's missing some (many) features of the C99 grammar. Let's call it C
  * No support for `typedef`. 
 
  * No support for variable length arrays (e.g., `int arr[x]`, where the size of `arr` is unknown at compile-time) 
-   \- this was added in C99. In ACC, the array-size declatation syntax is restricted to a scalar constant.
+   \- this was added in C99. In ACC, the array-size declaration syntax is restricted to a scalar constant.
    By contrast, C89 at least permits any scalar constant expression.
 
  * No support for expression lists, such as `int a = 3+2, 1` (since the _expression_ rule is left-recursive,
