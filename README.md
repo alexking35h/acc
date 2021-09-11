@@ -140,3 +140,13 @@ this means it's missing some (many) features of the C99 grammar. Let's call it C
 
   * Type qualifiers (`const`, `volatile` and `volatile`) and storage class specifiers (`register` and
     `static`) are ignored by the compiler.
+
+## Links
+
+ * https://craftinginterpreters.com/ - Crafting Interpretters book
+
+ * www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf - C99 Specification
+
+ * https://en.wikipedia.org/wiki/Register_allocation#Linear_scan - Linear scan register allocation
+ 
+ * https://developer.arm.com/documentation/ddi0487/latest - ARM A-profile architecture reference
