@@ -3,7 +3,12 @@
 # Alex's C Compiler
 
 Welcome! ACC is a C99-subset compiler, written in C. This is a hobby project I started
-during the UK's Coronavirus lockdown to brush up on C, and learn more about compilers.
+during the UK's Coronavirus lockdown to brush up on C, and learn more about:
+* Compiler design
+* ARM architecture (Aarch A32)
+* Test Driven Development (TDD) and unit testing in C
+* Testing C projects with Python/PyTest
+* GitHub's Continuous Integration (CI)
 
 The goals of ACC are:
 * Hand-coded everything, including lexer and parser
