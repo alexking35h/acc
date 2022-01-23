@@ -14,6 +14,7 @@ RUN apt-get update && apt-get -y install gdb
 RUN apt-get update && apt-get -y install git
 RUN apt-get update && apt-get -y install python3
 RUN apt-get update && apt-get -y install python3-pip
+RUN apt-get update && apt-get -y install python3-venv
 
 RUN pip3 install black
 RUN pip3 install pytest

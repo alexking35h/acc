@@ -14,6 +14,7 @@ setup(
     install_requires=[
         'unicorn>=1.0.2',
         'capstone>=4.0.2',
-        'pyelftools>=0.26'
+        'pyelftools>=0.26',
+        'matplotlib>=3.5.1'
     ]
 )

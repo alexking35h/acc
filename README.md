@@ -3,34 +3,44 @@
 # Alex's C Compiler
 
 Welcome! ACC is a C99-subset compiler, written in C. This is a hobby project I started
-during the UK's Coronavirus lockdown to brush up on C, and learn more about compilers.
+during the UK's Coronavirus lockdown to brush up on C, and learn more about:
+* Compiler design
+* ARM architecture (Aarch A32)
+* Test Driven Development (TDD) and unit testing in C
+* Testing C projects with Python/PyTest
+* GitHub's Continuous Integration (CI)
 
 The goals of ACC are:
 * Hand-coded everything, including lexer and parser
 * Helpful error messages and user interface
 * High test coverage
 
-![ACC User Interace](screenshot.png)
+![ACC User Interface](screenshot.png)
 
 ACC targets ARM Aarch32, and makes no effort to optimise the generated code. ACC is not
 designed with extensibility/portability in mind.
 
 ## Building
 
-The provided `Dockerfile` includes all the required dependencies for building and testing.
+All required dependencies for building and testing ACC are included in the `Dockerfile`.
+The `Makefile` creates a Docker environment for all build and test targets - the only
+prerequisites are GNU Make and Docker.
 
-```
-Build the Docker container
+```bash
+# Build the Docker container
 $ make docker_build
 
-Start the Docker container
-$ make docker_sh
-
-Build acc
+# Build acc
 $ make build/acc
 
-Run unit tests and functional tests
+# Unit tests and functional tests
 $ make test functional_test
+
+# Review test coverager (Gcov)
+$ make coverage
+
+# Run benchmark tests
+$ make benchmark
 ```
 
 ## Design
@@ -38,14 +48,14 @@ $ make test functional_test
 The compiler front-end produces an [Abstract Syntax Tree](include/ast.h) representing input. 
 
  * [Scanner](include/scanner.h) - Generates a flat sequence of tokens from source input.
- * [Parser](include/parser.h) - Recusrive descent parser generates an AST from the output of the scanner based on C99's grammar.
+ * [Parser](include/parser.h) - Recursive descent parser generates an AST from the output of the scanner based on C99's grammar.
 
 During [Context-sensitive analysis](include/analysis.h), ACC:
  * Annotates the AST with type information
  * Check for semantic errors
  * Handle type conversions
 
-Seperately, parts of the C language are implemented independently to support compilation:
+Separately, parts of the C language are implemented independently to support compilation:
  * [Types](include/ctype.h) - Handle type-declaration syntax, and dealing with C types.
  * [Symbols](include/symbol.h) - Handle symbol tables used for storing object names, types, and locations.
  * [Pretty-print](include/pretty_print.h) - Generate concise textual representations of ASTs for debugging/testing.
@@ -94,7 +104,7 @@ tests.
 ### Functional Tests
 
 Functional tests are written in Python 3 using PyTest, and verify expected program behaviour and
-error handling. The tests themselves are parameterized, and run against ACC's IR output (with and without
+error handling. The tests themselves are parameterised, and run against ACC's IR output (with and without
 register allocation), assembly output, and GCC (used as a reference, to verify the tests). Calling 
 `make functional_test` within the top-level directory runs the functional tests.
 
@@ -124,7 +134,7 @@ this means it's missing some (many) features of the C99 grammar. Let's call it C
  * No support for `typedef`. 
 
  * No support for variable length arrays (e.g., `int arr[x]`, where the size of `arr` is unknown at compile-time) 
-   \- this was added in C99. In ACC, the array-size declatation syntax is restricted to a scalar constant.
+   \- this was added in C99. In ACC, the array-size declaration syntax is restricted to a scalar constant.
    By contrast, C89 at least permits any scalar constant expression.
 
  * No support for expression lists, such as `int a = 3+2, 1` (since the _expression_ rule is left-recursive,
@@ -140,3 +150,13 @@ this means it's missing some (many) features of the C99 grammar. Let's call it C
 
   * Type qualifiers (`const`, `volatile` and `volatile`) and storage class specifiers (`register` and
     `static`) are ignored by the compiler.
+
+## Links
+
+ * https://craftinginterpreters.com/ - Crafting Interpretters book
+
+ * www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf - C99 Specification
+
+ * https://en.wikipedia.org/wiki/Register_allocation#Linear_scan - Linear scan register allocation
+ 
+ * https://developer.arm.com/documentation/ddi0487/latest - ARM A-profile architecture reference
