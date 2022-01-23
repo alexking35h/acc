@@ -22,20 +22,25 @@ designed with extensibility/portability in mind.
 
 ## Building
 
-The provided `Dockerfile` includes all the required dependencies for building and testing.
+All required dependencies for building and testing ACC are included in the `Dockerfile`.
+The `Makefile` creates a Docker environment for all build and test targets - the only
+prerequisites are GNU Make and Docker.
 
-```
-Build the Docker container
+```bash
+# Build the Docker container
 $ make docker_build
 
-Start the Docker container
-$ make docker_sh
-
-Build acc
+# Build acc
 $ make build/acc
 
-Run unit tests and functional tests
+# Unit tests and functional tests
 $ make test functional_test
+
+# Review test coverager (Gcov)
+$ make coverage
+
+# Run benchmark tests
+$ make benchmark
 ```
 
 ## Design
