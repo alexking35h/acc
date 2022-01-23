@@ -30,10 +30,8 @@
 #define EXPR_ASSIGN(p, ...)                                                              \
     Ast_create_expr_node((ExprAstNode){ASSIGN, p, .assign = {__VA_ARGS__}})
 
-#define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
-#define consume(t) Parser_consume_token(parser, t)
-#define peek() Parser_peek_token(parser)
-
+static ExprAstNode *desugar_assign(Parser *, ExprAstNode *, BinaryExprOp, ExprAstNode *);
+static ExprAstNode *desugar_array(Parser *, ExprAstNode *, ExprAstNode *);
 static ExprAstNode *primary_expression(Parser *);
 static ExprAstNode *postfix_expression(Parser *);
 static ArgumentListItem *argument_expression_list(Parser *);

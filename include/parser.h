@@ -38,6 +38,12 @@
 #include "scanner.h"
 #include "token.h"
 
+#define consume(t) Parser_consume_token(parser, t)
+#define peek(t) Parser_peek_token(parser)
+#define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
+#define advance(...) Parser_advance_token(parser)
+#define sync(...) Parser_sync_token(parser, (TokenType[]){__VA_ARGS__, NAT})
+
 typedef struct Parser_t
 {
     // Scanner and error instances.

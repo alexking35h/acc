@@ -28,12 +28,8 @@
     Ast_create_stmt_node(                                                                \
         (StmtAstNode){.type = IF_STATEMENT, p, .if_statement = {__VA_ARGS__}})
 
-#define consume(t) Parser_consume_token(parser, t)
-#define peek(t) Parser_peek_token(parser)
-#define match(...) Parser_match_token(parser, (TokenType[]){__VA_ARGS__, NAT})
-#define advance(...) Parser_advance_token(parser)
-#define sync(...) Parser_sync_token(parser, (TokenType[]){__VA_ARGS__, NAT})
-
+static _Bool is_decl(TokenType tok);
+static StmtAstNode *statement(Parser *parser);
 static StmtAstNode *expression_statement(Parser *parser);
 static StmtAstNode *iteration_statement(Parser *parser);
 static StmtAstNode *return_statement(Parser *parser);
@@ -75,17 +71,6 @@ static StmtAstNode *statement(Parser *parser)
     }
     return expression_statement(parser);
 }
-
-// static ExprAstNode *labeled_statement(Parser *parser)
-// {
-//     /*
-//      * IDENTIFIER ':' statement
-//      * CASE constant_expression ':' statement
-//      * DEFAULT ':' statement
-//      */
-//
-//     return NULL;
-// }
 
 StmtAstNode *Parser_compound_statement(Parser *parser)
 {
@@ -131,18 +116,7 @@ static StmtAstNode *expression_statement(Parser *parser)
     return stmt;
 }
 
-// ExprAstNode *Parser_selection_statement(Parser *parser)
-// { // @TODO
-//     /*
-//      * IF '(' expression ')' statement ELSE statement
-//      * IF '(' expression ')' statement
-//      * SWITCH '(' expression ')' statement
-//      */
-//
-//     return NULL;
-// }
-
-StmtAstNode *iteration_statement(Parser *parser)
+static StmtAstNode *iteration_statement(Parser *parser)
 {
     if (match(WHILE))
     {
@@ -157,7 +131,7 @@ StmtAstNode *iteration_statement(Parser *parser)
     return NULL;
 }
 
-StmtAstNode *return_statement(Parser *parser)
+static StmtAstNode *return_statement(Parser *parser)
 {
     StmtAstNode *stmt;
     Token *tok;
@@ -177,7 +151,7 @@ StmtAstNode *return_statement(Parser *parser)
     return stmt;
 }
 
-StmtAstNode *if_statement(Parser *parser)
+static StmtAstNode *if_statement(Parser *parser)
 {
     /*
      * 'if' '(' expression ')' '{' statement '}'

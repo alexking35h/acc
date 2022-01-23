@@ -136,7 +136,6 @@ static void regalloc_expire_active(ActiveSet * active, FreeStack * free, int ind
 
 static int regalloc_spill(IrFunction * function)
 {
-    // TODO.
     int spill = function->stack_size;
     function->stack_size += 4;
     return spill;
