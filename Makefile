@@ -79,8 +79,10 @@ $(RUN_TESTS): run_%:%
 	$<
 
 functional_test: build/cov/acc
-	pip3 install acctools/
-	ACC_PATH=$^ pytest functional/
+	python3 -m venv /tmp/venv/
+	/tmp/venv/bin/pip3 install pytest
+	/tmp/venv/bin/pip3 install --no-cache-dir -e acctools/
+	ACC_PATH=$^ /tmp/venv/bin/pytest functional/
 
 coverage:
 	gcov -o build/cov/ source/*.c --no-output \
@@ -88,8 +90,9 @@ coverage:
 	| awk '{t+=$$2;a+=(.01*$$1*$$2)}END{printf "\n** Test coverage: %f0.2%% **\n\n",100*a/t}'
 
 benchmark: build/acc
-	pip3 install acctools/
-	ACC_PATH=$^ python3 benchmark/measure.py
+	python3 -m venv /tmp/venv/
+	/tmp/venv/bin/pip3 install --no-cache-dir -e acctools/
+	ACC_PATH=$^ /tmp/venv/bin/python3 benchmark/measure.py
 
 $(ACC_OBJECTS): build/%.o: source/%.c | build
 	$(CC) -c $< -o $@ $(CFLAGS)
@@ -121,9 +124,9 @@ docker_sh:
 	docker run -it --rm --user $(shell id -u):$(shell id -g) -v$(PWD):/home/ acc:v1 bash
 
 benchmark test:
-	docker run -it --rm --user $(shell id -u):$(shell id -g) -v$(PWD):/home/ make -f Makefile $@
+	docker run -it --rm --user $(shell id -u):$(shell id -g) -v$(PWD):/home/ acc:v1 make $@
 %:
-	docker run -it --rm --user $(shell id -u):$(shell id -g) -v$(PWD):/home/ acc:v1 make -f Makefile $@
+	docker run -it --rm --user $(shell id -u):$(shell id -g) -v$(PWD):/home/ acc:v1 make $@
 
 endif
 
