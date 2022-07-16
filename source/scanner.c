@@ -7,15 +7,10 @@
 #include "error.h"
 #include "token.h"
 
-// @TODO - get rid of TOKEN_BUFFER_SIZE
-#define TOKEN_BUFFER_SIZE 32
 #define IDENTIFIER_START_CHARACTERS                                                      \
     "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm_"
 #define IDENTIFIER_CHARACTERS                                                            \
     "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm_1234567890"
-
-// @todo get rid
-#define MAX_KEYWORD_LENGTH 20
 
 #define COUNT(n) sizeof(n) / sizeof(n[0])
 #define PEEK(scanner)                                                                    \
@@ -54,8 +49,6 @@ typedef struct Scanner_t
 static bool match_character(Scanner *, const char *expected);
 static bool match_whitespace(Scanner *);
 static bool consume_keyword_or_identifier(Scanner *, TokenType *);
-static bool consume_number(Scanner *);
-static bool consume_string(Scanner *);
 static bool consume_comment(Scanner *);
 
 static void store_line_position(Scanner *scanner)
@@ -140,81 +133,6 @@ static bool consume_keyword_or_identifier(Scanner *scanner, TokenType *token_typ
         return true;
     }
     *token_type = IDENTIFIER;
-    return true;
-}
-
-// @TODO - remove string handling/parsing.
-static bool consume_string(Scanner *scanner)
-{
-    int string_line_position = scanner->current - scanner->line_start_position;
-
-    // Skip over the first double-quote
-    ADVANCE(scanner);
-
-    while (true)
-    {
-        if (END_OF_FILE(scanner))
-        {
-            Position pos = {scanner->line_number, string_line_position};
-            Error_report_error(scanner->error_reporter, SCANNER, pos,
-                               "Unterminated string literal");
-            return false;
-        }
-
-        char focus = scanner->source[scanner->current++];
-
-        // End of string, stop searching.
-        if (focus == '"')
-            break;
-
-        // Reach end of line (before end of string).
-        if (focus == '\n')
-        {
-            Position pos = {scanner->line_number, string_line_position};
-            Error_report_error(scanner->error_reporter, SCANNER, pos,
-                               "Unterminated string literal");
-            scanner->line_number++;
-            scanner->line_start_position = scanner->current;
-            store_line_position(scanner);
-            return false;
-        }
-
-        // Escape sequence.
-        // These are replaced later. But make sure to ignore the double-quote.
-        if (focus == '\\')
-        {
-            if (match_character(scanner, "\""))
-                continue;
-        }
-    }
-    return true;
-}
-
-/* Consume a number */
-// @TODO - atoi (below) only recognises base-10. Get rid of hex/oct handling.
-static bool consume_number(Scanner *scanner)
-{
-    if (match_character(scanner, "0"))
-    {
-        if (match_character(scanner, "Xx"))
-        {
-            // Hex notation
-            while (match_character(scanner, "1234567890abcdefABCDEF"))
-                continue;
-        }
-        else
-        {
-            // Oct notation
-            while (match_character(scanner, "1234567890"))
-                continue;
-        }
-    }
-    else
-    {
-        while (match_character(scanner, "1234567890"))
-            continue;
-    }
-    match_character(scanner, "ulUL");
     return true;
 }
 
@@ -387,18 +305,12 @@ static TokenType get_next_token_type(Scanner *scanner)
         return match_character(scanner, "=") ? DIV_ASSIGN : SLASH;
     }
 
-    // String literal. @TODO remove string handling
-    if (focus == '"')
-    {
-        scanner->current--;
-        return consume_string(scanner) ? STRING_LITERAL : NAT;
-    }
-
     // Number literal.
     if (strchr("1234567890", focus))
     {
-        scanner->current--;
-        return consume_number(scanner) ? CONSTANT : NAT;
+        while (match_character(scanner, "1234567890"))
+            continue;
+        return CONSTANT;
     }
 
     if (strchr(IDENTIFIER_START_CHARACTERS, focus))

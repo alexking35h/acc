@@ -112,7 +112,6 @@ typedef enum TokenType_t
 
     IDENTIFIER,
     CONSTANT,
-    STRING_LITERAL,
     END_OF_FILE
 } TokenType;
 

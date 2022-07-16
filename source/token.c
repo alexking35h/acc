@@ -164,8 +164,6 @@ char *Token_str(TokenType type)
         return "identifier";
     case CONSTANT:
         return "constant";
-    case STRING_LITERAL:
-        return "string literal";
     case END_OF_FILE:
         return "End of File";
     default:

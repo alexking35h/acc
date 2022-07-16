@@ -102,7 +102,6 @@ static void declaration_initializer(void **state)
     AstTestSet tests[] = {
         {"char a = 1;", "(D [unsigned char], a, (P 1))"},
         {"int a = 2*3;", "(D [signed int], a, (B (P 2), *, (P 3)))"},
-        {"char* s = \"hw\";", "(D [* [unsigned char]], s, (P \"hw\"))"},
         {"int a=2, b=3;", "(D [signed int], a, (P 2), (D [signed int], b, (P 3)))"},
 
         {NULL, NULL}};

@@ -115,10 +115,6 @@ static void pp_primary(ExprAstNode *node, StringBuffer *buf)
     {
         pp_printf(buf, "%s", node->primary.constant->lexeme);
     }
-    else if (node->primary.string_literal)
-    {
-        pp_printf(buf, "%s", node->primary.string_literal->lexeme);
-    }
 }
 
 static void pp_postfix(ExprAstNode *node, StringBuffer *buf)

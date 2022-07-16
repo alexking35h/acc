@@ -21,11 +21,6 @@ def test_scanner_invalid_character(cc):
     err = compilers.CompilerError("SCANNER", 3, "Invalid character in input: '$'")
     cc.program("int a;\n\n$\n\n", [err])
 
-
-def test_scanner_unterminated_string(cc):
-    err = compilers.CompilerError("SCANNER", 1, "Unterminated string literal")
-    cc.program('"Oops, forgot to close this...\n', [err])
-
 def test_parser_invalid_type(cc):
     err = compilers.CompilerError("PARSER", 1, "Invalid type")
 

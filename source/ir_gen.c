@@ -329,10 +329,6 @@ static IrRegister *walk_expr_primary(IrGenerator *irgen, ExprAstNode *node)
             return emit_arith(irgen, IR_MOV, value, NULL);
         }
     }
-    else if (node->primary.string_literal)
-    {
-        abort();
-    }
     return NULL;
 }
 

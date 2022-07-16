@@ -208,13 +208,13 @@ static CType *type_conversion(ExprAstNode **node_a, CType *ctype_a, ExprAstNode 
 static CType *walk_expr_primary(ErrorReporter *error, ExprAstNode *node, SymbolTable *tab,
                                 _Bool need_lvalue)
 {
-    if (node->primary.constant || node->primary.string_literal)
+    if (node->primary.constant)
     {
         if (need_lvalue)
         {
             Error_report_error(error, ANALYSIS, node->pos, "Invalid lvalue");
         }
-        return node->primary.constant ? &int_type : &char_ptr_type;
+        return &int_type;
     }
 
     Symbol *sym = symbol_table_get(tab, node->primary.identifier->lexeme, true);

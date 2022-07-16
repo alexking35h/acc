@@ -73,7 +73,7 @@ static ExprAstNode *desugar_array(Parser *parser, ExprAstNode *base, ExprAstNode
 
 static ExprAstNode *primary_expression(Parser *parser)
 {
-    Token *next = match(IDENTIFIER, CONSTANT, STRING_LITERAL, LEFT_PAREN);
+    Token *next = match(IDENTIFIER, CONSTANT, LEFT_PAREN);
 
     if (!next)
     {
@@ -90,10 +90,6 @@ static ExprAstNode *primary_expression(Parser *parser)
     else if (next->type == CONSTANT)
     {
         return EXPR_PRIMARY(next->pos, .constant = next);
-    }
-    else if (next->type == STRING_LITERAL)
-    {
-        return EXPR_PRIMARY(next->pos, .string_literal = next);
     }
     else if (next->type == LEFT_PAREN)
     {

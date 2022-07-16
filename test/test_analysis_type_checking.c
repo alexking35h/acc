@@ -187,8 +187,8 @@ static void arithmetic_operators(void **state)
                            test_symbol_table);
 
     // 6.5.7 (bitwise shift operators) Each of the operands shall have integer type
-    expect_report_error(ANALYSIS, 1, 6, "Invalid operand type to binary operator");
-    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("\"abc\" << 3"),
+    expect_report_error(ANALYSIS, 1, 5, "Invalid operand type to binary operator");
+    analysis_ast_walk_expr(MOCK_ERROR_REPORTER, parse_expr("_ptr << 3"),
                            test_symbol_table);
 }
 

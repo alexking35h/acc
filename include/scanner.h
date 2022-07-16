@@ -27,7 +27,7 @@ typedef struct Scanner_t Scanner;
  *  source - pointer to source code
  *
  * Returns:
- *  pointer to allocated Scanner instance, or NULL on error.
+ *  pointer to allocated Scanner instance.
  */
 Scanner *Scanner_init(char const *source, ErrorReporter *error_reporter);
 

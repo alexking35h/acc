@@ -28,7 +28,6 @@ static void primary_expressions(void **state)
     AstTestSet tests[] = {{"1", "(P 1)"},
                           {"q", "(P q)"},
                           {"((3))", "(P 3)"},
-                          {"\"a\"", "(P \"a\")"},
                           {NULL, NULL}};
     assert_true(test_parse_compare_ast_set(tests, TEST_EXPR));
 }
@@ -94,7 +93,6 @@ static void logical_expressions(void **state)
                           {"a|b", "(B (P a), |, (P b))"},
                           {"a^b", "(B (P a), ^, (P b))"},
                           {"a&&b", "(B (P a), &&, (P b))"},
-                          {"\"a\"||b", "(B (P \"a\"), ||, (P b))"},
                           {"a?1:3", "(T (P a), (P 1), (P 3))"},
                           {NULL, NULL}};
 

@@ -4,10 +4,6 @@ This module reads an ARM ELF file, and executes it on a basic Aarch32 VM.
 This emulator -only supports static executables, and will not import any other
 library dependencies.
 
-This module reads an ARM ELF file, and executes it on a basic Aarch32 VM.
-Only static executables are supported - the emulator does not import any other
-library dependencies; and files must only include ARM Aarch32 code - no Thumb code).
-
 A mininal set of system calls are implemented based on the Linux ARM 32-bit EABI:
  - exit (0x01)
  - write (0x04)

@@ -123,7 +123,6 @@ typedef struct ExprAstNode_t
         {
             Token *identifier;
             Token *constant;
-            Token *string_literal;
             Symbol *symbol;
         } primary;
 
