@@ -1,11 +1,11 @@
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
-#include "scanner.h"
 #include "error.h"
+#include "scanner.h"
 #include "token.h"
 
 #define IDENTIFIER_START_CHARACTERS                                                      \
@@ -114,11 +114,9 @@ static bool consume_keyword_or_identifier(Scanner *scanner, TokenType *token_typ
     }
 
     char *keywords[] = {
-        "auto",        "char",     "const",
-              "else",   "extern",       "if",
-         "int",    "long",     "register", "return",   "short",
-        "signed",   "sizeof", "static",   
-        "unsigned", "void",   "volatile", "while",
+        "auto",   "char",   "const",    "else",   "extern",   "if",
+        "int",    "long",   "register", "return", "short",    "signed",
+        "sizeof", "static", "unsigned", "void",   "volatile", "while",
     };
 
     for (int i = 0; i < COUNT(keywords); i++)

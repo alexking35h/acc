@@ -57,11 +57,10 @@ static void single_character(void **state)
     Scanner *scanner = Scanner_init(source, MOCK_ERROR_REPORTER);
 
     TokenType expected_tokens[] = {
-        SEMICOLON,    LEFT_BRACE, RIGHT_BRACE, COMMA,       COLON,
-        EQUAL,        LEFT_PAREN, RIGHT_PAREN, LEFT_SQUARE, RIGHT_SQUARE,
-                  AMPERSAND,  BANG,        TILDE,       MINUS,
-        PLUS,         STAR,       SLASH,       PERCENT,     LESS_THAN,
-        GREATER_THAN, CARET,      BAR,         QUESTION,    END_OF_FILE,
+        SEMICOLON,  LEFT_BRACE,   RIGHT_BRACE, COMMA,        COLON,     EQUAL,
+        LEFT_PAREN, RIGHT_PAREN,  LEFT_SQUARE, RIGHT_SQUARE, AMPERSAND, BANG,
+        TILDE,      MINUS,        PLUS,        STAR,         SLASH,     PERCENT,
+        LESS_THAN,  GREATER_THAN, CARET,       BAR,          QUESTION,  END_OF_FILE,
     };
 
     for (int i = 0; i < COUNT(expected_tokens); i++)
@@ -133,18 +132,15 @@ static void comment(void **state)
 
 static void keyword(void **state)
 {
-    const char *source =
-        "auto char const else "
-        "extern if int long register "
-        "return short signed sizeof static "
-        "unsigned void volatile while _identifier_1234_name";
+    const char *source = "auto char const else "
+                         "extern if int long register "
+                         "return short signed sizeof static "
+                         "unsigned void volatile while _identifier_1234_name";
 
-    TokenType keyword_tokens[] = {
-        AUTO,          CHAR,       CONST,    
-        ELSE,          EXTERN,                IF,
-           INT,    LONG,       REGISTER,    RETURN,   SHORT,    SIGNED,
-        SIZEOF,   STATIC,                 UNSIGNED, VOID,
-        VOLATILE, WHILE,  IDENTIFIER, END_OF_FILE};
+    TokenType keyword_tokens[] = {AUTO,  CHAR,     CONST,  ELSE,       EXTERN,
+                                  IF,    INT,      LONG,   REGISTER,   RETURN,
+                                  SHORT, SIGNED,   SIZEOF, STATIC,     UNSIGNED,
+                                  VOID,  VOLATILE, WHILE,  IDENTIFIER, END_OF_FILE};
 
     Scanner *scanner = Scanner_init(source, MOCK_ERROR_REPORTER);
     for (int i = 0; i < COUNT(keyword_tokens); i++)

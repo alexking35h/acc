@@ -376,4 +376,3 @@ DeclAstNode *Parser_translation_unit(Parser *parser)
     }
     return head;
 }
-
