@@ -4,65 +4,38 @@
  * Tokens are the 'microsyntax' of the language, as defined
  * by C's lexical grammar. The Scanner/Lexer generates a flat sequence
  * of tokens from the input source, which the parser takes as input.
+ *
+ * Only a subset of C11 tokens have been implemented (see TokenType_t, below).
  */
 
 #ifndef __TOKEN__
 #define __TOKEN__
 
-/* The following C11 tokens have not been implemented: */
-// ALIGNAS
-// ALIGNOF
-// ATOMIC
-// BOOL
-// COMPLEX
-// GENERIC
-// IMAGINARY
-// NORETURN
-// STATIC_ASSERT
-// THREAD_LOCAL
-// FUNC_NAME
-
 /* Token types Enum */
 typedef enum TokenType_t
 {
-
     // NAT - Not a Token. Used internally in the scanner.
     NAT = 0,
 
     AUTO,
-    BREAK,
-    CASE,
     CHAR,
     CONST,
-    CONTINUE,
-    DEFAULT,
-    DO,
     ELSE,
-    ENUM,
     EXTERN,
-    FOR,
-    GOTO,
     IF,
-    INLINE,
     INT,
     LONG,
     REGISTER,
-    RESTRICT,
     RETURN,
     SHORT,
     SIGNED,
     SIZEOF,
     STATIC,
-    STRUCT,
-    SWITCH,
-    TYPEDEF,
-    UNION,
     UNSIGNED,
     VOID,
     VOLATILE,
     WHILE,
 
-    ELLIPSIS,     // '...'
     RIGHT_ASSIGN, // '>>='
     LEFT_ASSIGN,  // '<<='
     ADD_ASSIGN,   // '+='
@@ -95,7 +68,6 @@ typedef enum TokenType_t
     RIGHT_PAREN,  // ')' x
     LEFT_SQUARE,  // '[' x
     RIGHT_SQUARE, // ']' x
-    DOT,          // '.'
     AMPERSAND,    // '&'
     BANG,         // '!'
     TILDE,        // '~' x

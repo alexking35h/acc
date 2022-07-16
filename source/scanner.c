@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "scanner.h"
 #include "error.h"
@@ -81,8 +82,7 @@ static bool match_character(Scanner *scanner, const char *expected)
 
 static bool match_whitespace(Scanner *scanner)
 {
-    // @todo - CHECK, \v, \f?
-    char whitespace[] = {'\t', '\v', '\f', ' '};
+    char whitespace[] = {'\t', ' '};
     char focus = scanner->source[scanner->current];
     if (focus == '\n')
     {
@@ -103,7 +103,6 @@ static bool match_whitespace(Scanner *scanner)
     return false;
 }
 
-// @TODO - remove unused keywords.
 static bool consume_keyword_or_identifier(Scanner *scanner, TokenType *token_type)
 {
     const char *identifier_start = scanner->source + scanner->current++;
@@ -115,10 +114,10 @@ static bool consume_keyword_or_identifier(Scanner *scanner, TokenType *token_typ
     }
 
     char *keywords[] = {
-        "auto",     "break",  "case",     "char",     "const",    "continue", "default",
-        "do",       "else",   "enum",     "extern",   "for",      "goto",     "if",
-        "inline",   "int",    "long",     "register", "restrict", "return",   "short",
-        "signed",   "sizeof", "static",   "struct",   "switch",   "typedef",  "union",
+        "auto",        "char",     "const",
+              "else",   "extern",       "if",
+         "int",    "long",     "register", "return",   "short",
+        "signed",   "sizeof", "static",   
         "unsigned", "void",   "volatile", "while",
     };
 
@@ -194,8 +193,6 @@ static TokenType get_next_token_type(Scanner *scanner)
         return TILDE;
     case '?':
         return QUESTION;
-    case '.':
-        return DOT;
     case EOF:
         return END_OF_FILE;
     }
@@ -340,12 +337,12 @@ static TokenType get_next_token_type(Scanner *scanner)
  *  source - pointer to source code
  *
  * Returns:
- *  pointer to allocated Scanner instance, or NULL on error.
+ *  pointer to allocated Scanner instance.
  */
 Scanner *Scanner_init(char const *source, ErrorReporter *error_reporter)
 {
     Scanner *scanner = malloc(sizeof(Scanner));
-    // @TODO handle malloc fail with assert.
+    assert(scanner);
 
     scanner->error_reporter = error_reporter;
     scanner->source = source;

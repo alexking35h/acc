@@ -6,42 +6,22 @@ char *Token_str(TokenType type)
     {
     case AUTO:
         return "auto";
-    case BREAK:
-        return "break";
-    case CASE:
-        return "case";
     case CHAR:
         return "char";
     case CONST:
         return "const";
-    case CONTINUE:
-        return "continue";
-    case DEFAULT:
-        return "default";
-    case DO:
-        return "do";
     case ELSE:
         return "else";
-    case ENUM:
-        return "enum";
     case EXTERN:
         return "extern";
-    case FOR:
-        return "for";
-    case GOTO:
-        return "goto";
     case IF:
         return "if";
-    case INLINE:
-        return "inline";
     case INT:
         return "int";
     case LONG:
         return "long";
     case REGISTER:
         return "register";
-    case RESTRICT:
-        return "restrict";
     case RETURN:
         return "return";
     case SHORT:
@@ -52,14 +32,6 @@ char *Token_str(TokenType type)
         return "sizeof";
     case STATIC:
         return "static";
-    case STRUCT:
-        return "struct";
-    case SWITCH:
-        return "switch";
-    case TYPEDEF:
-        return "typedef";
-    case UNION:
-        return "union";
     case UNSIGNED:
         return "unsigned";
     case VOID:
@@ -68,8 +40,6 @@ char *Token_str(TokenType type)
         return "volatile";
     case WHILE:
         return "while";
-    case ELLIPSIS:
-        return "...";
     case RIGHT_ASSIGN:
         return ">>=";
     case LEFT_ASSIGN:
@@ -132,8 +102,6 @@ char *Token_str(TokenType type)
         return "[";
     case RIGHT_SQUARE:
         return "]";
-    case DOT:
-        return ".";
     case AMPERSAND:
         return "&";
     case BANG:
