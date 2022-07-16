@@ -1,19 +1,20 @@
-#include "scanner.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "scanner.h"
 #include "error.h"
 #include "token.h"
 
+// @TODO - get rid of TOKEN_BUFFER_SIZE
 #define TOKEN_BUFFER_SIZE 32
 #define IDENTIFIER_START_CHARACTERS                                                      \
     "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm_"
 #define IDENTIFIER_CHARACTERS                                                            \
     "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm_1234567890"
 
+// @todo get rid
 #define MAX_KEYWORD_LENGTH 20
 
 #define COUNT(n) sizeof(n) / sizeof(n[0])
@@ -87,6 +88,7 @@ static bool match_character(Scanner *scanner, const char *expected)
 
 static bool match_whitespace(Scanner *scanner)
 {
+    // @todo - CHECK, \v, \f?
     char whitespace[] = {'\t', '\v', '\f', ' '};
     char focus = scanner->source[scanner->current];
     if (focus == '\n')
@@ -108,6 +110,7 @@ static bool match_whitespace(Scanner *scanner)
     return false;
 }
 
+// @TODO - remove unused keywords.
 static bool consume_keyword_or_identifier(Scanner *scanner, TokenType *token_type)
 {
     const char *identifier_start = scanner->source + scanner->current++;
@@ -140,6 +143,7 @@ static bool consume_keyword_or_identifier(Scanner *scanner, TokenType *token_typ
     return true;
 }
 
+// @TODO - remove string handling/parsing.
 static bool consume_string(Scanner *scanner)
 {
     int string_line_position = scanner->current - scanner->line_start_position;
@@ -187,6 +191,7 @@ static bool consume_string(Scanner *scanner)
 }
 
 /* Consume a number */
+// @TODO - atoi (below) only recognises base-10. Get rid of hex/oct handling.
 static bool consume_number(Scanner *scanner)
 {
     if (match_character(scanner, "0"))
@@ -382,7 +387,7 @@ static TokenType get_next_token_type(Scanner *scanner)
         return match_character(scanner, "=") ? DIV_ASSIGN : SLASH;
     }
 
-    // String literal.
+    // String literal. @TODO remove string handling
     if (focus == '"')
     {
         scanner->current--;
@@ -428,6 +433,7 @@ static TokenType get_next_token_type(Scanner *scanner)
 Scanner *Scanner_init(char const *source, ErrorReporter *error_reporter)
 {
     Scanner *scanner = malloc(sizeof(Scanner));
+    // @TODO handle malloc fail with assert.
 
     scanner->error_reporter = error_reporter;
     scanner->source = source;

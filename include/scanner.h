@@ -35,7 +35,7 @@ Scanner *Scanner_init(char const *source, ErrorReporter *error_reporter);
  * Get the next token
  *
  * This function generates the next token from the source file, including the
- * final EOF token. When finished, the function returns NULL.
+ * final EOF token.
  */
 Token *Scanner_get_next(Scanner *scanner);
 
