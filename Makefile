@@ -30,6 +30,8 @@ ACC_EXE=$(BUILD_DIR)/acc
 .PHONY: $(RUN_TESTS)
 .PHONY: benchmark
 .PHONY: functional
+.PHONY: docker_build
+.PHONY: docker_sh
 
 # Phony targets to run the unit tests
 RUN_TESTS=$(addprefix run_, $(TEST_EXE))

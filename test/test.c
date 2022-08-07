@@ -72,10 +72,9 @@ _Bool test_parse_compare_ast(const char *source, const char *expected,
         break;
     }
 
-    if (Parser_peek_next_token(parser)->type != END_OF_FILE)
-    {
-        TokenType next_token = Parser_peek_next_token(parser)->type;
-        printf("FAIL. Expected 'END_OF_FILE', got '%s'\n", Token_str(next_token));
+    if (!Parser_at_end(parser)) {
+        printf("FAIL. Expected 'END_OF_FILE'");
+        success = false;
     }
 
     Parser_destroy(parser);
